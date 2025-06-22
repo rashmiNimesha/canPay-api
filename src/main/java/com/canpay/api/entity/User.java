@@ -1,7 +1,11 @@
 package com.canpay.api.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
+@Setter
+@Getter
 @Entity
 public class User {
     @Id
@@ -9,11 +13,14 @@ public class User {
     private Long id;
 
     @Column(unique = true, nullable = false)
-    private String phone;
+    private String email;
 
     private String name;
 
     private String role = "PASSENGER";
+
+    private String pin;
+
 
     public Long getId() {
         return id;
@@ -23,12 +30,12 @@ public class User {
         this.id = id;
     }
 
-    public String getPhone() {
-        return phone;
+    public String getEmail() {
+        return email;
     }
 
-    public void setPhone(String phone) {
-        this.phone = phone;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getName() {
@@ -45,5 +52,13 @@ public class User {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getPin() {
+        return pin;
+    }
+
+    public void setPin(String pin) {
+        this.pin = pin;
     }
 }

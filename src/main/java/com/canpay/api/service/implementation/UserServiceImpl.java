@@ -18,16 +18,26 @@ public class UserServiceImpl implements UserSevice {
     }
 
     @Override
-    public Optional<User> findByPhone(String phone) {
-        return userRepository.findByPhone(phone);
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email);
     }
 
     @Override
-    public User createPassenger(String phone, String name) {
+    public User createPassenger(String email, String name) {
         User user = new User();
-        user.setPhone(phone);
+        user.setEmail(email);
         user.setName(name);
         user.setRole("PASSENGER");
         return userRepository.save(user);
+    }
+
+    @Override
+    public Optional<User> setPin(String email, String pin) {
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        userOpt.ifPresent(user -> {
+            user.setPin(pin);
+            userRepository.save(user);
+        });
+        return userOpt;
     }
 }

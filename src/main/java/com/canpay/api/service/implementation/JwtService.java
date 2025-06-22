@@ -21,7 +21,7 @@ public class JwtService {
         Date expiryDate = new Date(now.getTime() + 86400000);
 
         return Jwts.builder()
-                .setSubject(user.getPhone())
+                .setSubject(user.getEmail())
                 .claim("role", user.getRole())
                 .claim("name", user.getName())
                 .claim("id", user.getId())

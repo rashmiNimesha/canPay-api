@@ -7,6 +7,9 @@ import java.util.Optional;
 
 @Service
 public interface UserSevice {
-    Optional<User> findByPhone(String phone);
-    User createPassenger(String phone, String name);
+    Optional<User> findByEmail(String email);
+    User createPassenger(String email, String name);
+    Optional<User> setPin(String email, String pin);
+
+
 }
