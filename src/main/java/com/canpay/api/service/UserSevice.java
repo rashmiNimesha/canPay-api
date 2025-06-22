@@ -8,8 +8,6 @@ import java.util.Optional;
 @Service
 public interface UserSevice {
     Optional<User> findByEmail(String email);
-    User createPassenger(String email, String name);
-    Optional<User> setPin(String email, String pin);
-
+    User registerWithEmail(String email);
 
 }

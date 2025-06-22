@@ -41,7 +41,6 @@ public class EmailService {
             request.setBody(mail.build());
             Response response = sg.api(request);
 
-            // Optionally, log response
             System.out.println(response.getStatusCode());
             System.out.println(response.getBody());
             System.out.println(response.getHeaders());

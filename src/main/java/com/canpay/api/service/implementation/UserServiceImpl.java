@@ -23,21 +23,12 @@ public class UserServiceImpl implements UserSevice {
     }
 
     @Override
-    public User createPassenger(String email, String name) {
+    public User registerWithEmail(String email) {
         User user = new User();
         user.setEmail(email);
-        user.setName(name);
         user.setRole("PASSENGER");
         return userRepository.save(user);
     }
 
-    @Override
-    public Optional<User> setPin(String email, String pin) {
-        Optional<User> userOpt = userRepository.findByEmail(email);
-        userOpt.ifPresent(user -> {
-            user.setPin(pin);
-            userRepository.save(user);
-        });
-        return userOpt;
-    }
+
 }

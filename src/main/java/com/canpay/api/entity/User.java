@@ -12,14 +12,14 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
     private String email;
 
     private String name;
 
     private String role = "PASSENGER";
 
-    private String pin;
+    private String nic;
+    private long backAccNo;
 
 
     public Long getId() {
@@ -54,11 +54,19 @@ public class User {
         this.role = role;
     }
 
-    public String getPin() {
-        return pin;
+    public String getNic() {
+        return nic;
     }
 
-    public void setPin(String pin) {
-        this.pin = pin;
+    public void setNic(String nic) {
+        this.nic = nic;
+    }
+
+    public long getBackAccNo() {
+        return backAccNo;
+    }
+
+    public void setBackAccNo(long backAccNo) {
+        this.backAccNo = backAccNo;
     }
 }
