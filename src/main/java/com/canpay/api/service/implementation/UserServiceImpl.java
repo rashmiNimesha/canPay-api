@@ -25,10 +25,10 @@ public class UserServiceImpl implements UserSevice {
     }
 
     @Override
-    public User registerWithEmail(String email) {
+    public User registerWithEmail(String email, String role) {
         User user = new User();
         user.setEmail(email);
-        user.setRole("PASSENGER");
+        user.setRole(role);
         return userRepository.save(user);
     }
 
@@ -55,6 +55,53 @@ public class UserServiceImpl implements UserSevice {
         }
 
         return userRepository.save(user);
+    }
+
+    @Override
+    public User updateOperatorProfile(String email, String name, String nic, String profileImageBase64) {
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isEmpty()) {
+            throw new RuntimeException("User not found with email: " + email);
+        }
+        User user = userOpt.get();
+
+        if (!"OPERATOR".equalsIgnoreCase(user.getRole())) {
+            throw new RuntimeException("User is not an OPERATOR");
+        }
+
+        user.setName(name);
+        user.setNic(nic);
+     //   user.setProfileImage(profileImageBase64);
+
+        return userRepository.save(user);
+    }
+
+    @Override
+    public User updateOwnerProfile(String email, String name, String nic, String profileImageBase64, String accountHolderName, String bankName, long accountNumber) {
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isEmpty()) {
+            throw new RuntimeException("User not found with email: " + email);
+        }
+        User user = userOpt.get();
+
+        if (!"OWNER".equalsIgnoreCase(user.getRole())) {
+            throw new RuntimeException("User is not an OWNER");
+        }
+
+        user.setName(name);
+        user.setNic(nic);
+       // user.setProfileImage(profileImageBase64);
+
+        BankAccount account = new BankAccount();
+        account.setUser(user);
+        account.setAccountHolderName(accountHolderName);
+        account.setBankName(bankName);
+        account.setAccountNumber(accountNumber);
+
+        user.getBankAccounts().add(account);
+
+        return userRepository.save(user);
+
     }
 
 
