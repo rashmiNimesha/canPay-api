@@ -1,11 +1,10 @@
 package com.canpay.api.controller;
 
+import com.canpay.api.dto.UserDto;
 import com.canpay.api.entity.User;
-import com.canpay.api.repository.user.UserRepository;
 import com.canpay.api.service.implementation.JwtService;
 import com.canpay.api.service.implementation.OTPService;
 import com.canpay.api.service.implementation.UserServiceImpl;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -28,10 +27,6 @@ public class AuthController {
         this.userServiceImpl = userServiceImpl;
         this.jwtService = jwtService;
     }
-
-    @Autowired
-    UserRepository userRepository;
-
 
     @PostMapping("/send-otp")
     public ResponseEntity<?> sendOtp(@RequestBody Map<String, String> request) {
@@ -72,30 +67,41 @@ public class AuthController {
     @PostMapping("/create-profile")
     public ResponseEntity<?> createProfile(@RequestBody Map<String, String> request) {
         System.out.println("came create acc");
+
         String email = request.get("email");
         String name = request.get("name");
-//        String nic = request.get("nic");
-//        long backAccNo = Integer.parseInt(request.get("accNo"));
+        String nic = request.get("nic");
+        String accNoStr = request.get("accNo");
+        String bank = request.get("bank");
+        String accName = request.get("accName");
 
-        Optional<User> userOpt = userServiceImpl.findByEmail(email);
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.status(404).body(Map.of("message", "User not found"));
+        if (email == null || name == null || nic == null || accNoStr == null || bank == null || accName == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Missing required fields"));
         }
 
-        User user = userOpt.get();
-        user.setName(name);
-        userRepository.save(user);
+        long accNo;
+        try {
+            accNo = Long.parseLong(accNoStr);
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Invalid account number"));
+        }
 
-        System.out.println("update new acc with other details");
+        try {
+            User user = userServiceImpl.updateProfileWithBankAccount(email, name, nic, accName, bank, accNo);
+            System.out.println("profile updated");
 
-        String token = jwtService.generateToken(user);
-        return ResponseEntity.ok(Map.of(
-                "message", "Profile updated successfully",
-                "token", token,
-                "profile", user
-        ));
+            String token = jwtService.generateToken(user);
+
+            UserDto userDto = new UserDto(user.getName(), user.getEmail(), user.getNic());
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "Profile updated successfully",
+                    "token", token,
+                    "profile", userDto
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(404).body(Map.of("message", e.getMessage()));
+        }
     }
-
-
 
 }

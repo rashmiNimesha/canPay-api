@@ -1,8 +1,12 @@
 package com.canpay.api.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Setter
 @Getter
@@ -19,8 +23,10 @@ public class User {
     private String role = "PASSENGER";
 
     private String nic;
-    private long backAccNo;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private List<BankAccount> bankAccounts;
 
     public Long getId() {
         return id;
@@ -62,11 +68,11 @@ public class User {
         this.nic = nic;
     }
 
-    public long getBackAccNo() {
-        return backAccNo;
+    public List<BankAccount> getBankAccounts() {
+        return bankAccounts;
     }
 
-    public void setBackAccNo(long backAccNo) {
-        this.backAccNo = backAccNo;
+    public void setBankAccounts(List<BankAccount> bankAccounts) {
+        this.bankAccounts = bankAccounts;
     }
 }
