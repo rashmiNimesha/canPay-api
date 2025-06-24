@@ -28,6 +28,25 @@ public class User {
     @JsonManagedReference
     private List<BankAccount> bankAccounts;
 
+    private double walletBalance = 0.0;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @JsonManagedReference
+    private List<RechargeTransaction> rechargeHistory = new ArrayList<>();
+
+
+    public User(Long id, String email, String name, String role, String nic) {
+        this.id = id;
+        this.email = email;
+        this.name = name;
+        this.role = role;
+        this.nic = nic;
+    }
+
+    public User() {
+
+    }
+
     public Long getId() {
         return id;
     }
@@ -74,5 +93,21 @@ public class User {
 
     public void setBankAccounts(List<BankAccount> bankAccounts) {
         this.bankAccounts = bankAccounts;
+    }
+
+    public double getWalletBalance() {
+        return walletBalance;
+    }
+
+    public void setWalletBalance(double walletBalance) {
+        this.walletBalance = walletBalance;
+    }
+
+    public List<RechargeTransaction> getRechargeHistory() {
+        return rechargeHistory;
+    }
+
+    public void setRechargeHistory(List<RechargeTransaction> rechargeHistory) {
+        this.rechargeHistory = rechargeHistory;
     }
 }

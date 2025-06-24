@@ -1,6 +1,7 @@
 package com.canpay.api.service.implementation;
 
 import com.canpay.api.entity.User;
+import com.canpay.api.jwt.JwtConfig;
 import org.springframework.stereotype.Service;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -13,12 +14,17 @@ import java.util.Date;
 @Service
 public class JwtService {
 
-    private final String SECRET = "q8xNjQlKUtW2+KDd13OdU1jZhrqU3FqKqhX/vR2I1xM=";
-    private final Key key = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
+    private final JwtConfig jwtConfig;
+    private final Key key;
+
+    public JwtService(JwtConfig jwtConfig) {
+        this.jwtConfig = jwtConfig;
+        this.key = Keys.hmacShaKeyFor(jwtConfig.getSecretKey().getBytes(StandardCharsets.UTF_8));
+    }
 
     public String generateToken(User user) {
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + 86400000);
+        Date expiryDate = new Date(now.getTime() + jwtConfig.getTokenExpirationAfterDays() * 24 * 60 * 60 * 1000L);
 
         return Jwts.builder()
                 .setSubject(user.getEmail())

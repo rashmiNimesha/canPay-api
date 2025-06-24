@@ -53,12 +53,14 @@ public class AuthController {
         }
 
         Optional<User> existingUser = userServiceImpl.findByEmail(email);
+
         if (existingUser.isPresent()) {
             String token = jwtService.generateToken(existingUser.get());
             return ResponseEntity.ok(Map.of(
                     "newUser", false,
                     "token", token,
-                    "profile", existingUser.get()
+                    "profile", new UserDto(existingUser.get())
+
             ));
         }
 
