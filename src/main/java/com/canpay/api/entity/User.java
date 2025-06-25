@@ -20,7 +20,7 @@ public class User {
 
     private String name;
 
-    private String role = "PASSENGER";
+    private String role = "";
 
     private String nic;
 
