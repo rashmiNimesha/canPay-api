@@ -1,10 +1,12 @@
 package com.canpay.api.controller;
 
 import com.canpay.api.dto.UserDto;
+import com.canpay.api.entity.ResponseEntityBuilder;
 import com.canpay.api.entity.User;
 import com.canpay.api.service.implementation.JwtService;
 import com.canpay.api.service.implementation.OTPService;
 import com.canpay.api.service.implementation.UserServiceImpl;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -31,47 +33,74 @@ public class AuthController {
     @PostMapping("/send-otp")
     public ResponseEntity<?> sendOtp(@RequestBody Map<String, String> request) {
         String email = request.get("email");
+        if (email == null || email.isBlank()) {
+            return new ResponseEntityBuilder.Builder<Void>()
+                    .resultMessage("Email is required")
+                    .httpStatus(HttpStatus.BAD_REQUEST)
+                    .buildWrapped();
+        }
+
         otpService.sendOtp(email);
-        return ResponseEntity.ok(Map.of("message", "OTP sent successfully"));
+        return new ResponseEntityBuilder.Builder<Void>()
+                .resultMessage("OTP sent successfully")
+                .httpStatus(HttpStatus.OK)
+                .buildWrapped();
     }
 
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@RequestBody Map<String, String> request) {
         String email = request.get("email");
         String otp = request.get("otp");
-        String role = request.getOrDefault("role", "PASSENGER").toUpperCase();
+        String role = request.getOrDefault("role", "").toUpperCase();
 
         if (email == null || otp == null || role.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Missing required fields"));
+            return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                    .resultMessage("Missing required fields")
+                    .httpStatus(HttpStatus.BAD_REQUEST)
+                    .buildWrapped();
         }
 
         boolean valid = otpService.verifyOtp(email, otp);
         System.out.println("OTP verified");
 
         if (!valid) {
-            return ResponseEntity.status(401).body(Map.of("message", "Invalid OTP"));
+            return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                    .resultMessage("Invalid OTP")
+                    .httpStatus(HttpStatus.UNAUTHORIZED)
+                    .buildWrapped();
         }
 
         Optional<User> existingUser = userServiceImpl.findByEmail(email);
 
         if (existingUser.isPresent()) {
             String token = jwtService.generateToken(existingUser.get());
-            return ResponseEntity.ok(Map.of(
+
+            Map<String, Object> responseData = Map.of(
                     "newUser", false,
                     "token", token,
-                    "profile", new UserDto(existingUser.get())
+                    "profile", new UserDto(existingUser.get()));
 
-            ));
+
+            return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                    .resultMessage("OTP verified successfully")
+                    .httpStatus(HttpStatus.OK)
+                    .body(responseData)
+                    .buildWrapped();
         }
 
         System.out.println("Going to create new account with role: " + role);
         userServiceImpl.registerWithEmail(email, role);
         System.out.println("New account created after OTP verification");
 
-        return ResponseEntity.ok(Map.of(
-                "newUser", true,
-                "message", "OTP verified and email registered"
-        ));
+        Map<String, Object> responseData = Map.of(
+                "newUser", true
+        );
+
+        return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                .resultMessage("OTP verified and new user registered")
+                .httpStatus(HttpStatus.OK)
+                .body(responseData)
+                .buildWrapped();
     }
 
 
@@ -86,7 +115,11 @@ public class AuthController {
 
 
         if (email == null || name == null || nic == null) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Missing name/email/nic"));
+            return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                    .resultMessage("Missing name/email/nic")
+                    .httpStatus(HttpStatus.BAD_REQUEST)
+                    .buildWrapped();
+
         }
 
         try {
@@ -98,14 +131,19 @@ public class AuthController {
                     String accNameP = request.get("accName");
 
                     if (accNoStrP == null || bankP == null || accNameP == null)
-                        return ResponseEntity.badRequest().body(Map.of("message", "Missing bank details"));
+                        return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                                .resultMessage("Missing bank details")
+                                .httpStatus(HttpStatus.BAD_REQUEST)
+                                .buildWrapped();
 
                     long accNoP;
                     try {
                         accNoP = Long.parseLong(accNoStrP);
                     } catch (NumberFormatException e) {
-                        return ResponseEntity.badRequest().body(Map.of("message", "Invalid account number"));
-                    }
+                        return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                                .resultMessage("Invalid account number")
+                                .httpStatus(HttpStatus.BAD_REQUEST)
+                                .buildWrapped();                    }
 
                     user = userServiceImpl.updateProfileWithBankAccount(email, name, nic, accNameP, bankP, accNoP);
                     break;
@@ -113,8 +151,10 @@ public class AuthController {
                 case "OPERATOR":
                     String profileImageOp = request.get("profileImage");
                     if (profileImageOp == null)
-                        return ResponseEntity.badRequest().body(Map.of("message", "Missing profile image"));
-
+                        return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                                .resultMessage("Missing profile image")
+                                .httpStatus(HttpStatus.BAD_REQUEST)
+                                .buildWrapped();
                     user = userServiceImpl.updateOperatorProfile(email, name, nic, profileImageOp);
                     break;
 
@@ -125,33 +165,47 @@ public class AuthController {
                     String accNameOw = request.get("accName");
 
                     if (profileImageOw == null || accNoStrOw == null || bankOw == null || accNameOw == null)
-                        return ResponseEntity.badRequest().body(Map.of("message", "Missing owner data"));
-
+                        return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                                .resultMessage("Missing owner data")
+                                .httpStatus(HttpStatus.BAD_REQUEST)
+                                .buildWrapped();
                     long accNoOw;
                     try {
                         accNoOw = Long.parseLong(accNoStrOw);
                     } catch (NumberFormatException e) {
-                        return ResponseEntity.badRequest().body(Map.of("message", "Invalid account number"));
-                    }
+                        return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                                .resultMessage("Invalid account number")
+                                .httpStatus(HttpStatus.BAD_REQUEST)
+                                .buildWrapped();                    }
 
                     user = userServiceImpl.updateOwnerProfile(email, name, nic, profileImageOw, accNameOw, bankOw, accNoOw);
                     break;
 
                 default:
-                    return ResponseEntity.badRequest().body(Map.of("message", "Invalid role"));
-            }
+                    return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                            .resultMessage("Invalid role")
+                            .httpStatus(HttpStatus.BAD_REQUEST)
+                            .buildWrapped();            }
 
             String token = jwtService.generateToken(user);
-            UserDto userDto = new UserDto(user.getName(), user.getEmail(), user.getNic());
+            UserDto userDto = new UserDto(user.getRole(), user.getName(), user.getEmail(), user.getNic());
 
-            return ResponseEntity.ok(Map.of(
-                    "message", "Profile updated successfully",
+            Map<String, Object> responseData = Map.of(
                     "token", token,
                     "profile", userDto
-            ));
+            );
+            return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                    .resultMessage("Profile updated successfully")
+                    .httpStatus(HttpStatus.OK)
+                    .body(responseData)
+                    .buildWrapped();
 
         } catch (RuntimeException e) {
-            return ResponseEntity.status(404).body(Map.of("message", e.getMessage()));
-        }
+            return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                    .resultMessage(e.getMessage())
+                    .httpStatus(HttpStatus.NOT_FOUND)
+                    .buildWrapped();        }
     }
+    
+
 }

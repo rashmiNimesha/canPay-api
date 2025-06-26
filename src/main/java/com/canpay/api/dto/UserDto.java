@@ -18,11 +18,13 @@ public class UserDto {
         this.role = user.getRole();
     }
 
-    public UserDto(String name, String email, String nic) {
+    public UserDto(String name, String email, String nic, String role) {
         this.name = name;
         this.email = email;
         this.nic = nic;
+        this.role = role;
     }
+
 
     public Long getId() {
         return id;
