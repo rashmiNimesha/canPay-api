@@ -104,5 +104,44 @@ public class UserServiceImpl implements UserSevice {
 
     }
 
+    public User updateName(String email, String name) {
+        User user = getUserOrThrow(email);
+        user.setName(name);
+        return userRepository.save(user);
+    }
+
+    public User updateEmail(String oldEmail, String newEmail) {
+        Optional<User> userOpt = userRepository.findByEmail(oldEmail);
+        if (userOpt.isEmpty()) {
+            throw new RuntimeException("User not found");
+        }
+        if (userRepository.existsByEmail(newEmail)) {
+            throw new RuntimeException("Email already in use");
+        }
+        User user = userOpt.get();
+        user.setEmail(newEmail);
+        return userRepository.save(user);
+    }
+
+    public User  addBankAccount(String email, String accName, String bank, long accNo) {
+        User user = getUserOrThrow(email);
+        boolean exists = user.getBankAccounts().stream()
+                .anyMatch(acc -> acc.getAccountNumber() == accNo);
+        if (!exists) {
+            BankAccount account = new BankAccount();
+            account.setAccountHolderName(accName);
+            account.setBankName(bank);
+            account.setAccountNumber(accNo);
+            account.setUser(user);
+            user.getBankAccounts().add(account);
+            userRepository.save(user);
+        }
+        return userRepository.save(user);
+    }
+
+    private User getUserOrThrow(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+    }
 
 }
