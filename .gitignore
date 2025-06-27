@@ -1,0 +1,80 @@
+# Compiled class files
+*.class
+
+# Log files
+*.log
+
+# BlueJ files
+*.ctxt
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files #
+*.jar
+*.war
+*.ear
+
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.properties
+
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+.gradle-cache/
+**/build/
+
+# Eclipse
+*.launch
+.settings/
+.metadata/
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+
+# IntelliJ
+*.iml
+.idea/
+out/
+*.ipr
+*.iws
+
+# NetBeans
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# VS Code
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Spring Boot devtools
+.spring-boot-devtools.properties
+.spring-boot-devtools.restart.triggerfile
+
+# Environment
+env*
+.env
+.env.*
+
+# Others
+*.db
+*.sqlite
+*.h2.db
+*.mv.db
+*.log
+
+# Application properties
+**/application.properties

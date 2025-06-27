@@ -28,12 +28,13 @@ public class JwtService {
 
         return Jwts.builder()
                 .setSubject(user.getEmail())
+                // .claim("nic", expiryDate)
                 .claim("role", user.getRole())
                 .claim("name", user.getName())
                 .claim("id", user.getId())
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
-                .signWith(key, SignatureAlgorithm.HS256)
+                .signWith(key, SignatureAlgorithm.RS256)
                 .compact();
     }
 }

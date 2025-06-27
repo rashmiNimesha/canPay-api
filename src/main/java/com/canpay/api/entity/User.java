@@ -24,6 +24,8 @@ public class User {
 
     private String nic;
 
+    private String profilePhotoUrl;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<BankAccount> bankAccounts;
@@ -109,5 +111,14 @@ public class User {
 
     public void setRechargeHistory(List<RechargeTransaction> rechargeHistory) {
         this.rechargeHistory = rechargeHistory;
+    }
+
+
+    public String getProfilePhotoUrl() {
+        return profilePhotoUrl;
+    }
+
+    public void setProfilePhotoUrl(String profilePhotoUrl) {
+        this.profilePhotoUrl = profilePhotoUrl;
     }
 }
