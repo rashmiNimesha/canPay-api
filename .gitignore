@@ -1,0 +1,75 @@
+# Node.js dependencies (if any frontend present)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment variables
+.env
+.env.*
+
+# Logs
+logs/
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Build output
+dist/
+build/
+out/
+target/
+
+# IDE files
+.vscode/
+.idea/
+*.iml
+*.sublime-workspace
+*.sublime-project
+
+# Coverage reports
+coverage/
+.nyc_output/
+jacoco.exec
+
+# Misc
+*.local
+*.cache
+*.swp
+*.bak
+*.tmp
+
+# Maven
+.mvn/
+!.mvn/wrapper/maven-wrapper.jar
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Spring Boot specific
+spring.log
+
+# Database
+*.h2.db
+*.mv.db
+*.db
+*.sqlite
+
+# Others
+*.class
+
+# Spring Boot application properties
+application.properties
+application.yml
