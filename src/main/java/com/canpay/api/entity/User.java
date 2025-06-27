@@ -4,56 +4,83 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.GenericGenerator;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.util.ArrayList;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
 @Setter
 @Getter
 @Entity
+@EntityListeners(AuditingEntityListener.class)
+@Table(name = "users")
 public class User {
     @Id
-    @GeneratedValue(generator = "UUID")
-    @GenericGenerator(
-        name = "UUID",
-        strategy = "org.hibernate.id.UUIDGenerator"
-    )
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(updatable = false, nullable = false)
     private UUID id;
 
-    private String email;
-
+    @Column(nullable = false)
     private String name;
 
-    private String role = "";
-
+    @Column(nullable = false, unique = true)
     private String nic;
 
-    private String profilePhotoUrl;
+    private String email;
+
+    @Column(name = "photo_url")
+    private String photoUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserRole role;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserStatus status = UserStatus.PENDING;
+
+    @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<BankAccount> bankAccounts;
 
-    private double walletBalance = 0.0;
+    @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private List<Bus> ownedBuses;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     @JsonManagedReference
-    private List<RechargeTransaction> rechargeHistory = new ArrayList<>();
+    private List<OperatorAssignment> operatorAssignments;
 
+    @OneToOne(mappedBy = "passenger", cascade = CascadeType.ALL)
+    @JsonManagedReference
+    private PassengerWallet passengerWallet;
 
-    public User(UUID id, String email, String name, String role, String nic) {
-        this.id = id;
-        this.email = email;
+    public User() {}
+
+    public User(String name, String nic, String email, UserRole role) {
         this.name = name;
-        this.role = role;
         this.nic = nic;
+        this.email = email;
+        this.role = role;
     }
 
-    public User() {
+    public enum UserRole {
+        OWNER, OPERATOR, PASSENGER
+    }
 
+    public enum UserStatus {
+        PENDING, APPROVED, REJECTED, BLOCKED, ACTIVE, INACTIVE
     }
 
     public UUID getId() {
@@ -80,11 +107,11 @@ public class User {
         this.name = name;
     }
 
-    public String getRole() {
+    public UserRole getRole() {
         return role;
     }
 
-    public void setRole(String role) {
+    public void setRole(UserRole role) {
         this.role = role;
     }
 
@@ -104,28 +131,59 @@ public class User {
         this.bankAccounts = bankAccounts;
     }
 
-    public double getWalletBalance() {
-        return walletBalance;
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
-    public void setWalletBalance(double walletBalance) {
-        this.walletBalance = walletBalance;
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 
-    public List<RechargeTransaction> getRechargeHistory() {
-        return rechargeHistory;
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
     }
 
-    public void setRechargeHistory(List<RechargeTransaction> rechargeHistory) {
-        this.rechargeHistory = rechargeHistory;
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
-
-    public String getProfilePhotoUrl() {
-        return profilePhotoUrl;
+    public List<Bus> getOwnedBuses() {
+        return ownedBuses;
     }
 
-    public void setProfilePhotoUrl(String profilePhotoUrl) {
-        this.profilePhotoUrl = profilePhotoUrl;
+    public void setOwnedBuses(List<Bus> ownedBuses) {
+        this.ownedBuses = ownedBuses;
+    }
+
+    public List<OperatorAssignment> getOperatorAssignments() {
+        return operatorAssignments;
+    }
+
+    public void setOperatorAssignments(List<OperatorAssignment> operatorAssignments) {
+        this.operatorAssignments = operatorAssignments;
+    }
+
+    public PassengerWallet getPassengerWallet() {
+        return passengerWallet;
+    }
+
+    public void setPassengerWallet(PassengerWallet passengerWallet) {
+        this.passengerWallet = passengerWallet;
+    }
+
+    public UserStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(UserStatus status) {
+        this.status = status;
+    }
+
+    public String getPhotoUrl() {
+        return photoUrl;
+    }
+
+    public void setPhotoUrl(String photoUrl) {
+        this.photoUrl = photoUrl;
     }
 }

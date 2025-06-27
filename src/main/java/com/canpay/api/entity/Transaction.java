@@ -11,7 +11,7 @@ import java.util.UUID;
 @Entity
 @EntityListeners(AuditingEntityListener.class)
 @Table(name = "transactions")
-public class RechargeTransaction {
+public class Transaction {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -21,18 +21,11 @@ public class RechargeTransaction {
 
     @CreatedDate
     @Column(name = "happened_at", nullable = false)
-    private LocalDateTime timestamp;
-
-    @PrePersist
-    protected void onCreate() {
-        if (timestamp == null) {
-            timestamp = LocalDateTime.now();
-        }
-    }
+    private LocalDateTime happenedAt;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private TransactionType type = TransactionType.TOP_UP;
+    private TransactionType type;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -40,11 +33,31 @@ public class RechargeTransaction {
 
     @ManyToOne
     @JoinColumn(name = "passenger_id", nullable = false)
-    private User user;
+    private User passenger;
+
+    @ManyToOne
+    @JoinColumn(name = "bus_id")
+    private Bus bus;
+
+    @ManyToOne
+    @JoinColumn(name = "operator_id")
+    private User operator;
 
     @ManyToOne
     @JoinColumn(name = "from_bank_account_id")
     private BankAccount fromBankAccount;
+
+    @ManyToOne
+    @JoinColumn(name = "to_bank_account_id")
+    private BankAccount toBankAccount;
+
+    @ManyToOne
+    @JoinColumn(name = "from_wallet_id")
+    private PassengerWallet fromWallet;
+
+    @ManyToOne
+    @JoinColumn(name = "to_wallet_id")
+    private BusWallet toWallet;
 
     @Column(length = 500)
     private String note;
@@ -57,13 +70,13 @@ public class RechargeTransaction {
         PENDING, APPROVED, REJECTED, BLOCKED, ACTIVE, INACTIVE
     }
 
-    public RechargeTransaction() {}
+    public Transaction() {}
 
-    public RechargeTransaction(UUID id, BigDecimal amount, LocalDateTime timestamp, User user) {
-        this.id = id;
+    public Transaction(BigDecimal amount, TransactionType type, User passenger) {
         this.amount = amount;
-        this.timestamp = timestamp;
-        this.user = user;
+        this.type = type;
+        this.passenger = passenger;
+        this.happenedAt = LocalDateTime.now();
     }
 
     // Getters and setters
@@ -83,20 +96,12 @@ public class RechargeTransaction {
         this.amount = amount;
     }
 
-    public LocalDateTime getTimestamp() {
-        return timestamp;
+    public LocalDateTime getHappenedAt() {
+        return happenedAt;
     }
 
-    public void setTimestamp(LocalDateTime timestamp) {
-        this.timestamp = timestamp;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
+    public void setHappenedAt(LocalDateTime happenedAt) {
+        this.happenedAt = happenedAt;
     }
 
     public TransactionType getType() {
@@ -115,12 +120,60 @@ public class RechargeTransaction {
         this.status = status;
     }
 
+    public User getPassenger() {
+        return passenger;
+    }
+
+    public void setPassenger(User passenger) {
+        this.passenger = passenger;
+    }
+
+    public Bus getBus() {
+        return bus;
+    }
+
+    public void setBus(Bus bus) {
+        this.bus = bus;
+    }
+
+    public User getOperator() {
+        return operator;
+    }
+
+    public void setOperator(User operator) {
+        this.operator = operator;
+    }
+
     public BankAccount getFromBankAccount() {
         return fromBankAccount;
     }
 
     public void setFromBankAccount(BankAccount fromBankAccount) {
         this.fromBankAccount = fromBankAccount;
+    }
+
+    public BankAccount getToBankAccount() {
+        return toBankAccount;
+    }
+
+    public void setToBankAccount(BankAccount toBankAccount) {
+        this.toBankAccount = toBankAccount;
+    }
+
+    public PassengerWallet getFromWallet() {
+        return fromWallet;
+    }
+
+    public void setFromWallet(PassengerWallet fromWallet) {
+        this.fromWallet = fromWallet;
+    }
+
+    public BusWallet getToWallet() {
+        return toWallet;
+    }
+
+    public void setToWallet(BusWallet toWallet) {
+        this.toWallet = toWallet;
     }
 
     public String getNote() {

@@ -22,13 +22,14 @@ public class WalletController {
     }
 
     @PostMapping("/recharge")
-    @PreAuthorize("hasRole('PASSENGER')")
+    @PreAuthorize("hasRole('PASSENGER') or hasRole('OPERATOR')")
     public ResponseEntity<?> rechargeWallet(@RequestBody Map<String, String> request) {
         String email = request.get("email");
         double amount = Double.parseDouble(request.get("amount"));
 
         User updatedUser = walletService.rechargeWallet(email, amount);
-        UserWalletBalanceDto walletBalancedto = new UserWalletBalanceDto(updatedUser.getWalletBalance());
+        double currentBalance = walletService.getWalletBalance(email);
+        UserWalletBalanceDto walletBalancedto = new UserWalletBalanceDto(currentBalance);
 
         System.out.println("wallet recharged ");
         return ResponseEntity.ok(Map.of(
@@ -39,12 +40,14 @@ public class WalletController {
 
 
     @GetMapping("/balance")
+    @PreAuthorize("hasRole('PASSENGER') or hasRole('OPERATOR')")
     public ResponseEntity<?> getWalletBalance(@RequestParam String email) {
         double balance = walletService.getWalletBalance(email);
         return ResponseEntity.ok(Map.of("balance", balance));
     }
 
     @GetMapping("/history")
+    @PreAuthorize("hasRole('PASSENGER') or hasRole('OPERATOR')")
     public ResponseEntity<?> getRechargeHistory(@RequestParam String email) {
         List<RechargeTransaction> history = walletService.getRechargeHistory(email);
         return ResponseEntity.ok(history);

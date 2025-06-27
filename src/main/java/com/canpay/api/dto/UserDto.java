@@ -3,13 +3,14 @@ package com.canpay.api.dto;
 import java.util.UUID;
 
 import com.canpay.api.entity.User;
+import com.canpay.api.entity.User.UserRole;
 
 public class UserDto {
     private UUID id;
     private String name;
     private String email;
     private String nic;
-    private String role;
+    private UserRole role;
 
 
     public UserDto(User user) {
@@ -20,7 +21,7 @@ public class UserDto {
         this.role = user.getRole();
     }
 
-    public UserDto(String name, String email, String nic, String role) {
+    public UserDto(String name, String email, String nic, UserRole role) {
         this.name = name;
         this.email = email;
         this.nic = nic;
@@ -60,11 +61,11 @@ public class UserDto {
         this.nic = nic;
     }
 
-    public String getRole() {
+    public UserRole getRole() {
         return role;
     }
 
-    public void setRole(String role) {
+    public void setRole(UserRole role) {
         this.role = role;
     }
 }

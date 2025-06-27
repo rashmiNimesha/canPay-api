@@ -3,6 +3,7 @@ package com.canpay.api.controller;
 import com.canpay.api.dto.UserDto;
 import com.canpay.api.entity.ResponseEntityBuilder;
 import com.canpay.api.entity.User;
+import com.canpay.api.entity.User.UserRole;
 import com.canpay.api.service.implementation.JwtService;
 import com.canpay.api.service.implementation.OTPService;
 import com.canpay.api.service.implementation.UserServiceImpl;
@@ -51,9 +52,24 @@ public class AuthController {
     public ResponseEntity<?> verifyOtp(@RequestBody Map<String, String> request) {
         String email = request.get("email");
         String otp = request.get("otp");
-        String role = request.getOrDefault("role", "").toUpperCase();
+        String roleStr = request.getOrDefault("role", "").toUpperCase();
+        UserRole role = null;
+        if (roleStr.isBlank()) {
+            return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                    .resultMessage("Missing required fields")
+                    .httpStatus(HttpStatus.BAD_REQUEST)
+                    .buildWrapped();
+        }
+        try {
+            role = UserRole.valueOf(roleStr);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                    .resultMessage("Invalid role")
+                    .httpStatus(HttpStatus.BAD_REQUEST)
+                    .buildWrapped();
+        }
 
-        if (email == null || otp == null || role.isEmpty()) {
+        if (email == null || otp == null) {
             return new ResponseEntityBuilder.Builder<Map<String, Object>>()
                     .resultMessage("Missing required fields")
                     .httpStatus(HttpStatus.BAD_REQUEST)
@@ -89,7 +105,7 @@ public class AuthController {
         }
 
         System.out.println("Going to create new account with role: " + role);
-        userServiceImpl.registerWithEmail(email, role);
+        userServiceImpl.registerWithEmail(email, roleStr);
         System.out.println("New account created after OTP verification");
 
         Map<String, Object> responseData = Map.of(
@@ -111,8 +127,16 @@ public class AuthController {
         String email = request.get("email");
         String name = request.get("name");
         String nic = request.get("nic");
-        String role = request.getOrDefault("role", "PASSENGER").toUpperCase();
-
+        String roleStr = request.getOrDefault("role", "PASSENGER").toUpperCase();
+        UserRole role;
+        try {
+            role = UserRole.valueOf(roleStr);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                    .resultMessage("Invalid role")
+                    .httpStatus(HttpStatus.BAD_REQUEST)
+                    .buildWrapped();
+        }
 
         if (email == null || name == null || nic == null) {
             return new ResponseEntityBuilder.Builder<Map<String, Object>>()
@@ -125,7 +149,7 @@ public class AuthController {
         try {
             User user;
             switch (role) {
-                case "PASSENGER":
+                case PASSENGER:
                     String accNoStrP = request.get("accNo");
                     String bankP = request.get("bank");
                     String accNameP = request.get("accName");
@@ -148,7 +172,7 @@ public class AuthController {
                     user = userServiceImpl.updateProfileWithBankAccount(email, name, nic, accNameP, bankP, accNoP);
                     break;
 
-                case "OPERATOR":
+                case OPERATOR:
                     String profileImageOp = request.get("profileImage");
                     if (profileImageOp == null)
                         return new ResponseEntityBuilder.Builder<Map<String, Object>>()
@@ -158,7 +182,7 @@ public class AuthController {
                     user = userServiceImpl.updateOperatorProfile(email, name, nic, profileImageOp);
                     break;
 
-                case "OWNER":
+                case OWNER:
                     String profileImageOw = request.get("profileImage");
                     String accNoStrOw = request.get("accNo");
                     String bankOw = request.get("bank");
@@ -188,7 +212,7 @@ public class AuthController {
                             .buildWrapped();            }
 
             String token = jwtService.generateToken(user);
-            UserDto userDto = new UserDto(user.getRole(), user.getName(), user.getEmail(), user.getNic());
+            UserDto userDto = new UserDto(user);
 
             Map<String, Object> responseData = Map.of(
                     "token", token,

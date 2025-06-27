@@ -2,11 +2,11 @@ package com.canpay.api.service.implementation;
 
 import com.canpay.api.entity.BankAccount;
 import com.canpay.api.entity.User;
+import com.canpay.api.entity.User.UserRole;
 import com.canpay.api.repository.user.UserRepository;
 import com.canpay.api.service.UserSevice;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
 
 
@@ -25,9 +25,18 @@ public class UserServiceImpl implements UserSevice {
     }
 
     @Override
-    public User registerWithEmail(String email, String role) {
+    public User registerWithEmail(String email, String roleString) {
         User user = new User();
         user.setEmail(email);
+        
+        // Convert string to enum
+        UserRole role;
+        try {
+            role = UserRole.valueOf(roleString.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid user role: " + roleString);
+        }
+        
         user.setRole(role);
         return userRepository.save(user);
     }
@@ -47,7 +56,7 @@ public class UserServiceImpl implements UserSevice {
 
         if (!alreadyExists) {
             BankAccount bankAccount = new BankAccount();
-            bankAccount.setAccountHolderName(accName);
+            bankAccount.setAccountName(name);
             bankAccount.setAccountNumber(accNo);
             bankAccount.setBankName(bank);
             bankAccount.setUser(user);
@@ -65,7 +74,7 @@ public class UserServiceImpl implements UserSevice {
         }
         User user = userOpt.get();
 
-        if (!"OPERATOR".equalsIgnoreCase(user.getRole())) {
+        if (user.getRole() != UserRole.OPERATOR) {
             throw new RuntimeException("User is not an OPERATOR");
         }
 
@@ -84,7 +93,7 @@ public class UserServiceImpl implements UserSevice {
         }
         User user = userOpt.get();
 
-        if (!"OWNER".equalsIgnoreCase(user.getRole())) {
+        if (user.getRole() != UserRole.OWNER) {
             throw new RuntimeException("User is not an OWNER");
         }
 
@@ -94,7 +103,7 @@ public class UserServiceImpl implements UserSevice {
 
         BankAccount account = new BankAccount();
         account.setUser(user);
-        account.setAccountHolderName(accountHolderName);
+        account.setAccountName(accountHolderName);
         account.setBankName(bankName);
         account.setAccountNumber(accountNumber);
 

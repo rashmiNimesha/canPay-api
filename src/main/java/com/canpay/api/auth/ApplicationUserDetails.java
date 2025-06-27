@@ -4,6 +4,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import com.canpay.api.entity.User;
+import com.canpay.api.entity.User.UserRole;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -20,7 +21,7 @@ public class ApplicationUserDetails implements UserDetails {
         return user.getEmail();
     }
 
-    public String getRole() {
+    public UserRole getRole() {
         return user.getRole();
     }
 

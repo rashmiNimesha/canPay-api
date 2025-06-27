@@ -30,7 +30,7 @@ public class BankAccountController {
         }
         User user = userOpt.get();
         List<BankAccountDto> result = user.getBankAccounts().stream()
-                .map(acc -> new BankAccountDto(acc.getBankName(), acc.getAccountNumber(), acc.getAccountHolderName()))
+                .map(acc -> new BankAccountDto(acc.getBankName(), acc.getAccountNumber(), acc.getAccountName()))
                 .toList();
 
         System.out.println("loaded bank accounts");
