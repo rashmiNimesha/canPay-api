@@ -4,17 +4,24 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.GenericGenerator;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Setter
 @Getter
 @Entity
 public class User {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(generator = "UUID")
+    @GenericGenerator(
+        name = "UUID",
+        strategy = "org.hibernate.id.UUIDGenerator"
+    )
+    @Column(updatable = false, nullable = false)
+    private UUID id;
 
     private String email;
 
@@ -37,7 +44,7 @@ public class User {
     private List<RechargeTransaction> rechargeHistory = new ArrayList<>();
 
 
-    public User(Long id, String email, String name, String role, String nic) {
+    public User(UUID id, String email, String name, String role, String nic) {
         this.id = id;
         this.email = email;
         this.name = name;
@@ -49,11 +56,11 @@ public class User {
 
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 

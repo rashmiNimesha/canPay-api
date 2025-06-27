@@ -4,13 +4,14 @@ import jakarta.persistence.*;
 import org.springframework.data.annotation.CreatedDate;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 public class RechargeTransaction {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue
+    private UUID id;
     private double amount;
 
     @CreatedDate
@@ -20,7 +21,7 @@ public class RechargeTransaction {
     @JoinColumn(name = "user_id")
     private User user;
 
-    public RechargeTransaction(Long id, double amount, LocalDateTime timestamp, User user) {
+    public RechargeTransaction(UUID id, double amount, LocalDateTime timestamp, User user) {
         this.id = id;
         this.amount = amount;
         this.timestamp = timestamp;
@@ -31,11 +32,11 @@ public class RechargeTransaction {
 
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 

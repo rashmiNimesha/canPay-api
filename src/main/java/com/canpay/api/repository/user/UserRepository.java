@@ -7,14 +7,15 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
     List<User> findByRole(String role);
-
     Optional<User> findByNic(String nic);
+    Optional<User> findById(UUID id);
 
     @Query("SELECT COUNT(u) FROM User u WHERE u.role = 'PASSENGER'")
     long countPassengers();

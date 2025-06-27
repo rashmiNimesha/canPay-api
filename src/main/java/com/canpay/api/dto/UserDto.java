@@ -1,9 +1,11 @@
 package com.canpay.api.dto;
 
+import java.util.UUID;
+
 import com.canpay.api.entity.User;
 
 public class UserDto {
-    private Long id;
+    private UUID id;
     private String name;
     private String email;
     private String nic;
@@ -26,11 +28,11 @@ public class UserDto {
     }
 
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 

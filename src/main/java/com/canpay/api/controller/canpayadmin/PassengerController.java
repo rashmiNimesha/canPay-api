@@ -15,11 +15,13 @@ import com.canpay.api.entity.User;
 import com.canpay.api.repository.user.UserRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.ArrayList;
 
 @RestController
@@ -37,48 +39,10 @@ public class PassengerController {
         this.walletService = walletService;
     }
 
-    @GetMapping("/passengers")
-    public ResponseEntity<?> getAllPassengers() {
-        List<User> passengers = userRepository.findByRole("PASSENGER");
-
-        List<UserDto> passengerDtos = passengers.stream()
-                .map(UserDto::new)
-                .toList();
-
-        return ResponseEntity.ok(
-                Map.of(
-                        "success", true,
-                        "message", "List of all passengers",
-                        "data", passengerDtos
-                )
-        );
-    }
-
-    @GetMapping("/passengers/count")
-    public ResponseEntity<?> getPassengerCount() {
-        long count = userRepository.countPassengers();
-
-        return ResponseEntity.ok(
-                Map.of(
-                        "success", true,
-                        "message", "Total number of passengers",
-                        "data", Map.of("passengerCount", count)
-                )
-        );
-    }
-
     // Create a new passenger     
     @PostMapping("/passengers/add")
     @Transactional
     public ResponseEntity<?> addPassenger(@RequestBody PassengerRegistrationRequest request) {
-        if (request.getBankAccounts() != null) {
-            System.out.println("Received bank accounts:");
-            request.getBankAccounts().forEach(bankAccountDto -> 
-            System.out.println(bankAccountDto.toString())
-            );
-        } else {
-            System.out.println("No bank accounts provided.");
-        }
         // Validate required fields
         if (request.getName() == null || request.getName().isBlank() ||
             request.getNic() == null || request.getNic().isBlank() ||
@@ -114,7 +78,10 @@ public class PassengerController {
         if (request.getBankAccounts() != null && !request.getBankAccounts().isEmpty()) {
             List<BankAccount> bankAccounts = new ArrayList<>();
             for (BankAccountDto bankDto : request.getBankAccounts()) {
-                if (bankDto.getBank() != null && !bankDto.getBank().isBlank() && bankDto.getAccountNumber() != 0 && bankDto.getAccountHolderName() != null && !bankDto.getAccountHolderName().isBlank()) {
+                if (bankDto.getBank() != null && !bankDto.getBank().isBlank() && 
+                    bankDto.getAccountNumber() != 0 && 
+                    bankDto.getAccountHolderName() != null && !bankDto.getAccountHolderName().isBlank()) {
+                    
                     BankAccount bankAccount = new BankAccount();
                     bankAccount.setAccountHolderName(bankDto.getAccountHolderName());
                     bankAccount.setAccountNumber(bankDto.getAccountNumber());
@@ -124,11 +91,14 @@ public class PassengerController {
                 }
             }
             if (!bankAccounts.isEmpty()) {
-                bankAccountRepository.saveAll(bankAccounts);
-                // Attach to user entity for consistency
-                passenger.setBankAccounts(bankAccounts);
-                userRepository.save(passenger);
+                System.out.println("Saving " + bankAccounts.size() + " bank accounts to database");
+                List<BankAccount> savedAccounts = bankAccountRepository.saveAll(bankAccounts);
+                System.out.println("Saved " + savedAccounts.size() + " bank accounts successfully");
+            } else {
+                System.out.println("No valid bank accounts to save");
             }
+        } else {
+            System.out.println("No bank accounts provided in request");
         }
         
         
@@ -139,5 +109,64 @@ public class PassengerController {
                 "message", "Passenger created successfully.",
                 "data", Map.of("passengerId", passenger.getId())
         ));
+    }
+
+    // Get all passengers
+    @GetMapping("/passengers")
+    public ResponseEntity<?> getAllPassengers() {
+        List<User> passengers = userRepository.findByRole("PASSENGER");
+
+        List<UserDto> passengerDtos = passengers.stream()
+                .map(UserDto::new)
+                .toList();
+
+        return ResponseEntity.ok(
+                Map.of(
+                        "success", true,
+                        "message", "List of all passengers",
+                        "data", passengerDtos
+                )
+        );
+    }
+
+    // Get passenger information by ID
+    @GetMapping("/passengers/{id}")
+    public ResponseEntity<?> getPassengerById(@PathVariable UUID id) {
+        return userRepository.findById(id)
+                .map(user -> {
+                    List<BankAccountDto> bankAccounts = user.getBankAccounts().stream()
+                            .map(acc -> new BankAccountDto(acc.getBankName(), acc.getAccountNumber(), acc.getAccountHolderName()))
+                            .toList();
+
+                    return ResponseEntity.ok(
+                            Map.of(
+                                    "success", true,
+                                    "message", "Passenger details",
+                                    "data", Map.of(
+                                            "user", new UserDto(user),
+                                            "bankAccounts", bankAccounts
+                                    )
+                            )
+                    );
+                })
+                .orElse(ResponseEntity.status(404).body(
+                        Map.of(
+                                "success", false,
+                                "message", "Passenger not found"
+                        )
+                ));
+    }    
+
+    @GetMapping("/passengers/count")
+    public ResponseEntity<?> getPassengerCount() {
+        long count = userRepository.countPassengers();
+
+        return ResponseEntity.ok(
+                Map.of(
+                        "success", true,
+                        "message", "Total number of passengers",
+                        "data", Map.of("passengerCount", count)
+                )
+        );
     }
 }
