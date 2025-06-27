@@ -63,7 +63,7 @@ public class Transaction {
     private String note;
 
     public enum TransactionType {
-        PAYMENT, TOP_UP, WITHDRAWAL, REFUND
+        PAYMENT, RECHARGE, WITHDRAWAL, REFUND
     }
 
     public enum TransactionStatus {

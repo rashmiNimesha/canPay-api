@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.canpay.api.dto.BankAccountDto;
 
-public class PassengerRegistrationRequest {
+public class PassengerRegistrationRequestDto {
     private String name;
     private String nic;
     private String email;

@@ -1,7 +1,8 @@
 package com.canpay.api.service.implementation;
 
 import com.canpay.api.auth.ApplicationUserDetails;
-import com.canpay.api.repository.user.UserRepository;
+import com.canpay.api.repository.UserRepository;
+
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

@@ -1,25 +1,24 @@
 package com.canpay.api.service.implementation;
 
-import com.canpay.api.entity.RechargeTransaction;
+import com.canpay.api.entity.Transaction;
 import com.canpay.api.entity.User;
 import com.canpay.api.entity.PassengerWallet;
 import com.canpay.api.entity.BusWallet;
-import com.canpay.api.repository.user.UserRepository;
-import com.canpay.api.repository.wallet.RechargeTransactionRepository;
+import com.canpay.api.repository.UserRepository;
+import com.canpay.api.repository.TransactionRepository;
 import com.canpay.api.service.WalletService;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 public class WalletServiceImpl implements WalletService {
 
     private final UserRepository userRepository;
-    private final RechargeTransactionRepository transactionRepository;
+    private final TransactionRepository transactionRepository;
 
-    public WalletServiceImpl(UserRepository userRepository, RechargeTransactionRepository transactionRepository) {
+    public WalletServiceImpl(UserRepository userRepository, TransactionRepository transactionRepository) {
         this.userRepository = userRepository;
         this.transactionRepository = transactionRepository;
     }
@@ -33,7 +32,7 @@ public class WalletServiceImpl implements WalletService {
         BigDecimal amountDecimal = BigDecimal.valueOf(amount);
 
         // Check user role and handle appropriate wallet
-        if (user.getRole() != null && user.getRole() == User.UserRole.OPERATOR) {
+        if (user.getRole() != null && user.getRole() == User.UserRole.OWNER) {
             // Handle bus wallet - create if doesn't exist
             BusWallet busWallet = new BusWallet();
             // Set the user relationship
@@ -54,14 +53,6 @@ public class WalletServiceImpl implements WalletService {
             }
             passengerWallet.setBalance(passengerWallet.getBalance().add(amountDecimal));
         }
-
-        // Create recharge transaction
-        RechargeTransaction transaction = new RechargeTransaction();
-        transaction.setAmount(amountDecimal);
-        transaction.setTimestamp(LocalDateTime.now());
-        transaction.setUser(user);
-
-        transactionRepository.save(transaction);
         return userRepository.save(user);
     }
 
@@ -74,11 +65,11 @@ public class WalletServiceImpl implements WalletService {
         return passengerWallet != null ? passengerWallet.getBalance().doubleValue() : 0.0;
     }
 
-    public List<RechargeTransaction> getRechargeHistory(String email) {
+    public List<Transaction> getTransactionHistory(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
         // Return empty list for now - adjust based on your repository method
         return transactionRepository.findAll(); // Replace with correct method
-    }
+    }   
 }

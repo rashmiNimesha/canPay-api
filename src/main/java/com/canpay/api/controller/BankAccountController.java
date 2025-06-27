@@ -2,7 +2,7 @@ package com.canpay.api.controller;
 
 import com.canpay.api.dto.BankAccountDto;
 import com.canpay.api.entity.User;
-import com.canpay.api.repository.user.UserRepository;
+import com.canpay.api.repository.UserRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

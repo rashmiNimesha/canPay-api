@@ -1,4 +1,4 @@
-package com.canpay.api.repository.user;
+package com.canpay.api.repository;
 
 import com.canpay.api.entity.User;
 import com.canpay.api.entity.User.UserRole;

@@ -1,7 +1,7 @@
 package com.canpay.api.controller;
 
 import com.canpay.api.dto.UserWalletBalanceDto;
-import com.canpay.api.entity.RechargeTransaction;
+import com.canpay.api.entity.Transaction;
 import com.canpay.api.entity.User;
 import com.canpay.api.service.implementation.WalletServiceImpl;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +22,7 @@ public class WalletController {
     }
 
     @PostMapping("/recharge")
-    @PreAuthorize("hasRole('PASSENGER') or hasRole('OPERATOR')")
+    @PreAuthorize("hasRole('PASSENGER') or hasRole('BUS')")
     public ResponseEntity<?> rechargeWallet(@RequestBody Map<String, String> request) {
         String email = request.get("email");
         double amount = Double.parseDouble(request.get("amount"));
@@ -40,16 +40,16 @@ public class WalletController {
 
 
     @GetMapping("/balance")
-    @PreAuthorize("hasRole('PASSENGER') or hasRole('OPERATOR')")
+    @PreAuthorize("hasRole('PASSENGER') or hasRole('BUS')")
     public ResponseEntity<?> getWalletBalance(@RequestParam String email) {
         double balance = walletService.getWalletBalance(email);
         return ResponseEntity.ok(Map.of("balance", balance));
     }
 
     @GetMapping("/history")
-    @PreAuthorize("hasRole('PASSENGER') or hasRole('OPERATOR')")
-    public ResponseEntity<?> getRechargeHistory(@RequestParam String email) {
-        List<RechargeTransaction> history = walletService.getRechargeHistory(email);
+    @PreAuthorize("hasRole('PASSENGER') or hasRole('BUS')")
+    public ResponseEntity<?> getTransactionHistory(@RequestParam String email) {
+        List<Transaction> history = walletService.getTransactionHistory(email);
         return ResponseEntity.ok(history);
     }
 }

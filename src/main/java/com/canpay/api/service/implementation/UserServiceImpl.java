@@ -3,7 +3,7 @@ package com.canpay.api.service.implementation;
 import com.canpay.api.entity.BankAccount;
 import com.canpay.api.entity.User;
 import com.canpay.api.entity.User.UserRole;
-import com.canpay.api.repository.user.UserRepository;
+import com.canpay.api.repository.UserRepository;
 import com.canpay.api.service.UserSevice;
 import org.springframework.stereotype.Service;
 

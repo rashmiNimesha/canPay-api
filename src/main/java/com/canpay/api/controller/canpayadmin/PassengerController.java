@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.canpay.api.dto.Dashboard.Passenger.PassengerRegistrationRequest;
-import com.canpay.api.repository.user.UserRepository;
+import com.canpay.api.dto.Dashboard.Passenger.PassengerRegistrationRequestDto;
+import com.canpay.api.repository.UserRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,7 +41,7 @@ public class PassengerController {
     // Create a new passenger     
     @PostMapping("/passengers/add")
     @Transactional
-    public ResponseEntity<?> addPassenger(@RequestBody PassengerRegistrationRequest request) {
+    public ResponseEntity<?> addPassenger(@RequestBody PassengerRegistrationRequestDto request) {
         // Validate required fields
         if (request.getName() == null || request.getName().isBlank() ||
             request.getNic() == null || request.getNic().isBlank() ||
