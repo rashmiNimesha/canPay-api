@@ -41,7 +41,7 @@ public class ApplicationSecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/auth/**")
                     .permitAll()
-                .requestMatchers("api/v1/canpay-admin/**")
+                .requestMatchers("/api/v1/canpay-admin/**")
                     // .hasRole("ADMIN")
                     .permitAll()
                 .anyRequest()

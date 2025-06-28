@@ -5,8 +5,6 @@ import java.util.UUID;
 import java.time.LocalDateTime;
 
 import com.canpay.api.dto.BankAccountDto;
-import com.canpay.api.dto.Dashboard.Passenger.PassengerTransactionDto;
-import com.canpay.api.dto.Dashboard.Passenger.PassengerWalletDto;
 import com.canpay.api.entity.User;
 import com.canpay.api.entity.User.UserRole;
 

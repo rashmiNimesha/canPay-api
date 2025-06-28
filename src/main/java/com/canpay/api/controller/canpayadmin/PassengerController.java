@@ -1,13 +1,13 @@
 package com.canpay.api.controller.canpayadmin;
 
-import com.canpay.api.dto.BankAccountDto;
-import com.canpay.api.dto.UserDto;
+import com.canpay.api.dto.Dashboard.BankAccountDto;
+import com.canpay.api.dto.Dashboard.Passenger.PassengerWalletDto;
+import com.canpay.api.dto.Dashboard.Passenger.PassengerDto;
 import com.canpay.api.entity.BankAccount;
 import com.canpay.api.entity.PassengerWallet;
 import com.canpay.api.entity.User;
 import com.canpay.api.entity.User.UserRole;
-import com.canpay.api.repository.BankAccountRepository;
-import com.canpay.api.service.WalletService;
+import com.canpay.api.repository.dashboard.DBankAccountRepository;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,24 +25,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("api/v1/canpay-admin")
+@RequestMapping("/api/v1/canpay-admin")
 public class PassengerController {
 
     private final UserRepository userRepository;
-    private final BankAccountRepository bankAccountRepository;
+    private final DBankAccountRepository bankAccountRepository;
     @Autowired
-    public PassengerController(UserRepository userRepository, BankAccountRepository bankAccountRepository, WalletService walletService) {
+    public PassengerController(UserRepository userRepository, DBankAccountRepository bankAccountRepository) {
         this.userRepository = userRepository;
         this.bankAccountRepository = bankAccountRepository;
     }
 
     // Create a new passenger     
-    @PostMapping("/passengers/add")
+    @PostMapping("/passengers")
     @Transactional
     public ResponseEntity<?> addPassenger(@RequestBody PassengerRegistrationRequestDto request) {
-        // Validate required fields
+        System.out.println("Request received: " + request); // Debug log
+
         if (request.getName() == null || request.getName().isBlank() ||
             request.getNic() == null || request.getNic().isBlank() ||
             request.getEmail() == null || request.getEmail().isBlank()) {
@@ -51,7 +53,6 @@ public class PassengerController {
                     "message", "Name, NIC, and Email Address are required."
             ));
         }
-        // Check for duplicate NIC or Email
         if (userRepository.findByNic(request.getNic()).isPresent()) {
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
@@ -64,61 +65,53 @@ public class PassengerController {
                     "message", "Email Address already exists."
             ));
         }
-        // Create User entity
+    
         User passenger = new User();
         passenger.setName(request.getName());
         passenger.setNic(request.getNic());
         passenger.setRole(UserRole.PASSENGER);
         passenger.setEmail(request.getEmail());
-        passenger.setPhotoUrl(request.getProfilePhotoUrl()); // Optional
-        passenger = userRepository.save(passenger);
-        
-        // Create passenger wallet
+        passenger.setPhotoUrl(request.getProfilePhotoUrl());
+    
         PassengerWallet passengerWallet = new PassengerWallet(passenger);
         passenger.setPassengerWallet(passengerWallet);
+    
         passenger = userRepository.save(passenger);
-        // Save bank accounts if provided
+    
         if (request.getBankAccounts() != null && !request.getBankAccounts().isEmpty()) {
             List<BankAccount> bankAccounts = new ArrayList<>();
             for (BankAccountDto bankDto : request.getBankAccounts()) {
-                if (bankDto.getBankName() != null && !bankDto.getBankName().isBlank() && 
-                    bankDto.getAccountNumber() != null && 
+                if (bankDto.getBankName() != null && !bankDto.getBankName().isBlank() &&
+                    bankDto.getAccountNumber() != null &&
                     bankDto.getAccountName() != null && !bankDto.getAccountName().isBlank()) {
                     BankAccount bankAccount = new BankAccount();
                     bankAccount.setAccountName(bankDto.getAccountName());
-                    bankAccount.setAccountNumber(bankDto.getAccountNumber()); 
+                    bankAccount.setAccountNumber(bankDto.getAccountNumber());
                     bankAccount.setBankName(bankDto.getBankName());
                     bankAccount.setUser(passenger);
                     bankAccounts.add(bankAccount);
                 }
             }
             if (!bankAccounts.isEmpty()) {
-                System.out.println("Saving " + bankAccounts.size() + " bank accounts to database");
-                List<BankAccount> savedAccounts = bankAccountRepository.saveAll(bankAccounts);
-                System.out.println("Saved " + savedAccounts.size() + " bank accounts successfully");
-            } else {
-                System.out.println("No valid bank accounts to save");
+                bankAccountRepository.saveAll(bankAccounts);
             }
-        } else {
-            System.out.println("No bank accounts provided in request");
         }
-        
-        // Passenger wallet is created with default balance 0.0
+    
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "Passenger created successfully.",
                 "data", Map.of("passengerId", passenger.getId())
         ));
     }
-
+   
     // Get all passengers
     @GetMapping("/passengers")
     public ResponseEntity<?> getAllPassengers() {
         List<User> passengers = userRepository.findByRole(UserRole.PASSENGER);
 
-        List<UserDto> passengerDtos = passengers.stream()
-                .map(UserDto::new)
-                .toList();
+        List<PassengerDto> passengerDtos = passengers.stream()
+                .map(PassengerDto::new)
+                .collect(Collectors.toList());
 
         return ResponseEntity.ok(
                 Map.of(
@@ -135,16 +128,19 @@ public class PassengerController {
         return userRepository.findById(id)
                 .map(user -> {
                     List<BankAccountDto> bankAccounts = user.getBankAccounts().stream()
-                            .map(acc -> new BankAccountDto(acc.getBankName(), acc.getAccountNumber(), acc.getAccountName()))
-                            .toList();
+                            .map(acc -> new BankAccountDto(acc))
+                            .collect(Collectors.toList());
+
+                    PassengerWalletDto wallet = new PassengerWalletDto(user.getPassengerWallet());
 
                     return ResponseEntity.ok(
                             Map.of(
                                     "success", true,
                                     "message", "Passenger details",
                                     "data", Map.of(
-                                            "user", new UserDto(user),
-                                            "bankAccounts", bankAccounts
+                                            "user", new PassengerDto(user),
+                                            "bankAccounts", bankAccounts,
+                                            "wallet", wallet
                                     )
                             )
                     );

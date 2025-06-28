@@ -2,7 +2,7 @@ package com.canpay.api.dto.Dashboard.Passenger;
 
 import java.util.List;
 
-import com.canpay.api.dto.BankAccountDto;
+import com.canpay.api.dto.Dashboard.BankAccountDto;;
 
 public class PassengerRegistrationRequestDto {
     private String name;

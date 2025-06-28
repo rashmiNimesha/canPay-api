@@ -10,6 +10,7 @@ public class PassengerWalletDto {
     private UUID id; // corresponds to entity id
     private BigDecimal balance;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     // No-argument constructor
     public PassengerWalletDto() {
@@ -18,9 +19,12 @@ public class PassengerWalletDto {
 
     // Constructor from entity (assuming entity class PassengerWallet)
     public PassengerWalletDto(PassengerWallet entity) {
-        this.id = entity.getId();
-        this.balance = entity.getBalance();
-        this.createdAt = entity.getCreatedAt();
+        if (entity != null) {
+            this.id = entity.getId();
+            this.balance = entity.getBalance();
+            this.createdAt = entity.getCreatedAt();
+            this.updatedAt = entity.getUpdatedAt();
+        }
     }
 
     // Optional: custom constructor for partial initialization
@@ -50,6 +54,14 @@ public class PassengerWalletDto {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
 }
