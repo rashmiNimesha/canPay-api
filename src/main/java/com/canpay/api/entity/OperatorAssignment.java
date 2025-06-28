@@ -13,7 +13,7 @@ import java.util.UUID;
 @Table(name = "operator_assignments")
 public class OperatorAssignment {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @ManyToOne

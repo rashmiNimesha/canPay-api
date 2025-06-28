@@ -23,12 +23,13 @@ public class User {
     @Column(updatable = false, nullable = false)
     private UUID id;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String name;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = true)
     private String nic;
 
+    @Column(nullable = false)
     private String email;
 
     @Column(name = "photo_url")

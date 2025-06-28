@@ -34,7 +34,7 @@ public class JwtService {
                 .claim("id", user.getId())
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
-                .signWith(key, SignatureAlgorithm.RS256)
+                .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
 }
