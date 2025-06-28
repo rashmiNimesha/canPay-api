@@ -9,6 +9,7 @@ import com.canpay.api.entity.User;
 import com.canpay.api.entity.User.UserRole;
 import com.canpay.api.repository.dashboard.DBankAccountRepository;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.canpay.api.dto.Dashboard.Passenger.PassengerRegistrationRequestDto;
 import com.canpay.api.repository.UserRepository;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -152,6 +154,107 @@ public class PassengerController {
                         )
                 ));
     }    
+
+    // Edit passenger information
+    @PutMapping("/passengers/{id}")
+    @Transactional
+    public ResponseEntity<?> editPassenger(@PathVariable UUID id, @RequestBody PassengerRegistrationRequestDto request) {
+        return userRepository.findById(id)
+                .map(user -> {
+                    if (request.getName() != null && !request.getName().isBlank()) {                            
+                        user.setName(request.getName());
+                    }
+                    if (request.getNic() != null && !request.getNic().isBlank()) {
+                        if (userRepository.findByNic(request.getNic()).isPresent() && !user.getNic().equals(request.getNic())) {
+                            return ResponseEntity.badRequest().body(Map.of(
+                                    "success", false,
+                                    "message", "NIC already exists."
+                            ));
+                        }
+                        user.setNic(request.getNic());
+                    }
+                    if (request.getEmail() != null && !request.getEmail().isBlank()) {
+                        if (userRepository.findByEmail(request.getEmail()).isPresent() && !user.getEmail().equals(request.getEmail())) {
+                            return ResponseEntity.badRequest().body(Map.of(
+                                    "success", false,
+                                    "message", "Email Address already exists."
+                            ));
+                        }
+                        user.setEmail(request.getEmail());
+                    }
+                    if (request.getProfilePhotoUrl() != null && !request.getProfilePhotoUrl().isBlank()) {
+                        user.setPhotoUrl(request.getProfilePhotoUrl());
+                    }   
+                    if (request.getBankAccounts() != null) {
+                        // Remove all existing bank accounts for this user
+                        List<BankAccount> existingAccounts = user.getBankAccounts();
+                        if (existingAccounts != null && !existingAccounts.isEmpty()) {
+                            bankAccountRepository.deleteAll(existingAccounts);
+                            user.getBankAccounts().clear();
+                        }
+                        // Add new bank accounts
+                        List<BankAccount> bankAccounts = request.getBankAccounts().stream()
+                                .map(bankDto -> {
+                                    BankAccount bankAccount = new BankAccount();
+                                    bankAccount.setAccountName(bankDto.getAccountName());
+                                    bankAccount.setAccountNumber(bankDto.getAccountNumber());
+                                    bankAccount.setBankName(bankDto.getBankName());
+                                    bankAccount.setUser(user);
+                                    return bankAccount;
+                                })
+                                .collect(Collectors.toList());
+                        bankAccountRepository.saveAll(bankAccounts);
+                        user.getBankAccounts().addAll(bankAccounts);
+                    }               
+
+                    User updatedUser = userRepository.save(user);
+
+                    List<BankAccountDto> bankAccounts = updatedUser.getBankAccounts().stream()
+                            .map(BankAccountDto::new)
+                            .collect(Collectors.toList());
+                    PassengerWalletDto wallet = new PassengerWalletDto(updatedUser.getPassengerWallet());
+                    return ResponseEntity.ok(
+                            Map.of(
+                                    "success", true,
+                                    "message", "Passenger updated successfully.",
+                                    "data", Map.of(
+                                            "user", new PassengerDto(updatedUser),
+                                            "bankAccounts", bankAccounts,
+                                            "wallet", wallet
+                                    )
+                            )
+                    );
+                })
+                .orElse(ResponseEntity.status(404).body(
+                        Map.of(
+                                "success", false,
+                                "message", "Passenger not found"
+                        )
+                ));
+    }
+
+    // Delete a passenger
+    @DeleteMapping("/passengers/{id}")
+    @Transactional
+    public ResponseEntity<?> deletePassenger(@PathVariable UUID id) {
+        return userRepository.findById(id)
+                .map(user -> {
+                    userRepository.delete(user);
+                    return ResponseEntity.ok(
+                            Map.of(
+                                    "success", true,    
+                                    "message", "Passenger deleted successfully."
+                                )
+                        );
+                })
+                .orElse(ResponseEntity.status(404).body(
+                        Map.of(
+                                "success", false,
+                                "message", "Passenger not found"
+                        )
+                ));
+        }
+
 
     @GetMapping("/passengers/count")
     public ResponseEntity<?> getPassengerCount() {
