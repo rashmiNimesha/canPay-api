@@ -2,107 +2,52 @@ package com.canpay.api.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.time.LocalDateTime;
-import java.util.UUID;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
-@EntityListeners(AuditingEntityListener.class)
 @Table(name = "bank_accounts")
-public class BankAccount {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
-
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    @JsonBackReference
-    private User user;
+@Getter
+@Setter
+@NoArgsConstructor
+public class BankAccount extends BaseEntity {
 
     @Column(name = "bank_name", nullable = false)
+    @NotBlank
+    @Size(max = 100)
     private String bankName;
 
     @Column(name = "account_number", nullable = false)
+    @NotNull
+    @Positive
     private Long accountNumber;
 
     @Column(name = "account_name", nullable = false)
+    @NotBlank
+    @Size(max = 100)
     private String accountName;
 
     @Column(name = "is_default", nullable = false)
     private boolean isDefault = false;
 
-    @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    // Relationships
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    @JsonBackReference
+    @NotNull
+    private User user;
 
-    @LastModifiedDate
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public String getBankName() {
-        return bankName;
-    }
-
-    public void setBankName(String bankName) {
-        this.bankName = bankName;
-    }
-
-    public Long getAccountNumber() {
-        return accountNumber;
-    }
-
-    public void setAccountNumber(Long accountNumber) {
-        this.accountNumber = accountNumber;
-    }
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public void setAccountName(String accountName) {
-        this.accountName = accountName;
-    }
-
-    public boolean isDefault() {
-        return isDefault;
-    }
-
-    public void setDefault(boolean isDefault) {
-        this.isDefault = isDefault;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
+    // Business Constructor
+    public BankAccount(User user, String bankName, Long accountNumber, String accountName, boolean isDefault) {
         this.user = user;
+        this.bankName = bankName;
+        this.accountNumber = accountNumber;
+        this.accountName = accountName;
+        this.isDefault = isDefault;
     }
 }

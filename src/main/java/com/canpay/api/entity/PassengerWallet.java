@@ -2,95 +2,49 @@ package com.canpay.api.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
-@EntityListeners(AuditingEntityListener.class)
 @Table(name = "passenger_wallets")
-public class PassengerWallet {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
-
-    @OneToOne
-    @JoinColumn(name = "passenger_id", nullable = false, unique = true)
-    @JsonBackReference
-    private User passenger;
+@Getter
+@Setter
+@NoArgsConstructor
+public class PassengerWallet extends BaseEntity {
 
     @Column(nullable = false, precision = 19, scale = 2)
+    @NotNull
+    @DecimalMin(value = "0.0", inclusive = true)
     private BigDecimal balance = BigDecimal.ZERO;
 
     @Column(name = "wallet_number", nullable = false, unique = true, length = 16)
+    @NotBlank
+    @Size(min = 16, max = 16)
     private String walletNumber;
 
-    @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    // Relationships
+    @OneToOne
+    @JoinColumn(name = "passenger_id", nullable = false, unique = true)
+    @JsonBackReference
+    @NotNull
+    private User passenger;
 
-    @LastModifiedDate
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    public PassengerWallet() {
-    }
-
+    // Business Constructor
     public PassengerWallet(User passenger) {
         this.passenger = passenger;
         this.balance = BigDecimal.ZERO;
     }
 
-    // Getters and setters
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public User getPassenger() {
-        return passenger;
-    }
-
-    public void setPassenger(User passenger) {
+    public PassengerWallet(User passenger, String walletNumber) {
         this.passenger = passenger;
-    }
-
-    public BigDecimal getBalance() {
-        return balance;
-    }
-
-    public void setBalance(BigDecimal balance) {
-        this.balance = balance;
-    }
-
-    public String getWalletNumber() {
-        return walletNumber;
-    }
-
-    public void setWalletNumber(String walletNumber) {
         this.walletNumber = walletNumber;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
+        this.balance = BigDecimal.ZERO;
     }
 }
