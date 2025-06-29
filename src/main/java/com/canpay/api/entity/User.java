@@ -67,7 +67,8 @@ public class User {
     @JsonManagedReference
     private PassengerWallet passengerWallet;
 
-    public User() {}
+    public User() {
+    }
 
     public User(String name, String nic, String email, UserRole role) {
         this.name = name;

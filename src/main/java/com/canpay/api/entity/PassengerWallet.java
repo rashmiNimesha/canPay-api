@@ -26,6 +26,9 @@ public class PassengerWallet {
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal balance = BigDecimal.ZERO;
 
+    @Column(name = "wallet_number", nullable = false, unique = true, length = 16)
+    private String walletNumber;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -34,7 +37,8 @@ public class PassengerWallet {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public PassengerWallet() {}
+    public PassengerWallet() {
+    }
 
     public PassengerWallet(User passenger) {
         this.passenger = passenger;
@@ -64,6 +68,14 @@ public class PassengerWallet {
 
     public void setBalance(BigDecimal balance) {
         this.balance = balance;
+    }
+
+    public String getWalletNumber() {
+        return walletNumber;
+    }
+
+    public void setWalletNumber(String walletNumber) {
+        this.walletNumber = walletNumber;
     }
 
     public LocalDateTime getCreatedAt() {
