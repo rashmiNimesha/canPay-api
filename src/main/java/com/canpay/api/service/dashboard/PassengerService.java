@@ -4,6 +4,7 @@ import com.canpay.api.entity.BankAccount;
 import com.canpay.api.entity.PassengerWallet;
 import com.canpay.api.entity.User;
 import com.canpay.api.entity.User.UserRole;
+import com.canpay.api.lib.Utils;
 import com.canpay.api.dto.Dashboard.BankAccountDto;
 import com.canpay.api.dto.Dashboard.Passenger.PassengerDto;
 import com.canpay.api.dto.Dashboard.Passenger.PassengerRegistrationRequestDto;
@@ -15,7 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.security.SecureRandom;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -56,12 +56,12 @@ public class PassengerService {
             throw new IllegalArgumentException("NIC already exists for PASSENGER role.");
         }
 
-        // Updated to enforce email uniqueness within specific role
+        // Enforce email uniqueness within specific role
         if (userRepository.findByEmailAndRole(request.getEmail(), UserRole.PASSENGER).isPresent()) {
             throw new IllegalArgumentException("Email Address already exists for PASSENGER role.");
         }
 
-        // Create new User entity for the passenger
+        // Create new User entity for the passenger (not saved yet)
         User passenger = new User();
         passenger.setName(request.getName());
         passenger.setNic(request.getNic());
@@ -71,15 +71,12 @@ public class PassengerService {
 
         // Create and associate a wallet for the passenger
         PassengerWallet passengerWallet = new PassengerWallet(passenger);
-        passengerWallet.setWalletNumber(generateUniqueWalletNumber());
+        passengerWallet.setWalletNumber(Utils.generateUniqueWalletNumber(passengerWalletRepository));
         passenger.setPassengerWallet(passengerWallet);
 
-        // Save the passenger to the database
-        passenger = userRepository.save(passenger);
-
-        // Add bank accounts if provided
+        // Add bank accounts if provided (create and set to user)
+        List<BankAccount> bankAccounts = new ArrayList<>();
         if (request.getBankAccounts() != null && !request.getBankAccounts().isEmpty()) {
-            List<BankAccount> bankAccounts = new ArrayList<>();
             for (BankAccountDto bankDto : request.getBankAccounts()) {
                 // Validate required bank account fields
                 if (bankDto.getBankName() != null && !bankDto.getBankName().isBlank() &&
@@ -89,34 +86,24 @@ public class PassengerService {
                     bankAccount.setAccountName(bankDto.getAccountName());
                     bankAccount.setAccountNumber(bankDto.getAccountNumber());
                     bankAccount.setBankName(bankDto.getBankName());
+                    bankAccount.setDefault(bankDto.isDefault());
                     bankAccount.setUser(passenger);
                     bankAccounts.add(bankAccount);
                 }
             }
-
-            // Save all valid bank accounts
-            if (!bankAccounts.isEmpty()) {
-                bankAccountRepository.saveAll(bankAccounts);
-            }
         }
+
+        // If User entity has a collection for bank accounts, set it here
+        passenger.setBankAccounts(bankAccounts);
+
+        // Save the passenger (with wallet and bank accounts set)
+        passenger = userRepository.save(passenger);
 
         // Return success response with passenger ID
         return Map.of(
                 "success", true,
                 "message", "Passenger created successfully.",
                 "data", Map.of("passengerId", passenger.getId()));
-    }
-
-    /**
-     * Generates a unique 16-digit wallet number.
-     */
-    private String generateUniqueWalletNumber() {
-        String walletNumber;
-        SecureRandom random = new SecureRandom();
-        do {
-            walletNumber = String.format("%016d", Math.abs(random.nextLong()) % 1_0000_0000_0000_0000L);
-        } while (passengerWalletRepository.findByWalletNumber(walletNumber).isPresent());
-        return walletNumber;
     }
 
     /**
@@ -247,6 +234,7 @@ public class PassengerService {
                     bankAccount.setAccountName(bankDto.getAccountName());
                     bankAccount.setAccountNumber(bankDto.getAccountNumber());
                     bankAccount.setBankName(bankDto.getBankName());
+                    bankAccount.setDefault(bankDto.isDefault());
                     bankAccount.setUser(user);
                     return bankAccount;
                 })

@@ -39,7 +39,7 @@ public class WalletServiceImpl implements WalletService {
             // Note: Adjust setter method name based on your entity definition
             // busWallet.setUser(user);
             busWallet.setBalance(amountDecimal);
-            
+
             // Save bus wallet and associate with user
             // user.setBusWallet(busWallet);
         } else {
@@ -59,7 +59,7 @@ public class WalletServiceImpl implements WalletService {
     public double getWalletBalance(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         // For now, only handle passenger wallet until entity structure is clarified
         PassengerWallet passengerWallet = user.getPassengerWallet();
         return passengerWallet != null ? passengerWallet.getBalance().doubleValue() : 0.0;
@@ -68,8 +68,8 @@ public class WalletServiceImpl implements WalletService {
     public List<Transaction> getTransactionHistory(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         // Return empty list for now - adjust based on your repository method
         return transactionRepository.findAll(); // Replace with correct method
-    }   
+    }
 }
