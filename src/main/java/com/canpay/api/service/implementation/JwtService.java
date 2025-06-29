@@ -32,6 +32,7 @@ public class JwtService {
                 .claim("role", user.getRole())
                 .claim("name", user.getName())
                 .claim("id", user.getId())
+                .claim("nic", user.getNic())
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(key, SignatureAlgorithm.HS256)

@@ -28,6 +28,12 @@ public class UserDto {
         this.role = role;
     }
 
+    public UserDto(String name, String email, String nic) {
+        this.name = name;
+        this.email = email;
+        this.nic = nic;
+    }
+
 
     public UUID getId() {
         return id;

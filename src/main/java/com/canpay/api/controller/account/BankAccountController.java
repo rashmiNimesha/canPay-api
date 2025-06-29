@@ -1,4 +1,4 @@
-package com.canpay.api.controller;
+package com.canpay.api.controller.account;
 
 import com.canpay.api.dto.BankAccountDto;
 import com.canpay.api.entity.User;
