@@ -4,6 +4,7 @@ import com.canpay.api.entity.BankAccount;
 import com.canpay.api.entity.PassengerWallet;
 import com.canpay.api.entity.User;
 import com.canpay.api.entity.User.UserRole;
+import com.canpay.api.entity.User.UserStatus;
 import com.canpay.api.lib.Utils;
 import com.canpay.api.dto.Dashboard.DBankAccountDto;
 import com.canpay.api.dto.Dashboard.Passenger.PassengerDto;
@@ -53,21 +54,22 @@ public class PassengerService {
 
         // Check for NIC uniqueness within PASSENGER role
         if (userRepository.findByNicAndRole(request.getNic(), UserRole.PASSENGER).isPresent()) {
-            throw new IllegalArgumentException("NIC already exists for PASSENGER role.");
+            throw new IllegalArgumentException("NIC already exists for another passenger.");
         }
 
         // Enforce email uniqueness within specific role
         if (userRepository.findByEmailAndRole(request.getEmail(), UserRole.PASSENGER).isPresent()) {
-            throw new IllegalArgumentException("Email Address already exists for PASSENGER role.");
+            throw new IllegalArgumentException("Email Address already exists for another passenger.");
         }
 
-        // Create new User entity for the passenger (not saved yet)
+        // Create new User entity from DTO manually
         User passenger = new User();
         passenger.setName(request.getName());
         passenger.setNic(request.getNic());
-        passenger.setRole(UserRole.PASSENGER);
         passenger.setEmail(request.getEmail());
-        passenger.setPhotoUrl(request.getProfilePhotoUrl());
+        passenger.setPhotoUrl(request.getPhoto());
+        passenger.setRole(UserRole.PASSENGER);
+        passenger.setStatus(UserStatus.ACTIVE);
 
         // Create and associate a wallet for the passenger
         PassengerWallet passengerWallet = new PassengerWallet(passenger);
@@ -80,11 +82,11 @@ public class PassengerService {
             for (DBankAccountDto bankDto : request.getBankAccounts()) {
                 // Validate required bank account fields
                 if (bankDto.getBankName() != null && !bankDto.getBankName().isBlank() &&
-                        bankDto.getAccountNumber() != null &&
+                        bankDto.getAccountNumber() != null && !bankDto.getAccountNumber().isBlank() &&
                         bankDto.getAccountName() != null && !bankDto.getAccountName().isBlank()) {
                     BankAccount bankAccount = new BankAccount();
                     bankAccount.setAccountName(bankDto.getAccountName());
-                    bankAccount.setAccountNumber(bankDto.getAccountNumber());
+                    bankAccount.setAccountNumber(Long.parseLong(bankDto.getAccountNumber()));
                     bankAccount.setBankName(bankDto.getBankName());
                     bankAccount.setDefault(bankDto.isDefault());
                     bankAccount.setUser(passenger);
@@ -99,7 +101,7 @@ public class PassengerService {
         // Save the passenger (with wallet and bank accounts set)
         passenger = userRepository.save(passenger);
 
-        // Return passenger ID
+        // Return PassengerDto instead of UUID
         return passenger.getId();
     }
 
@@ -116,26 +118,26 @@ public class PassengerService {
     /**
      * Retrieves a passenger by ID, including their bank accounts and wallet.
      */
-    public Map<String, Object> getPassengerById(UUID id) {
-        return userRepository.findById(id)
-                .map(user -> {
-                    // Use DBankAccountRepository to fetch bank accounts
-                    List<DBankAccountDto> bankAccounts = bankAccountRepository.findByUserId(user.getId()).stream()
-                            .map(DBankAccountDto::new)
-                            .collect(Collectors.toList());
-
-                    // Map wallet to DTO
-                    PassengerWalletDto wallet = passengerWalletRepository.findByPassenger_Id(user.getId())
-                            .map(PassengerWalletDto::new)
-                            .orElseThrow(() -> new NoSuchElementException("Wallet not found"));
-
-                    // Return passenger details
-                    return Map.of(
-                            "user", new PassengerDto(user),
-                            "bankAccounts", bankAccounts,
-                            "wallet", wallet);
-                })
+    public PassengerDto getPassengerById(UUID id) {
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Passenger not found"));
+
+        // Create passenger DTO from entity
+        PassengerDto passengerDto = new PassengerDto(user);
+
+        // Fetch and set bank accounts
+        List<DBankAccountDto> bankAccounts = bankAccountRepository.findByUserId(user.getId()).stream()
+                .map(DBankAccountDto::new)
+                .collect(Collectors.toList());
+        passengerDto.setBankAccounts(bankAccounts);
+
+        // Fetch and set wallet
+        PassengerWalletDto wallet = passengerWalletRepository.findByPassenger_Id(user.getId())
+                .map(PassengerWalletDto::new)
+                .orElseThrow(() -> new NoSuchElementException("Wallet not found"));
+        passengerDto.setWallet(wallet);
+
+        return passengerDto;
     }
 
     /**
@@ -143,7 +145,7 @@ public class PassengerService {
      * Updates fields if provided and replaces bank accounts if new ones are given.
      */
     @Transactional
-    public Map<String, Object> editPassenger(UUID id, PassengerRegistrationRequestDto request) {
+    public PassengerDto editPassenger(UUID id, PassengerRegistrationRequestDto request) {
         User user = userRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Passenger not found"));
 
         // Update fields if provided
@@ -153,7 +155,7 @@ public class PassengerService {
         if (request.getNic() != null && !request.getNic().isBlank()) {
             if (userRepository.findByNicAndRole(request.getNic(), UserRole.PASSENGER).isPresent()
                     && !user.getNic().equals(request.getNic())) {
-                throw new IllegalArgumentException("NIC already exists for PASSENGER role.");
+                throw new IllegalArgumentException("NIC already exists for another passenger.");
             }
             user.setNic(request.getNic());
         }
@@ -161,12 +163,12 @@ public class PassengerService {
         if (request.getEmail() != null && !request.getEmail().isBlank()) {
             if (userRepository.findByEmailAndRole(request.getEmail(), UserRole.PASSENGER).isPresent()
                     && !user.getEmail().equals(request.getEmail())) {
-                throw new IllegalArgumentException("Email Address already exists for PASSENGER role.");
+                throw new IllegalArgumentException("Email Address already exists for another passenger.");
             }
             user.setEmail(request.getEmail());
         }
-        if (request.getProfilePhotoUrl() != null && !request.getProfilePhotoUrl().isBlank()) {
-            user.setPhotoUrl(request.getProfilePhotoUrl());
+        if (request.getPhoto() != null && !request.getPhoto().isBlank()) {
+            user.setPhotoUrl(request.getPhoto());
         }
 
         // Replace bank accounts if provided
@@ -177,16 +179,20 @@ public class PassengerService {
         // Save updated user
         User updatedUser = userRepository.save(user);
 
-        // Prepare response DTOs
+        // Create response DTO with related data
+        PassengerDto passengerDto = new PassengerDto(updatedUser);
+
+        // Fetch and set bank accounts
         List<DBankAccountDto> bankAccounts = bankAccountRepository.findByUserId(updatedUser.getId()).stream()
                 .map(DBankAccountDto::new)
                 .collect(Collectors.toList());
-        PassengerWalletDto wallet = new PassengerWalletDto(updatedUser.getPassengerWallet());
+        passengerDto.setBankAccounts(bankAccounts);
 
-        return Map.of(
-                "user", new PassengerDto(updatedUser),
-                "bankAccounts", bankAccounts,
-                "wallet", wallet);
+        // Set wallet
+        PassengerWalletDto wallet = new PassengerWalletDto(updatedUser.getPassengerWallet());
+        passengerDto.setWallet(wallet);
+
+        return passengerDto;
     }
 
     /**
@@ -220,7 +226,7 @@ public class PassengerService {
                 .map(bankDto -> {
                     BankAccount bankAccount = new BankAccount();
                     bankAccount.setAccountName(bankDto.getAccountName());
-                    bankAccount.setAccountNumber(bankDto.getAccountNumber());
+                    bankAccount.setAccountNumber(Long.parseLong(bankDto.getAccountNumber()));
                     bankAccount.setBankName(bankDto.getBankName());
                     bankAccount.setDefault(bankDto.isDefault());
                     bankAccount.setUser(user);

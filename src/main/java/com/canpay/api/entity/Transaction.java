@@ -70,7 +70,8 @@ public class Transaction {
         PENDING, APPROVED, REJECTED, BLOCKED, ACTIVE, INACTIVE
     }
 
-    public Transaction() {}
+    public Transaction() {
+    }
 
     public Transaction(BigDecimal amount, TransactionType type, User passenger) {
         this.amount = amount;

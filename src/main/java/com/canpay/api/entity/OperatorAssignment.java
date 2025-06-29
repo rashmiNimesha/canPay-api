@@ -38,7 +38,8 @@ public class OperatorAssignment {
         PENDING, APPROVED, REJECTED, BLOCKED, ACTIVE, INACTIVE
     }
 
-    public OperatorAssignment() {}
+    public OperatorAssignment() {
+    }
 
     public OperatorAssignment(User user, Bus bus) {
         this.user = user;

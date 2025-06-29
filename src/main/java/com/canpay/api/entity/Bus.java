@@ -64,7 +64,8 @@ public class Bus {
         PENDING, APPROVED, REJECTED, BLOCKED, ACTIVE, INACTIVE
     }
 
-    public Bus() {}
+    public Bus() {
+    }
 
     public Bus(User owner, String busNumber, BusType type, String routeFrom, String routeTo, String province) {
         this.owner = owner;

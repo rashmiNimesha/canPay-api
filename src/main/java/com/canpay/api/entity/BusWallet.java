@@ -35,7 +35,8 @@ public class BusWallet {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public BusWallet() {}
+    public BusWallet() {
+    }
 
     public BusWallet(Bus bus) {
         this.bus = bus;

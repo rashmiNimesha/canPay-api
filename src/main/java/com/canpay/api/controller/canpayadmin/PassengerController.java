@@ -85,11 +85,11 @@ public class PassengerController {
      */
     @GetMapping("/passengers/{id}")
     public ResponseEntity<?> getPassengerById(@PathVariable UUID id) {
-        Map<String, Object> response = passengerService.getPassengerById(id);
+        PassengerDto response = passengerService.getPassengerById(id);
         return new ResponseEntityBuilder.Builder<Map<String, Object>>()
                 .resultMessage("Passenger details retrieved successfully")
                 .httpStatus(HttpStatus.OK)
-                .body(response)
+                .body(Map.of("passenger", response))
                 .buildWrapped();
     }
 
@@ -104,11 +104,11 @@ public class PassengerController {
     public ResponseEntity<?> editPassenger(@PathVariable UUID id,
             @RequestBody @Valid PassengerRegistrationRequestDto request) {
         logger.info("Request received: {}", request);
-        Map<String, Object> response = passengerService.editPassenger(id, request);
+        PassengerDto response = passengerService.editPassenger(id, request);
         return new ResponseEntityBuilder.Builder<Map<String, Object>>()
                 .resultMessage("Passenger updated successfully")
                 .httpStatus(HttpStatus.OK)
-                .body(response)
+                .body(Map.of("passenger", response))
                 .buildWrapped();
     }
 

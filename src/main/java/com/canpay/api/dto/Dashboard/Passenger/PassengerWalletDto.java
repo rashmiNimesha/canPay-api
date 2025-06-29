@@ -5,7 +5,11 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import com.canpay.api.entity.PassengerWallet;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class PassengerWalletDto {
     private UUID id; // corresponds to entity id
     private String number;
@@ -33,45 +37,4 @@ public class PassengerWalletDto {
     public PassengerWalletDto(BigDecimal balance, String passengerId) {
         this.balance = balance;
     }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public String getNumber() {
-        return number;
-    }
-
-    public void setNumber(String number) {
-        this.number = number;
-    }
-
-    public BigDecimal getBalance() {
-        return balance;
-    }
-
-    public void setBalance(BigDecimal balance) {
-        this.balance = balance;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
 }
