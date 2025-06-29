@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -71,6 +72,16 @@ public class PassengerService {
         passenger.setRole(UserRole.PASSENGER);
         passenger.setStatus(UserStatus.ACTIVE);
 
+        // Save the photo to system storage and set the photo URL
+        if (request.getPhoto() != null && !request.getPhoto().isBlank()) {
+            try {
+                String photoPath = Utils.saveImage(request.getPhoto(), UUID.randomUUID().toString() + ".png");
+                passenger.setPhotoUrl(photoPath);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to save passenger photo", e);
+            }
+        }
+
         // Create and associate a wallet for the passenger
         PassengerWallet passengerWallet = new PassengerWallet(passenger);
         passengerWallet.setWalletNumber(Utils.generateUniqueWalletNumber(passengerWalletRepository));
@@ -111,7 +122,14 @@ public class PassengerService {
     public List<PassengerDto> getAllPassengers() {
         List<User> passengers = userRepository.findByRole(UserRole.PASSENGER);
         return passengers.stream()
-                .map(PassengerDto::new)
+                .map(user -> {
+                    PassengerDto dto = new PassengerDto(user);
+                    // Convert photo file path to data URL
+                    if (user.getPhotoUrl() != null && !user.getPhotoUrl().isBlank()) {
+                        dto.setPhoto(Utils.convertImageToDataUrl(user.getPhotoUrl()));
+                    }
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 
@@ -124,6 +142,11 @@ public class PassengerService {
 
         // Create passenger DTO from entity
         PassengerDto passengerDto = new PassengerDto(user);
+
+        // Convert photo file path to data URL
+        if (user.getPhotoUrl() != null && !user.getPhotoUrl().isBlank()) {
+            passengerDto.setPhoto(Utils.convertImageToDataUrl(user.getPhotoUrl()));
+        }
 
         // Fetch and set bank accounts
         List<DBankAccountDto> bankAccounts = bankAccountRepository.findByUserId(user.getId()).stream()
@@ -168,7 +191,16 @@ public class PassengerService {
             user.setEmail(request.getEmail());
         }
         if (request.getPhoto() != null && !request.getPhoto().isBlank()) {
-            user.setPhotoUrl(request.getPhoto());
+            try {
+                // Delete the old photo
+                Utils.deleteImage(user.getPhotoUrl());
+
+                // Save the new photo
+                String photoPath = Utils.saveImage(request.getPhoto(), UUID.randomUUID().toString() + ".png");
+                user.setPhotoUrl(photoPath);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to save passenger photo", e);
+            }
         }
 
         // Replace bank accounts if provided
@@ -200,6 +232,11 @@ public class PassengerService {
      */
     @Transactional
     public void deletePassenger(UUID id) {
+        User user = userRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Passenger not found"));
+
+        // Delete the associated photo
+        Utils.deleteImage(user.getPhotoUrl());
+
         userRepository.deleteById(id);
     }
 

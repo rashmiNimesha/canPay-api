@@ -79,3 +79,4 @@ env*
 
 # Application properties
 **/application.properties
+images/

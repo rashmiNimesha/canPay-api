@@ -33,7 +33,7 @@ public class BankAccount extends BaseEntity {
     private String accountName;
 
     @Column(name = "is_default", nullable = false)
-    private boolean isDefault = false;
+    private boolean isDefault;
 
     // Relationships
     @ManyToOne

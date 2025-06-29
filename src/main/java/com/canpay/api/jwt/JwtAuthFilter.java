@@ -21,7 +21,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private final JwtConfig jwtConfig;
     private final ApplicationUserServiceImpl userDetailsService;
 
-
     public JwtAuthFilter(JwtUtil jwtUtil, JwtConfig jwtConfig, ApplicationUserServiceImpl userDetailsService) {
         this.jwtUtil = jwtUtil;
         this.jwtConfig = jwtConfig;
@@ -30,8 +29,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
+            HttpServletResponse response,
+            FilterChain filterChain)
             throws ServletException, IOException {
 
         final String authHeader = request.getHeader(jwtConfig.getAuthorizationHeader());
@@ -53,8 +52,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         // 🌟 Load full UserDetails from DB
         UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-        UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null,
+                userDetails.getAuthorities());
 
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(authentication);

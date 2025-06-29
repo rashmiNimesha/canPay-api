@@ -16,4 +16,7 @@ public final class Constants {
 
     /** Modulo value used for wallet number generation (16 digits) */
     public static final long WALLET_NUMBER_MODULO = 1_0000_0000_0000_0000L;
+
+    /** Base path for image storage */
+    public static final String IMAGE_STORAGE_PATH = "/images/";
 }

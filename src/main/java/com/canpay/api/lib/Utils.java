@@ -1,6 +1,10 @@
 package com.canpay.api.lib;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.security.SecureRandom;
+import java.util.Base64;
 
 import com.canpay.api.repository.dashboard.DPassengerWalletRepository;
 
@@ -29,4 +33,60 @@ public class Utils {
         return walletNumber;
     }
 
+    /**
+     * Saves an image from a data URL to the system storage and returns the file
+     * path.
+     */
+    public String saveImage(String dataUrl, String fileName) throws IOException {
+        if (dataUrl == null || dataUrl.isBlank()) {
+            return null;
+        }
+
+        // Extract base64 data from the data URL
+        String base64Data = dataUrl.split(",")[1];
+        byte[] imageBytes = Base64.getDecoder().decode(base64Data);
+
+        // Ensure the storage directory exists
+        File storageDir = new File(IMAGE_STORAGE_PATH);
+        if (!storageDir.exists()) {
+            storageDir.mkdirs();
+        }
+
+        // Save the image to the storage directory
+        File imageFile = new File(storageDir, fileName);
+        try (FileOutputStream fos = new FileOutputStream(imageFile)) {
+            fos.write(imageBytes);
+        }
+
+        return imageFile.getAbsolutePath();
+    }
+
+    /**
+     * Deletes an image from the system storage.
+     */
+    public void deleteImage(String filePath) {
+        if (filePath != null && !filePath.isBlank()) {
+            File imageFile = new File(filePath);
+            if (imageFile.exists()) {
+                imageFile.delete();
+            }
+        }
+    }
+
+    /**
+     * Converts an image file path to a data URL format.
+     */
+    public String convertImageToDataUrl(String filePath) {
+        try {
+            File imageFile = new File(filePath);
+            if (imageFile.exists()) {
+                byte[] imageBytes = java.nio.file.Files.readAllBytes(imageFile.toPath());
+                String base64Data = Base64.getEncoder().encodeToString(imageBytes);
+                return "data:image/png;base64," + base64Data;
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to convert image to data URL", e);
+        }
+        return null;
+    }
 }

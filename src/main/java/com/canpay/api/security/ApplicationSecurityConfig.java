@@ -26,31 +26,28 @@ public class ApplicationSecurityConfig {
     private final ApplicationUserServiceImpl userService;
 
     public ApplicationSecurityConfig(
-        JwtAuthFilter jwtAuthFilter,
-        ApplicationUserServiceImpl userService
-    ) {
+            JwtAuthFilter jwtAuthFilter,
+            ApplicationUserServiceImpl userService) {
         this.jwtAuthFilter = jwtAuthFilter;
-        this.userService   = userService;
+        this.userService = userService;
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/auth/**")
-                    .permitAll()
-                .requestMatchers("/api/v1/canpay-admin/**")
-                    // .hasRole("ADMIN")
-                    .permitAll()
-                .anyRequest()
-                    .authenticated()
-            )
-            .addFilterBefore(
-                jwtAuthFilter,
-                UsernamePasswordAuthenticationFilter.class
-            );
+                .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/v1/auth/**")
+                        .permitAll()
+                        .requestMatchers("/api/v1/canpay-admin/**")
+                        // .hasRole("ADMIN")
+                        .permitAll()
+                        .anyRequest()
+                        .authenticated())
+                .addFilterBefore(
+                        jwtAuthFilter,
+                        UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -70,8 +67,7 @@ public class ApplicationSecurityConfig {
 
     @Bean
     public AuthenticationManager authenticationManager(
-        AuthenticationConfiguration config
-    ) throws Exception {
+            AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
