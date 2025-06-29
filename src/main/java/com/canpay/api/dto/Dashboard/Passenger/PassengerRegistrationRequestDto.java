@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 
-import com.canpay.api.dto.Dashboard.BankAccountDto;
+import com.canpay.api.dto.Dashboard.DBankAccountDto;
 
 public class PassengerRegistrationRequestDto {
     // Passenger's full name
@@ -27,7 +27,7 @@ public class PassengerRegistrationRequestDto {
     private String photo;
 
     // List of passenger's bank accounts
-    private List<BankAccountDto> bankAccounts;
+    private List<DBankAccountDto> bankAccounts;
 
     // Getters and setters
     public String getName() {
@@ -62,11 +62,11 @@ public class PassengerRegistrationRequestDto {
         this.photo = photo;
     }
 
-    public List<BankAccountDto> getBankAccounts() {
+    public List<DBankAccountDto> getBankAccounts() {
         return bankAccounts;
     }
 
-    public void setBankAccounts(List<BankAccountDto> bankAccounts) {
+    public void setBankAccounts(List<DBankAccountDto> bankAccounts) {
         this.bankAccounts = bankAccounts;
     }
 }

@@ -96,7 +96,6 @@ public class AuthController {
                     "token", token,
                     "profile", new UserDto(existingUser.get()));
 
-
             return new ResponseEntityBuilder.Builder<Map<String, Object>>()
                     .resultMessage("OTP verified successfully")
                     .httpStatus(HttpStatus.OK)
@@ -109,8 +108,7 @@ public class AuthController {
         System.out.println("New account created after OTP verification");
 
         Map<String, Object> responseData = Map.of(
-                "newUser", true
-        );
+                "newUser", true);
 
         return new ResponseEntityBuilder.Builder<Map<String, Object>>()
                 .resultMessage("OTP verified and new user registered")
@@ -118,7 +116,6 @@ public class AuthController {
                 .body(responseData)
                 .buildWrapped();
     }
-
 
     @PostMapping("/create-profile")
     public ResponseEntity<?> createProfile(@RequestBody Map<String, String> request) {
@@ -167,7 +164,8 @@ public class AuthController {
                         return new ResponseEntityBuilder.Builder<Map<String, Object>>()
                                 .resultMessage("Invalid account number")
                                 .httpStatus(HttpStatus.BAD_REQUEST)
-                                .buildWrapped();                    }
+                                .buildWrapped();
+                    }
 
                     user = userServiceImpl.updateProfileWithBankAccount(email, name, nic, accNameP, bankP, accNoP);
                     break;
@@ -200,24 +198,26 @@ public class AuthController {
                         return new ResponseEntityBuilder.Builder<Map<String, Object>>()
                                 .resultMessage("Invalid account number")
                                 .httpStatus(HttpStatus.BAD_REQUEST)
-                                .buildWrapped();                    }
+                                .buildWrapped();
+                    }
 
-                    user = userServiceImpl.updateOwnerProfile(email, name, nic, profileImageOw, accNameOw, bankOw, accNoOw);
+                    user = userServiceImpl.updateOwnerProfile(email, name, nic, profileImageOw, accNameOw, bankOw,
+                            accNoOw);
                     break;
 
                 default:
                     return new ResponseEntityBuilder.Builder<Map<String, Object>>()
                             .resultMessage("Invalid role")
                             .httpStatus(HttpStatus.BAD_REQUEST)
-                            .buildWrapped();            }
+                            .buildWrapped();
+            }
 
             String token = jwtService.generateToken(user);
             UserDto userDto = new UserDto(user);
 
             Map<String, Object> responseData = Map.of(
                     "token", token,
-                    "profile", userDto
-            );
+                    "profile", userDto);
             return new ResponseEntityBuilder.Builder<Map<String, Object>>()
                     .resultMessage("Profile updated successfully")
                     .httpStatus(HttpStatus.OK)
@@ -228,8 +228,8 @@ public class AuthController {
             return new ResponseEntityBuilder.Builder<Map<String, Object>>()
                     .resultMessage(e.getMessage())
                     .httpStatus(HttpStatus.NOT_FOUND)
-                    .buildWrapped();        }
+                    .buildWrapped();
+        }
     }
-    
 
 }

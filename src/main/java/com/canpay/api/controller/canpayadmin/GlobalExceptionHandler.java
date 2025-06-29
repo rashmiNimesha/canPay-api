@@ -1,5 +1,7 @@
 package com.canpay.api.controller.canpayadmin;
 
+import com.canpay.api.entity.ResponseEntityBuilder;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -21,9 +23,11 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<?> handleIllegalArgumentException(IllegalArgumentException ex) {
-        return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", ex.getMessage()));
+        return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                .resultMessage(ex.getMessage())
+                .httpStatus(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", ex.getMessage()))
+                .buildWrapped();
     }
 
     /**
@@ -34,8 +38,10 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(NoSuchElementException.class)
     public ResponseEntity<?> handleNoSuchElementException(NoSuchElementException ex) {
-        return ResponseEntity.status(404).body(Map.of(
-                "success", false,
-                "message", ex.getMessage()));
+        return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                .resultMessage(ex.getMessage())
+                .httpStatus(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", ex.getMessage()))
+                .buildWrapped();
     }
 }

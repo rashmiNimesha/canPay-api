@@ -5,7 +5,7 @@ import com.canpay.api.entity.PassengerWallet;
 import com.canpay.api.entity.User;
 import com.canpay.api.entity.User.UserRole;
 import com.canpay.api.lib.Utils;
-import com.canpay.api.dto.Dashboard.BankAccountDto;
+import com.canpay.api.dto.Dashboard.DBankAccountDto;
 import com.canpay.api.dto.Dashboard.Passenger.PassengerDto;
 import com.canpay.api.dto.Dashboard.Passenger.PassengerRegistrationRequestDto;
 import com.canpay.api.dto.Dashboard.Passenger.PassengerWalletDto;
@@ -43,7 +43,7 @@ public class PassengerService {
      * Optionally adds bank accounts if provided.
      */
     @Transactional
-    public Map<String, Object> addPassenger(PassengerRegistrationRequestDto request) {
+    public UUID addPassenger(PassengerRegistrationRequestDto request) {
         // Validate required fields
         if (request.getName() == null || request.getName().isBlank() ||
                 request.getNic() == null || request.getNic().isBlank() ||
@@ -77,7 +77,7 @@ public class PassengerService {
         // Add bank accounts if provided (create and set to user)
         List<BankAccount> bankAccounts = new ArrayList<>();
         if (request.getBankAccounts() != null && !request.getBankAccounts().isEmpty()) {
-            for (BankAccountDto bankDto : request.getBankAccounts()) {
+            for (DBankAccountDto bankDto : request.getBankAccounts()) {
                 // Validate required bank account fields
                 if (bankDto.getBankName() != null && !bankDto.getBankName().isBlank() &&
                         bankDto.getAccountNumber() != null &&
@@ -99,11 +99,8 @@ public class PassengerService {
         // Save the passenger (with wallet and bank accounts set)
         passenger = userRepository.save(passenger);
 
-        // Return success response with passenger ID
-        return Map.of(
-                "success", true,
-                "message", "Passenger created successfully.",
-                "data", Map.of("passengerId", passenger.getId()));
+        // Return passenger ID
+        return passenger.getId();
     }
 
     /**
@@ -123,8 +120,8 @@ public class PassengerService {
         return userRepository.findById(id)
                 .map(user -> {
                     // Use DBankAccountRepository to fetch bank accounts
-                    List<BankAccountDto> bankAccounts = bankAccountRepository.findByUserId(user.getId()).stream()
-                            .map(BankAccountDto::new)
+                    List<DBankAccountDto> bankAccounts = bankAccountRepository.findByUserId(user.getId()).stream()
+                            .map(DBankAccountDto::new)
                             .collect(Collectors.toList());
 
                     // Map wallet to DTO
@@ -134,12 +131,9 @@ public class PassengerService {
 
                     // Return passenger details
                     return Map.of(
-                            "success", true,
-                            "message", "Passenger details",
-                            "data", Map.of(
-                                    "user", new PassengerDto(user),
-                                    "bankAccounts", bankAccounts,
-                                    "wallet", wallet));
+                            "user", new PassengerDto(user),
+                            "bankAccounts", bankAccounts,
+                            "wallet", wallet);
                 })
                 .orElseThrow(() -> new NoSuchElementException("Passenger not found"));
     }
@@ -184,29 +178,23 @@ public class PassengerService {
         User updatedUser = userRepository.save(user);
 
         // Prepare response DTOs
-        List<BankAccountDto> bankAccounts = bankAccountRepository.findByUserId(updatedUser.getId()).stream()
-                .map(BankAccountDto::new)
+        List<DBankAccountDto> bankAccounts = bankAccountRepository.findByUserId(updatedUser.getId()).stream()
+                .map(DBankAccountDto::new)
                 .collect(Collectors.toList());
         PassengerWalletDto wallet = new PassengerWalletDto(updatedUser.getPassengerWallet());
 
         return Map.of(
-                "success", true,
-                "message", "Passenger updated successfully.",
-                "data", Map.of(
-                        "user", new PassengerDto(updatedUser),
-                        "bankAccounts", bankAccounts,
-                        "wallet", wallet));
+                "user", new PassengerDto(updatedUser),
+                "bankAccounts", bankAccounts,
+                "wallet", wallet);
     }
 
     /**
      * Deletes a passenger by ID.
      */
     @Transactional
-    public Map<String, Object> deletePassenger(UUID id) {
+    public void deletePassenger(UUID id) {
         userRepository.deleteById(id);
-        return Map.of(
-                "success", true,
-                "message", "Passenger deleted successfully.");
     }
 
     /**
@@ -223,7 +211,7 @@ public class PassengerService {
      * 
      */
     @Transactional
-    private void replaceBankAccounts(User user, List<BankAccountDto> bankAccountDtos) {
+    private void replaceBankAccounts(User user, List<DBankAccountDto> bankAccountDtos) {
         // Delete existing bank accounts
         bankAccountRepository.deleteByUserId(user.getId());
 
