@@ -23,7 +23,7 @@ import java.util.NoSuchElementException;
 public class GlobalExceptionHandler {
     /**
      * Handles IllegalArgumentException and returns a 400 Bad Request response.
-     * 
+     *
      * @param ex the exception thrown
      * @return ResponseEntity with error details
      */
@@ -38,7 +38,7 @@ public class GlobalExceptionHandler {
 
     /**
      * Handles NoSuchElementException and returns a 404 Not Found response.
-     * 
+     *
      * @param ex the exception thrown
      * @return ResponseEntity with error details
      */
@@ -54,6 +54,9 @@ public class GlobalExceptionHandler {
     /**
      * Handles NullPointerException and returns a 500 Internal Server Error
      * response.
+     *
+     * @param ex the exception thrown
+     * @return ResponseEntity with error details
      */
     @ExceptionHandler(NullPointerException.class)
     public ResponseEntity<?> handleNullPointerException(NullPointerException ex) {
@@ -67,6 +70,9 @@ public class GlobalExceptionHandler {
     /**
      * Handles MethodArgumentNotValidException and returns a 400 Bad Request
      * response.
+     *
+     * @param ex the exception thrown
+     * @return ResponseEntity with error details
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
@@ -80,6 +86,9 @@ public class GlobalExceptionHandler {
     /**
      * Handles HttpRequestMethodNotSupportedException and returns a 405 Method Not
      * Allowed response.
+     *
+     * @param ex the exception thrown
+     * @return ResponseEntity with error details
      */
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<?> handleHttpRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException ex) {
@@ -93,6 +102,9 @@ public class GlobalExceptionHandler {
     /**
      * Handles HttpMessageNotReadableException and returns a 400 Bad Request
      * response.
+     *
+     * @param ex the exception thrown
+     * @return ResponseEntity with error details
      */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<?> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
@@ -105,6 +117,9 @@ public class GlobalExceptionHandler {
 
     /**
      * Handles AccessDeniedException and returns a 403 Forbidden response.
+     *
+     * @param ex the exception thrown
+     * @return ResponseEntity with error details
      */
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<?> handleAccessDeniedException(AccessDeniedException ex) {
@@ -117,6 +132,9 @@ public class GlobalExceptionHandler {
 
     /**
      * Handles DataIntegrityViolationException and returns a 409 Conflict response.
+     *
+     * @param ex the exception thrown
+     * @return ResponseEntity with error details
      */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<?> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
@@ -130,6 +148,9 @@ public class GlobalExceptionHandler {
     /**
      * Handles MissingServletRequestParameterException and returns a 400 Bad Request
      * response.
+     *
+     * @param ex the exception thrown
+     * @return ResponseEntity with error details
      */
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<?> handleMissingServletRequestParameterException(MissingServletRequestParameterException ex) {
@@ -142,6 +163,9 @@ public class GlobalExceptionHandler {
 
     /**
      * Handles RuntimeException and returns a 500 Internal Server Error response.
+     *
+     * @param ex the exception thrown
+     * @return ResponseEntity with error details
      */
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<?> handleRuntimeException(RuntimeException ex) {
@@ -154,6 +178,9 @@ public class GlobalExceptionHandler {
 
     /**
      * Handles generic Exception and returns a 500 Internal Server Error response.
+     *
+     * @param ex the exception thrown
+     * @return ResponseEntity with error details
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleException(Exception ex) {
@@ -167,6 +194,9 @@ public class GlobalExceptionHandler {
     /**
      * Handles all other Throwables and returns a 500 Internal Server Error
      * response.
+     *
+     * @param ex the exception thrown
+     * @return ResponseEntity with error details
      */
     @ExceptionHandler(Throwable.class)
     public ResponseEntity<?> handleThrowable(Throwable ex) {
