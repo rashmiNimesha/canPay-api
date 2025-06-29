@@ -34,10 +34,8 @@ public class WalletController {
         System.out.println("wallet recharged ");
         return ResponseEntity.ok(Map.of(
                 "message", "Wallet recharged successfully",
-                "balance", walletBalancedto
-        ));
+                "balance", walletBalancedto));
     }
-
 
     @GetMapping("/balance")
     @PreAuthorize("hasRole('PASSENGER') or hasRole('BUS')")
