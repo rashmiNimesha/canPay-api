@@ -1,12 +1,8 @@
 package com.canpay.api.controller.account;
 
-import com.canpay.api.dto.UserDto;
 import com.canpay.api.dto.UserWalletBalanceDto;
-import com.canpay.api.dto.UserWalletData;
 import com.canpay.api.entity.ResponseEntityBuilder;
 import com.canpay.api.entity.Transaction;
-import com.canpay.api.entity.User;
-import com.canpay.api.entity.User.UserRole;
 import com.canpay.api.service.implementation.JwtService;
 import com.canpay.api.service.implementation.WalletServiceImpl;
 import org.slf4j.Logger;
@@ -18,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/wallet")
