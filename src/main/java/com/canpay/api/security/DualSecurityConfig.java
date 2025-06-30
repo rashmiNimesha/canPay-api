@@ -65,9 +65,8 @@ public class DualSecurityConfig {
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .authorizeHttpRequests(auth -> auth
-                                                .requestMatchers("/api/v1/canpay-admin/**")
-                                                .permitAll()
-                                                .anyRequest().hasRole("ADMIN"))
+                                                .requestMatchers("/api/v1/canpay-admin/**").hasRole("ADMIN")
+                                                .anyRequest().denyAll())
                                 .oauth2ResourceServer(oauth2 -> oauth2
                                                 .jwt(jwt -> jwt
                                                                 .jwkSetUri(jwksUri)
@@ -117,8 +116,8 @@ public class DualSecurityConfig {
                 // Include all necessary HTTP methods
                 configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
 
-                // Allow all headers (you can restrict this later)
-                configuration.setAllowedHeaders(List.of("*"));
+                // Allow only necessary headers
+                configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Origin"));
 
                 // Required for cookies/auth headers
                 configuration.setAllowCredentials(true);

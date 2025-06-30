@@ -28,7 +28,7 @@ public class AdminClaimConverter implements Converter<Jwt, Collection<GrantedAut
         Boolean isAdmin = jwt.getClaim("isAdmin");
 
         // Log all claims for debugging purposes.
-        log.info("JWT Claims: {}", jwt.getClaims());
+        // log.info("JWT Claims: {}", jwt.getClaims());
 
         // If the "isAdmin" claim is true, return a collection with "ROLE_ADMIN".
         if (Boolean.TRUE.equals(isAdmin)) {
