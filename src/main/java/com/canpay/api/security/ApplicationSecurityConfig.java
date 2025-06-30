@@ -42,12 +42,12 @@ public class ApplicationSecurityConfig {
                         .permitAll()
                         .requestMatchers("/api/v1/canpay-admin/**")
                         // .hasRole("ADMIN")
-                        .permitAll()
-                        .anyRequest()
-                        .authenticated())
-                .addFilterBefore(
-                        jwtAuthFilter,
-                        UsernamePasswordAuthenticationFilter.class);
+                        .permitAll());
+        // .anyRequest()
+        // .authenticated())
+        // .addFilterBefore(
+        // jwtAuthFilter,
+        // UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
