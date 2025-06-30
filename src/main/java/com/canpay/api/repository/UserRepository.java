@@ -15,6 +15,7 @@ import java.util.UUID;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
+    Optional<User> findByEmailAndRole(String email, UserRole role);
     List<User> findByRole(UserRole role);
     Optional<User> findByNic(String nic);
     Optional<User> findById(UUID id);
@@ -22,5 +23,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT COUNT(u) FROM User u WHERE u.role = com.canpay.api.entity.User$UserRole.PASSENGER")
     long countPassengers();
     boolean existsByEmail(String email);
-
+    @Query(value = "SELECT COUNT(DISTINCT role) FROM users WHERE email = :email", nativeQuery = true)
+    long countDistinctRolesByEmail(String email);
 }

@@ -35,6 +35,9 @@ public class BusWallet {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+//    @Column(name = "wallet_number", nullable = false, unique = true, length = 16)
+//    private String walletNumber;
+
     public BusWallet() {}
 
     public BusWallet(Bus bus) {

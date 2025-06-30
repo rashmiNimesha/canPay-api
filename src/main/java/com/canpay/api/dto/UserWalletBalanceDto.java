@@ -5,8 +5,10 @@ public class UserWalletBalanceDto {
     private String email;
     private double balance;
 
-    public UserWalletBalanceDto(double walletBalance) {
+    public UserWalletBalanceDto(String email ,double walletBalance) {
+        this.email = email;
        this.balance = walletBalance;
+
     }
 
     public String getEmail() {

@@ -7,7 +7,11 @@ import java.time.LocalDateTime;
 import com.canpay.api.dto.BankAccountDto;
 import com.canpay.api.entity.User;
 import com.canpay.api.entity.User.UserRole;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class PassengerDto {
     private UUID id;
     private String name;

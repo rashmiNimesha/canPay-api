@@ -1,12 +1,14 @@
 package com.canpay.api.service.implementation;
 
-import com.canpay.api.entity.Transaction;
-import com.canpay.api.entity.User;
-import com.canpay.api.entity.PassengerWallet;
-import com.canpay.api.entity.BusWallet;
+import com.canpay.api.entity.*;
+import com.canpay.api.entity.User.UserRole;
 import com.canpay.api.repository.UserRepository;
 import com.canpay.api.repository.TransactionRepository;
 import com.canpay.api.service.WalletService;
+import com.canpay.api.util.WalletNumberGenerator;
+import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -15,6 +17,7 @@ import java.util.List;
 @Service
 public class WalletServiceImpl implements WalletService {
 
+    final static Logger logger = LoggerFactory.getLogger(WalletServiceImpl.class);
     private final UserRepository userRepository;
     private final TransactionRepository transactionRepository;
 
@@ -23,38 +26,123 @@ public class WalletServiceImpl implements WalletService {
         this.transactionRepository = transactionRepository;
     }
 
+    @Transactional
     @Override
-    public User rechargeWallet(String email, double amount) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    public User rechargePassengerWallet(String email, double amount) {
+        logger.debug("Recharging passenger wallet for email: {}, amount: {}", email, amount);
 
-        // Convert double to BigDecimal for precision
+        User user = userRepository.findByEmailAndRole(email, UserRole.PASSENGER)
+                .orElseThrow(() -> {
+                    logger.error("User not found for email: {} and role: PASSENGER", email);
+                    return new RuntimeException("User not found for email: " + email + " and role: PASSENGER");
+                });
+
         BigDecimal amountDecimal = BigDecimal.valueOf(amount);
-
-        // Check user role and handle appropriate wallet
-        if (user.getRole() != null && user.getRole() == User.UserRole.OWNER) {
-            // Handle bus wallet - create if doesn't exist
-            BusWallet busWallet = new BusWallet();
-            // Set the user relationship
-            // Note: Adjust setter method name based on your entity definition
-            // busWallet.setUser(user);
-            busWallet.setBalance(amountDecimal);
-            
-            // Save bus wallet and associate with user
-            // user.setBusWallet(busWallet);
-        } else {
-            // Handle passenger wallet (default)
-            PassengerWallet passengerWallet = user.getPassengerWallet();
-            if (passengerWallet == null) {
-                passengerWallet = new PassengerWallet();
-                passengerWallet.setPassenger(user);
-                passengerWallet.setBalance(BigDecimal.ZERO);
-                user.setPassengerWallet(passengerWallet);
-            }
-            passengerWallet.setBalance(passengerWallet.getBalance().add(amountDecimal));
+        PassengerWallet passengerWallet = user.getPassengerWallet();
+        if (passengerWallet == null) {
+            passengerWallet = new PassengerWallet(user, WalletNumberGenerator.generateWalletNumber(user.getId()));
+            passengerWallet.setBalance(BigDecimal.ZERO);
+            user.setPassengerWallet(passengerWallet);
         }
-        return userRepository.save(user);
+        passengerWallet.setBalance(passengerWallet.getBalance().add(amountDecimal));
+        logger.info("Passenger wallet recharged for email: {}, walletNumber: {}, amount: {}", email, passengerWallet.getWalletNumber(), amount);
+
+        User updatedUser = userRepository.save(user);
+        logger.debug("Passenger wallet recharge completed for email: {}, walletNumber: {}, new balance: {}",
+                email, passengerWallet.getWalletNumber(), passengerWallet.getBalance());
+        return updatedUser;
     }
+
+    @Override
+    public double getPassengerWalletBalance(String email) {
+        logger.debug("Fetching passenger wallet balance for email: {}", email);
+
+        User user = userRepository.findByEmailAndRole(email, UserRole.PASSENGER)
+                .orElseThrow(() -> {
+                    logger.error("User not found for email: {} and role: PASSENGER", email);
+                    return new RuntimeException("User not found for email: " + email + " and role: PASSENGER");
+                });
+
+        PassengerWallet passengerWallet = user.getPassengerWallet();
+        if (passengerWallet == null) {
+            logger.debug("No passenger wallet found for email: {}", email);
+            return 0.0;
+        }
+        return passengerWallet.getBalance().doubleValue();
+    }
+
+
+//    @Transactional
+//    @Override
+//    public User rechargeBusWallet(String email, double amount, UUID busId) {
+//        logger.debug("Recharging bus wallet for email: {}, amount: {}, busId: {}", email, amount, busId);
+//
+//        User user = userRepository.findByEmailAndRole(email, UserRole.OWNER)
+//                .orElseThrow(() -> {
+//                    logger.error("User not found for email: {} and role: OWNER", email);
+//                    return new RuntimeException("User not found for email: " + email + " and role: OWNER");
+//                });
+//
+//        Bus bus = busRepository.findById(busId)
+//                .orElseThrow(() -> {
+//                    logger.error("Bus not found for ID: {}", busId);
+//                    return new RuntimeException("Bus not found for ID: " + busId);
+//                });
+//
+//        if (!bus.getOwner().getId().equals(user.getId())) {
+//            logger.error("Bus {} does not belong to user {}", busId, email);
+//            throw new IllegalArgumentException("Bus does not belong to this user");
+//        }
+//
+//        BigDecimal amountDecimal = BigDecimal.valueOf(amount);
+//        BusWallet busWallet = bus.getBusWallet();
+//        if (busWallet == null) {
+//            busWallet = new BusWallet(bus, WalletNumberGenerator.generateBusWalletNumber(bus.getId()));
+//            busWallet.setBalance(BigDecimal.ZERO);
+//            bus.setBusWallet(busWallet);
+//        }
+//        busWallet.setBalance(busWallet.getBalance().add(amountDecimal));
+//        logger.info("Bus wallet recharged for email: {}, busId: {}, walletNumber: {}, amount: {}",
+//                email, busId, busWallet.getWalletNumber(), amount);
+//
+//        User updatedUser = userRepository.save(user);
+//        logger.debug("Bus wallet recharge completed for email: {}, busId: {}, walletNumber: {}, new balance: {}",
+//                email, busId, busWallet.getWalletNumber(), busWallet.getBalance());
+//        return updatedUser;
+//    }
+//
+
+//
+//
+//    @Override
+//    public double getBusWalletBalance(String email, UUID busId) {
+//        logger.debug("Fetching bus wallet balance for email: {}, busId: {}", email, busId);
+//
+//        User user = userRepository.findByEmailAndRole(email, UserRole.OWNER)
+//                .orElseThrow(() -> {
+//                    logger.error("User not found for email: {} and role: OWNER", email);
+//                    return new RuntimeException("User not found for email: " + email + " and role: OWNER");
+//                });
+//
+//        Bus bus = busRepository.findById(busId)
+//                .orElseThrow(() -> {
+//                    logger.error("Bus not found for ID: {}", busId);
+//                    return new RuntimeException("Bus not found for ID: " + busId);
+//                });
+//
+//        if (!bus.getOwner().getId().equals(user.getId())) {
+//            logger.error("Bus {} does not belong to user {}", busId, email);
+//            throw new IllegalArgumentException("Bus does not belong to this user");
+//        }
+//
+//        BusWallet busWallet = bus.getBusWallet();
+//        if (busWallet == null) {
+//            logger.debug("No bus wallet found for email: {}, busId: {}", email, busId);
+//            return 0.0;
+//        }
+//        return busWallet.getBalance().doubleValue();
+//    }
+
 
     public double getWalletBalance(String email) {
         User user = userRepository.findByEmail(email)

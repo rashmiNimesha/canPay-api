@@ -5,15 +5,21 @@ import com.canpay.api.entity.User;
 import com.canpay.api.entity.User.UserRole;
 import com.canpay.api.repository.UserRepository;
 import com.canpay.api.service.UserSevice;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class UserServiceImpl implements UserSevice {
 
     private final UserRepository userRepository;
+    private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
 
     public UserServiceImpl(UserRepository userRepository) {
         this.userRepository = userRepository;
@@ -24,94 +30,164 @@ public class UserServiceImpl implements UserSevice {
         return userRepository.findByEmail(email);
     }
 
+    @Transactional
     @Override
-    public User registerWithEmail(String email, String roleString) {
+    public User findUserByEmail(String email) {
+        logger.debug("Finding user by email: {}", email);
+        // Replace findByEmail with a check for role if needed
+        // This method may need to be adjusted based on usage
+        return userRepository.findByEmailAndRole(email, UserRole.PASSENGER) // Default to PASSENGER or adjust
+                .orElseThrow(() -> {
+                    logger.error("User not found for email: {}", email);
+                    return new RuntimeException("User not found for email: " + email);
+                });
+    }
+
+
+    public Optional<User> findByEmailAndRole(String email, UserRole role) {
+        return userRepository.findByEmailAndRole(email, role);
+    }
+
+
+    public User registerWithEmail(String email, String roleStr) {
+        UserRole role = UserRole.valueOf(roleStr.toUpperCase());
+
+        // Check if email-role combination already exists
+        if (userRepository.findByEmailAndRole(email, role).isPresent()) {
+            throw new IllegalArgumentException("User already exists with this email and role.");
+        }
+
+        // Check if user has less than 3 roles
+        long roleCount = countRolesByEmail(email);
+        if (roleCount >= 3) {
+            throw new IllegalArgumentException("User already has maximum of 3 roles.");
+        }
+
         User user = new User();
         user.setEmail(email);
-        
-        // Convert string to enum
-        UserRole role;
-        try {
-            role = UserRole.valueOf(roleString.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new RuntimeException("Invalid user role: " + roleString);
-        }
-        
         user.setRole(role);
+        user.setStatus(User.UserStatus.PENDING);
         return userRepository.save(user);
     }
 
-    public User updateProfileWithBankAccount(String email, String name, String nic, String accName, String bank, long accNo) {
-        Optional<User> userOpt = userRepository.findByEmail(email);
-        if (userOpt.isEmpty()) {
+    @Transactional
+    @Override
+    public User updatePassengerProfile(String email, String name, String nic, String accName, String bank, long accNo, UserRole role) {
+        logger.debug("Updating PASSENGER profile for email: {}, name: {}, nic: {}, accName: {}, bank: {}, accNo: {}",
+                email, name, nic, accName, bank, accNo);
+
+        Optional<User> optionalUser = userRepository.findByEmailAndRole(email, role);
+        if (!optionalUser.isPresent()) {
+            logger.error("User not found for email: {} and role: {}", email, role);
             throw new RuntimeException("User not found");
         }
 
-        User user = userOpt.get();
+        User user = optionalUser.get();
         user.setName(name);
         user.setNic(nic);
+        user.setStatus(User.UserStatus.ACTIVE);
 
-        boolean alreadyExists = user.getBankAccounts().stream()
-                .anyMatch(acc -> acc.getAccountNumber() == accNo);
-
-        if (!alreadyExists) {
-            BankAccount bankAccount = new BankAccount();
-            bankAccount.setAccountName(name);
-            bankAccount.setAccountNumber(accNo);
-            bankAccount.setBankName(bank);
-            bankAccount.setUser(user);
-            user.getBankAccounts().add(bankAccount);
+        // Initialize bankAccounts list if null
+        List<BankAccount> bankAccounts = user.getBankAccounts();
+        if (bankAccounts == null) {
+            bankAccounts = new ArrayList<>();
+            user.setBankAccounts(bankAccounts);
         }
 
-        return userRepository.save(user);
+        // Create new BankAccount
+        BankAccount bankAccount = new BankAccount();
+        bankAccount.setBankName(bank);
+        bankAccount.setAccountName(accName);
+        bankAccount.setAccountNumber(accNo);
+        bankAccount.setUser(user);
+        // Set isDefault to true if this is the first account, false otherwise
+        bankAccount.setDefault(bankAccounts.isEmpty());
+
+        // If adding a new default account, unset default on existing accounts
+        if (bankAccount.isDefault()) {
+            for (BankAccount existingAccount : bankAccounts) {
+                existingAccount.setDefault(false);
+            }
+        }
+
+        bankAccounts.add(bankAccount);
+
+        try {
+            User updatedUser = userRepository.save(user);
+            logger.info("PASSENGER profile updated successfully for email: {}", email);
+            logger.debug("Updated user with bank account: {}", updatedUser);
+            return updatedUser;
+        } catch (Exception e) {
+            logger.error("Failed to update PASSENGER profile for email: {}. Reason: {}", email, e.getMessage(), e);
+            throw new RuntimeException("Failed to update profile: " + (e.getMessage() != null ? e.getMessage() : "Database error"));
+        }
     }
 
+    @Transactional
     @Override
-    public User updateOperatorProfile(String email, String name, String nic, String profileImageBase64) {
-        Optional<User> userOpt = userRepository.findByEmail(email);
-        if (userOpt.isEmpty()) {
-            throw new RuntimeException("User not found with email: " + email);
-        }
-        User user = userOpt.get();
+    public User updateOperatorProfile(String email, String name, String nic, String profileImage, UserRole role) {
+        logger.debug("Updating OPERATOR profile for email: {}, name: {}, nic: {}, profileImage: {}", email, name, nic, profileImage);
 
-        if (user.getRole() != UserRole.OPERATOR) {
-            throw new RuntimeException("User is not an OPERATOR");
-        }
+        User user = userRepository.findByEmailAndRole(email, role)
+                .orElseThrow(() -> {
+                    logger.error("User not found for email: {} and role: {}", email, role);
+                    return new RuntimeException("User not found for email: " + email + " and role: " + role);
+                });
 
         user.setName(name);
         user.setNic(nic);
-     //   user.setProfileImage(profileImageBase64);
+        user.setPhotoUrl(profileImage);
+        user.setStatus(User.UserStatus.ACTIVE);
 
-        return userRepository.save(user);
+        User updatedUser = userRepository.save(user);
+        logger.info("OPERATOR profile updated successfully for email: {}", email);
+        return updatedUser;
     }
 
+
+    @Transactional
     @Override
-    public User updateOwnerProfile(String email, String name, String nic, String profileImageBase64, String accountHolderName, String bankName, long accountNumber) {
-        Optional<User> userOpt = userRepository.findByEmail(email);
-        if (userOpt.isEmpty()) {
-            throw new RuntimeException("User not found with email: " + email);
-        }
-        User user = userOpt.get();
+    public User updateOwnerProfile(String email, String name, String nic, String profileImage, String accName, String bank, long accNo, UserRole role) {
+        logger.debug("Updating OWNER profile for email: {}, name: {}, nic: {}, profileImage: {}, accName: {}, bank: {}, accNo: {}",
+                email, name, nic, profileImage, accName, bank, accNo);
 
-        if (user.getRole() != UserRole.OWNER) {
-            throw new RuntimeException("User is not an OWNER");
-        }
+        User user = userRepository.findByEmailAndRole(email, role)
+                .orElseThrow(() -> {
+                    logger.error("User not found for email: {} and role: {}", email, role);
+                    return new RuntimeException("User not found for email: " + email + " and role: " + role);
+                });
 
         user.setName(name);
         user.setNic(nic);
-       // user.setProfileImage(profileImageBase64);
+        user.setPhotoUrl(profileImage);
 
-        BankAccount account = new BankAccount();
-        account.setUser(user);
-        account.setAccountName(accountHolderName);
-        account.setBankName(bankName);
-        account.setAccountNumber(accountNumber);
+        List<BankAccount> bankAccounts = user.getBankAccounts();
+        if (bankAccounts == null) {
+            bankAccounts = new ArrayList<>();
+            user.setBankAccounts(bankAccounts);
+        }
 
-        user.getBankAccounts().add(account);
+        BankAccount bankAccount = new BankAccount();
+        bankAccount.setAccountName(accName);
+        bankAccount.setBankName(bank);
+        bankAccount.setAccountNumber(accNo);
+        bankAccount.setUser(user);
+        bankAccount.setDefault(bankAccounts.isEmpty());
 
-        return userRepository.save(user);
+        if (bankAccount.isDefault()) {
+            for (BankAccount existingAccount : bankAccounts) {
+                existingAccount.setDefault(false);
+            }
+        }
 
+        bankAccounts.add(bankAccount);
+        user.setStatus(User.UserStatus.ACTIVE);
+
+        User updatedUser = userRepository.save(user);
+        logger.info("OWNER profile updated successfully for email: {}", email);
+        return updatedUser;
     }
+
 
     public User updateName(String email, String name) {
         User user = getUserOrThrow(email);
@@ -132,13 +208,13 @@ public class UserServiceImpl implements UserSevice {
         return userRepository.save(user);
     }
 
-    public User  addBankAccount(String email, String accName, String bank, long accNo) {
+    public User addBankAccount(String email, String accName, String bank, long accNo) {
         User user = getUserOrThrow(email);
         boolean exists = user.getBankAccounts().stream()
                 .anyMatch(acc -> acc.getAccountNumber() == accNo);
         if (!exists) {
             BankAccount account = new BankAccount();
-            account.setAccountHolderName(accName);
+            account.setAccountName(accName);
             account.setBankName(bank);
             account.setAccountNumber(accNo);
             account.setUser(user);
@@ -152,5 +228,16 @@ public class UserServiceImpl implements UserSevice {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
     }
+
+    public long countRolesByEmail(String email) {
+        if (email == null || email.isBlank()) {
+            logger.error("Invalid email provided for role count: {}", email);
+            throw new IllegalArgumentException("Email cannot be null or empty");
+        }
+        long count = userRepository.countDistinctRolesByEmail(email);
+        logger.debug("Role count for email {}: {}", email, count);
+        return count;
+    }
+
 
 }

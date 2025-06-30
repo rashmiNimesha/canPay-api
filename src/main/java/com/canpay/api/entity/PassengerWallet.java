@@ -45,6 +45,13 @@ public class PassengerWallet {
         this.balance = BigDecimal.ZERO;
     }
 
+    public PassengerWallet(User passenger, String walletNumber) {
+        this.passenger = passenger;
+        this.walletNumber = walletNumber;
+        this.balance = BigDecimal.ZERO;
+    }
+
+
     // Getters and setters
     public UUID getId() {
         return id;
