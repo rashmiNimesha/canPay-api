@@ -14,4 +14,5 @@ public interface WalletService {
 
     double getPassengerWalletBalance(String email);
 
+    User getUserByEmailAndRole(String email);
 }

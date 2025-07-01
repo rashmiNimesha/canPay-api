@@ -31,11 +31,11 @@ public class BankAccount {
     @Column(name = "account_name", nullable = false)
     private String accountName;
 
-    @Column(name = "is_default", nullable = false)
+    @Column(name = "is_default")
     private boolean isDefault = false;
 
     @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @LastModifiedDate

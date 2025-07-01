@@ -8,12 +8,12 @@ import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
-@Service
-public interface UserSevice {
-    Optional<User> findByEmail(String email);
+
+public interface UserService {
+   // Optional<User> findByEmail(String email);
 
     @Transactional
-    User findUserByEmail(String email);
+    Optional<User> findUserByEmail(String email);
 
     @Transactional
     User registerWithEmail(String email, String roleString);
@@ -27,4 +27,10 @@ public interface UserSevice {
     @Transactional
     User updateOwnerProfile(String email, String name, String nic, String profileImage, String accName, String bank, long accNo, UserRole role);
 
+    @Transactional
+    void addBankAccount(String email, String accountName, String bankName, long accountNumber, boolean isDefault);
+
+    User updateName(String email, String name);
+
+    User updateEmail(String email, String newEmail);
 }

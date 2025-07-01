@@ -34,6 +34,11 @@ public class UserDto {
         this.nic = nic;
     }
 
+    public UserDto(String name, String email) {
+        this.name = name;
+        this.email = email;
+    }
+
 
     public UUID getId() {
         return id;

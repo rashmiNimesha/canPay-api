@@ -71,6 +71,13 @@ public class WalletServiceImpl implements WalletService {
         return passengerWallet.getBalance().doubleValue();
     }
 
+    @Override
+    public User getUserByEmailAndRole(String email) {
+        logger.debug("Fetching user by email: {} and role: PASSENGER", email);
+        return userRepository.findByEmailAndRole(email, UserRole.PASSENGER)
+                .orElse(null);
+    }
+
 
 //    @Transactional
 //    @Override
@@ -143,15 +150,6 @@ public class WalletServiceImpl implements WalletService {
 //        return busWallet.getBalance().doubleValue();
 //    }
 
-
-    public double getWalletBalance(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        // For now, only handle passenger wallet until entity structure is clarified
-        PassengerWallet passengerWallet = user.getPassengerWallet();
-        return passengerWallet != null ? passengerWallet.getBalance().doubleValue() : 0.0;
-    }
 
     public List<Transaction> getTransactionHistory(String email) {
         User user = userRepository.findByEmail(email)

@@ -13,10 +13,6 @@ public class BankAccountDto {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    // Add this no-argument constructor
-    public BankAccountDto() {
-        // no-arg constructor for Jackson
-    }
 
     // Constructor from entity
     public BankAccountDto(BankAccount entity) {
@@ -35,6 +31,14 @@ public class BankAccountDto {
         this.accountNumber = accountNumber;
         this.accountName = accountName;
     }
+
+    public BankAccountDto(String bankName, Long accountNumber, String accountName, boolean aDefault) {
+        this.bankName = bankName;
+        this.accountNumber = accountNumber;
+        this.accountName = accountName;
+        this.isDefault = isDefault();
+    }
+
 
     public String getId() {
         return id;

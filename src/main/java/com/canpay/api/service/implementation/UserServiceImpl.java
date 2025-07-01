@@ -4,10 +4,11 @@ import com.canpay.api.entity.BankAccount;
 import com.canpay.api.entity.User;
 import com.canpay.api.entity.User.UserRole;
 import com.canpay.api.repository.UserRepository;
-import com.canpay.api.service.UserSevice;
+import com.canpay.api.service.UserService;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -16,7 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Service
-public class UserServiceImpl implements UserSevice {
+public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
@@ -25,24 +26,12 @@ public class UserServiceImpl implements UserSevice {
         this.userRepository = userRepository;
     }
 
-    @Override
-    public Optional<User> findByEmail(String email) {
-        return userRepository.findByEmail(email);
-    }
-
     @Transactional
     @Override
-    public User findUserByEmail(String email) {
+    public Optional<User> findUserByEmail(String email) {
         logger.debug("Finding user by email: {}", email);
-        // Replace findByEmail with a check for role if needed
-        // This method may need to be adjusted based on usage
-        return userRepository.findByEmailAndRole(email, UserRole.PASSENGER) // Default to PASSENGER or adjust
-                .orElseThrow(() -> {
-                    logger.error("User not found for email: {}", email);
-                    return new RuntimeException("User not found for email: " + email);
-                });
+        return userRepository.findByEmailAndRole(email, UserRole.PASSENGER);
     }
-
 
     public Optional<User> findByEmailAndRole(String email, UserRole role) {
         return userRepository.findByEmailAndRole(email, role);
@@ -188,40 +177,41 @@ public class UserServiceImpl implements UserSevice {
         return updatedUser;
     }
 
-
-    public User updateName(String email, String name) {
-        User user = getUserOrThrow(email);
-        user.setName(name);
-        return userRepository.save(user);
-    }
-
-    public User updateEmail(String oldEmail, String newEmail) {
-        Optional<User> userOpt = userRepository.findByEmail(oldEmail);
-        if (userOpt.isEmpty()) {
-            throw new RuntimeException("User not found");
+    @Transactional
+    @Override
+    public void addBankAccount(String email, String accountName, String bankName, long accountNumber, boolean isDefault) {
+        logger.debug("Adding bank account for email: {}, accountNumber: {}", email, accountNumber);
+        if (accountName == null || accountName.trim().isEmpty()) {
+            logger.warn("Invalid account name for email: {}", email);
+            throw new IllegalArgumentException("Account name cannot be empty");
         }
-        if (userRepository.existsByEmail(newEmail)) {
-            throw new RuntimeException("Email already in use");
+        if (bankName == null || bankName.trim().isEmpty()) {
+            logger.warn("Invalid bank name for email: {}", email);
+            throw new IllegalArgumentException("Bank name cannot be empty");
         }
-        User user = userOpt.get();
-        user.setEmail(newEmail);
-        return userRepository.save(user);
-    }
-
-    public User addBankAccount(String email, String accName, String bank, long accNo) {
-        User user = getUserOrThrow(email);
-        boolean exists = user.getBankAccounts().stream()
-                .anyMatch(acc -> acc.getAccountNumber() == accNo);
-        if (!exists) {
-            BankAccount account = new BankAccount();
-            account.setAccountName(accName);
-            account.setBankName(bank);
-            account.setAccountNumber(accNo);
-            account.setUser(user);
-            user.getBankAccounts().add(account);
-            userRepository.save(user);
+        if (accountNumber <= 0) {
+            logger.warn("Invalid account number: {} for email: {}", accountNumber, email);
+            throw new IllegalArgumentException("Invalid account number");
         }
-        return userRepository.save(user);
+        User user = userRepository.findByEmailAndRole(email, UserRole.PASSENGER)
+                .orElseThrow(() -> {
+                    logger.error("User not found for email: {}", email);
+                    return new RuntimeException("User not found for email: " + email);
+                });
+        BankAccount bankAccount = new BankAccount();
+        bankAccount.setBankName(bankName.trim());
+        bankAccount.setAccountNumber(accountNumber);
+        bankAccount.setAccountName(accountName.trim());
+        bankAccount.setDefault(isDefault);
+        bankAccount.setCreatedAt(LocalDateTime.now());
+        bankAccount.setUpdatedAt(LocalDateTime.now());
+        bankAccount.setUser(user); // Set the User reference
+        user.getBankAccounts().add(bankAccount);
+        if (isDefault) {
+            user.getBankAccounts().forEach(acc -> acc.setDefault(acc == bankAccount));
+        }
+        userRepository.save(user);
+        logger.info("Added bank account for email: {}, accountNumber: {}", email, accountNumber);
     }
 
     private User getUserOrThrow(String email) {
@@ -239,5 +229,44 @@ public class UserServiceImpl implements UserSevice {
         return count;
     }
 
+
+    @Override
+    public User updateName(String email, String name) {
+        logger.debug("Updating name for email: {}", email);
+        if (name == null || name.trim().isEmpty()) {
+            logger.warn("Invalid name provided for email: {}", email);
+            throw new IllegalArgumentException("Name cannot be empty");
+        }
+        User user = userRepository.findByEmailAndRole(email, User.UserRole.PASSENGER)
+                .orElseThrow(() -> {
+                    logger.error("User not found for email: {}", email);
+                    return new RuntimeException("User not found");
+                });
+        user.setName(name.trim());
+        user.setUpdatedAt(LocalDateTime.now());
+        return userRepository.save(user);
+    }
+
+
+    @Override
+    public User updateEmail(String email, String newEmail) {
+        logger.debug("Updating email from {} to {}", email, newEmail);
+        if (newEmail == null || newEmail.trim().isEmpty() || !newEmail.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
+            logger.warn("Invalid new email provided: {}", newEmail);
+            throw new IllegalArgumentException("Invalid email format");
+        }
+        if (userRepository.findByEmailAndRole(newEmail, User.UserRole.PASSENGER).isPresent()) {
+            logger.warn("New email already in use: {}", newEmail);
+            throw new IllegalArgumentException("Email already in use");
+        }
+        User user = userRepository.findByEmailAndRole(email, User.UserRole.PASSENGER)
+                .orElseThrow(() -> {
+                    logger.error("User not found for email: {}", email);
+                    return new RuntimeException("User not found");
+                });
+        user.setEmail(newEmail.trim());
+        user.setUpdatedAt(LocalDateTime.now());
+        return userRepository.save(user);
+    }
 
 }
