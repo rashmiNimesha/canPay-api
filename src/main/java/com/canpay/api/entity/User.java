@@ -69,7 +69,7 @@ public class User extends BaseEntity {
     }
 
     public enum UserStatus {
-        PENDING, APPROVED, REJECTED, BLOCKED, ACTIVE, INACTIVE
+        PENDING, ACTIVE, INACTIVE, BLOCKED
     }
 
     // Business Constructor

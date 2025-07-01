@@ -113,6 +113,23 @@ public class PassengerController {
     }
 
     /**
+     * Changes the status of a passenger.
+     * 
+     * @param id        the UUID of the passenger
+     * @param newStatus the new status to set
+     * @return response entity with operation result
+     */
+    @PutMapping("/passengers/{id}/status")
+    public ResponseEntity<?> changePassengerStatus(@PathVariable UUID id, @RequestBody String newStatus) {
+        passengerService.changePassengerStatus(id, newStatus);
+        return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                .resultMessage("Passenger status updated successfully")
+                .httpStatus(HttpStatus.OK)
+                .body(Map.of("updated", true))
+                .buildWrapped();
+    }
+
+    /**
      * Deletes a passenger by their ID.
      * 
      * @param id the UUID of the passenger to delete

@@ -128,6 +128,11 @@ public class PassengerService {
                     if (user.getPhotoUrl() != null && !user.getPhotoUrl().isBlank()) {
                         dto.setPhoto(Utils.convertImageToDataUrl(user.getPhotoUrl()));
                     }
+                    // Get wallet information
+                    PassengerWalletDto walletDto = passengerWalletRepository.findByPassenger_Id(user.getId())
+                            .map(PassengerWalletDto::new)
+                            .orElseThrow(() -> new NoSuchElementException("Wallet not found"));
+                    dto.setWallet(walletDto);
                     return dto;
                 })
                 .collect(Collectors.toList());
@@ -225,6 +230,30 @@ public class PassengerService {
         passengerDto.setWallet(wallet);
 
         return passengerDto;
+    }
+
+    /**
+     * Changes the status of a passenger by ID.
+     */
+    @Transactional
+    public void changePassengerStatus(UUID id, String newStatus) {
+        User user = userRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Passenger not found"));
+        String cleanStatus = newStatus.replace("\"", "").trim();
+
+        // Validate newStatus against UserStatus enum
+        try {
+            UserStatus status = Arrays.stream(UserStatus.values())
+                    .filter(enumValue -> enumValue.name().equalsIgnoreCase(
+                            cleanStatus))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid user status provided."));
+            user.setStatus(status);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid user status provided.");
+        }
+
+        // Save the updated user status
+        userRepository.save(user);
     }
 
     /**

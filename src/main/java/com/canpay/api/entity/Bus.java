@@ -60,11 +60,11 @@ public class Bus extends BaseEntity {
 
     // Enums
     public enum BusType {
-        NORMAL, SEMI_LUXURY, LUXURY, AC
+        NORMAL, HIGHWAY, INTERCITY
     }
 
     public enum BusStatus {
-        PENDING, APPROVED, REJECTED, BLOCKED, ACTIVE, INACTIVE
+        PENDING, ACTIVE, INACTIVE, REJECTED, BLOCKED
     }
 
     // Business Constructor

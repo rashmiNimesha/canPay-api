@@ -25,7 +25,7 @@ import java.util.List;
  */
 @Configuration
 @EnableMethodSecurity
-public class DualSecurityConfig {
+public class ApplicationSecurityConfig {
 
         private final JwtAuthFilter jwtAuthFilter;
 
@@ -34,7 +34,7 @@ public class DualSecurityConfig {
          *
          * @param jwtAuthFilter Custom JWT authentication filter.
          */
-        public DualSecurityConfig(JwtAuthFilter jwtAuthFilter) {
+        public ApplicationSecurityConfig(JwtAuthFilter jwtAuthFilter) {
                 this.jwtAuthFilter = jwtAuthFilter;
         }
 
