@@ -4,18 +4,24 @@ import com.canpay.api.entity.BankAccount;
 import com.canpay.api.entity.PassengerWallet;
 import com.canpay.api.entity.User;
 import com.canpay.api.entity.User.UserRole;
-import com.canpay.api.dto.Dashboard.BankAccountDto;
+import com.canpay.api.entity.User.UserStatus;
+import com.canpay.api.lib.Utils;
+import com.canpay.api.dto.Dashboard.DBankAccountDto;
 import com.canpay.api.dto.Dashboard.Passenger.PassengerDto;
+import com.canpay.api.dto.Dashboard.Passenger.PassengerListDto;
+import com.canpay.api.dto.Dashboard.Passenger.PassengerListWalletDto;
 import com.canpay.api.dto.Dashboard.Passenger.PassengerRegistrationRequestDto;
 import com.canpay.api.dto.Dashboard.Passenger.PassengerWalletDto;
 import com.canpay.api.repository.dashboard.DBankAccountRepository;
 import com.canpay.api.repository.dashboard.DUserRepository;
 import com.canpay.api.repository.dashboard.DPassengerWalletRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.security.SecureRandom;
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -28,6 +34,10 @@ public class PassengerService {
     private final DBankAccountRepository bankAccountRepository;
     // Repository for PassengerWallet entities
     private final DPassengerWalletRepository passengerWalletRepository;
+
+    // Base URL for image links, set in application.properties as app.base-url
+    @Value("${app.base-url}")
+    private String baseUrl;
 
     @Autowired
     public PassengerService(DUserRepository userRepository, DBankAccountRepository bankAccountRepository,
@@ -43,7 +53,7 @@ public class PassengerService {
      * Optionally adds bank accounts if provided.
      */
     @Transactional
-    public Map<String, Object> addPassenger(PassengerRegistrationRequestDto request) {
+    public UUID addPassenger(PassengerRegistrationRequestDto request) {
         // Validate required fields
         if (request.getName() == null || request.getName().isBlank() ||
                 request.getNic() == null || request.getNic().isBlank() ||
@@ -53,108 +63,119 @@ public class PassengerService {
 
         // Check for NIC uniqueness within PASSENGER role
         if (userRepository.findByNicAndRole(request.getNic(), UserRole.PASSENGER).isPresent()) {
-            throw new IllegalArgumentException("NIC already exists for PASSENGER role.");
+            throw new IllegalArgumentException("NIC already exists for another passenger.");
         }
 
-        // Updated to enforce email uniqueness within specific role
+        // Enforce email uniqueness within specific role
         if (userRepository.findByEmailAndRole(request.getEmail(), UserRole.PASSENGER).isPresent()) {
-            throw new IllegalArgumentException("Email Address already exists for PASSENGER role.");
+            throw new IllegalArgumentException("Email Address already exists for another passenger.");
         }
 
-        // Create new User entity for the passenger
+        // Create new User entity from DTO manually
         User passenger = new User();
         passenger.setName(request.getName());
         passenger.setNic(request.getNic());
-        passenger.setRole(UserRole.PASSENGER);
         passenger.setEmail(request.getEmail());
-        passenger.setPhotoUrl(request.getProfilePhotoUrl());
+        passenger.setPhotoUrl(request.getPhoto());
+        passenger.setRole(UserRole.PASSENGER);
+        passenger.setStatus(UserStatus.ACTIVE);
+
+        // Save the photo to system storage and set the photo URL
+        if (request.getPhoto() != null && !request.getPhoto().isBlank()) {
+            try {
+                String photoPath = Utils.saveImage(request.getPhoto(), UUID.randomUUID().toString() + ".jpg");
+                passenger.setPhotoUrl(photoPath);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to save passenger photo", e);
+            }
+        }
 
         // Create and associate a wallet for the passenger
         PassengerWallet passengerWallet = new PassengerWallet(passenger);
-        passengerWallet.setWalletNumber(generateUniqueWalletNumber());
+        passengerWallet.setWalletNumber(Utils.generateUniqueWalletNumber(passengerWalletRepository));
         passenger.setPassengerWallet(passengerWallet);
 
-        // Save the passenger to the database
-        passenger = userRepository.save(passenger);
-
-        // Add bank accounts if provided
+        // Add bank accounts if provided (create and set to user)
+        List<BankAccount> bankAccounts = new ArrayList<>();
         if (request.getBankAccounts() != null && !request.getBankAccounts().isEmpty()) {
-            List<BankAccount> bankAccounts = new ArrayList<>();
-            for (BankAccountDto bankDto : request.getBankAccounts()) {
+            for (DBankAccountDto bankDto : request.getBankAccounts()) {
                 // Validate required bank account fields
                 if (bankDto.getBankName() != null && !bankDto.getBankName().isBlank() &&
-                        bankDto.getAccountNumber() != null &&
+                        bankDto.getAccountNumber() != null && !bankDto.getAccountNumber().isBlank() &&
                         bankDto.getAccountName() != null && !bankDto.getAccountName().isBlank()) {
                     BankAccount bankAccount = new BankAccount();
                     bankAccount.setAccountName(bankDto.getAccountName());
-                    bankAccount.setAccountNumber(bankDto.getAccountNumber());
+                    bankAccount.setAccountNumber(Long.parseLong(bankDto.getAccountNumber()));
                     bankAccount.setBankName(bankDto.getBankName());
+                    bankAccount.setDefault(bankDto.isDefault());
                     bankAccount.setUser(passenger);
                     bankAccounts.add(bankAccount);
                 }
             }
-
-            // Save all valid bank accounts
-            if (!bankAccounts.isEmpty()) {
-                bankAccountRepository.saveAll(bankAccounts);
-            }
         }
 
-        // Return success response with passenger ID
-        return Map.of(
-                "success", true,
-                "message", "Passenger created successfully.",
-                "data", Map.of("passengerId", passenger.getId()));
-    }
+        // If User entity has a collection for bank accounts, set it here
+        passenger.setBankAccounts(bankAccounts);
 
-    /**
-     * Generates a unique 16-digit wallet number.
-     */
-    private String generateUniqueWalletNumber() {
-        String walletNumber;
-        SecureRandom random = new SecureRandom();
-        do {
-            walletNumber = String.format("%016d", Math.abs(random.nextLong()) % 1_0000_0000_0000_0000L);
-        } while (passengerWalletRepository.findByWalletNumber(walletNumber).isPresent());
-        return walletNumber;
+        // Save the passenger (with wallet and bank accounts set)
+        passenger = userRepository.save(passenger);
+
+        // Return PassengerDto instead of UUID
+        return passenger.getId();
     }
 
     /**
      * Retrieves all passengers as a list of PassengerDto.
      */
-    public List<PassengerDto> getAllPassengers() {
+    public List<PassengerListDto> getAllPassengers() {
         List<User> passengers = userRepository.findByRole(UserRole.PASSENGER);
         return passengers.stream()
-                .map(PassengerDto::new)
+                .map(user -> {
+                    PassengerListDto dto = new PassengerListDto(user);
+                    // Set photo as public URL if exists
+                    if (user.getPhotoUrl() != null && !user.getPhotoUrl().isBlank()) {
+                        String filename = Paths.get(user.getPhotoUrl()).getFileName().toString();
+                        dto.setPhoto(baseUrl + "/" + filename);
+                    }
+                    // Get wallet information
+                    PassengerListWalletDto walletDto = passengerWalletRepository.findByPassenger_Id(user.getId())
+                            .map(PassengerListWalletDto::new)
+                            .orElse(null);
+                    dto.setWallet(walletDto);
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 
     /**
      * Retrieves a passenger by ID, including their bank accounts and wallet.
      */
-    public Map<String, Object> getPassengerById(UUID id) {
-        return userRepository.findById(id)
-                .map(user -> {
-                    // Use DBankAccountRepository to fetch bank accounts
-                    List<BankAccountDto> bankAccounts = bankAccountRepository.findByUserId(user.getId()).stream()
-                            .map(BankAccountDto::new)
-                            .collect(Collectors.toList());
-
-                    // Map wallet to DTO
-                    PassengerWalletDto wallet = passengerWalletRepository.findByPassenger_Id(user.getId())
-                            .map(PassengerWalletDto::new)
-                            .orElseThrow(() -> new NoSuchElementException("Wallet not found"));
-
-                    // Return passenger details
-                    return Map.of(
-                            "success", true,
-                            "message", "Passenger details",
-                            "data", Map.of(
-                                    "user", new PassengerDto(user),
-                                    "bankAccounts", bankAccounts,
-                                    "wallet", wallet));
-                })
+    public PassengerDto getPassengerById(UUID id) {
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Passenger not found"));
+
+        // Create passenger DTO from entity
+        PassengerDto passengerDto = new PassengerDto(user);
+
+        // Set photo as public URL if exists
+        if (user.getPhotoUrl() != null && !user.getPhotoUrl().isBlank()) {
+            String filename = Paths.get(user.getPhotoUrl()).getFileName().toString();
+            passengerDto.setPhoto(baseUrl + "/" + filename);
+        }
+
+        // Fetch and set bank accounts
+        List<DBankAccountDto> bankAccounts = bankAccountRepository.findByUserId(user.getId()).stream()
+                .map(DBankAccountDto::new)
+                .collect(Collectors.toList());
+        passengerDto.setBankAccounts(bankAccounts);
+
+        // Fetch and set wallet
+        PassengerWalletDto wallet = passengerWalletRepository.findByPassenger_Id(user.getId())
+                .map(PassengerWalletDto::new)
+                .orElse(null);
+        passengerDto.setWallet(wallet);
+
+        return passengerDto;
     }
 
     /**
@@ -162,7 +183,7 @@ public class PassengerService {
      * Updates fields if provided and replaces bank accounts if new ones are given.
      */
     @Transactional
-    public Map<String, Object> editPassenger(UUID id, PassengerRegistrationRequestDto request) {
+    public PassengerDto editPassenger(UUID id, PassengerRegistrationRequestDto request) {
         User user = userRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Passenger not found"));
 
         // Update fields if provided
@@ -172,7 +193,7 @@ public class PassengerService {
         if (request.getNic() != null && !request.getNic().isBlank()) {
             if (userRepository.findByNicAndRole(request.getNic(), UserRole.PASSENGER).isPresent()
                     && !user.getNic().equals(request.getNic())) {
-                throw new IllegalArgumentException("NIC already exists for PASSENGER role.");
+                throw new IllegalArgumentException("NIC already exists for another passenger.");
             }
             user.setNic(request.getNic());
         }
@@ -180,12 +201,21 @@ public class PassengerService {
         if (request.getEmail() != null && !request.getEmail().isBlank()) {
             if (userRepository.findByEmailAndRole(request.getEmail(), UserRole.PASSENGER).isPresent()
                     && !user.getEmail().equals(request.getEmail())) {
-                throw new IllegalArgumentException("Email Address already exists for PASSENGER role.");
+                throw new IllegalArgumentException("Email Address already exists for another passenger.");
             }
             user.setEmail(request.getEmail());
         }
-        if (request.getProfilePhotoUrl() != null && !request.getProfilePhotoUrl().isBlank()) {
-            user.setPhotoUrl(request.getProfilePhotoUrl());
+        if (request.getPhoto() != null && !request.getPhoto().isBlank()) {
+            try {
+                // Delete the old photo
+                Utils.deleteImage(user.getPhotoUrl());
+
+                // Save the new photo
+                String photoPath = Utils.saveImage(request.getPhoto(), UUID.randomUUID().toString() + ".jpg");
+                user.setPhotoUrl(photoPath);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to save passenger photo", e);
+            }
         }
 
         // Replace bank accounts if provided
@@ -196,30 +226,63 @@ public class PassengerService {
         // Save updated user
         User updatedUser = userRepository.save(user);
 
-        // Prepare response DTOs
-        List<BankAccountDto> bankAccounts = bankAccountRepository.findByUserId(updatedUser.getId()).stream()
-                .map(BankAccountDto::new)
-                .collect(Collectors.toList());
-        PassengerWalletDto wallet = new PassengerWalletDto(updatedUser.getPassengerWallet());
+        // Create response DTO with related data
+        PassengerDto passengerDto = new PassengerDto(updatedUser);
 
-        return Map.of(
-                "success", true,
-                "message", "Passenger updated successfully.",
-                "data", Map.of(
-                        "user", new PassengerDto(updatedUser),
-                        "bankAccounts", bankAccounts,
-                        "wallet", wallet));
+        // Set photo as public URL if exists
+        if (updatedUser.getPhotoUrl() != null && !updatedUser.getPhotoUrl().isBlank()) {
+            String filename = Paths.get(updatedUser.getPhotoUrl()).getFileName().toString();
+            passengerDto.setPhoto(baseUrl + "/" + filename);
+        }
+
+        // Fetch and set bank accounts
+        List<DBankAccountDto> bankAccounts = bankAccountRepository.findByUserId(updatedUser.getId()).stream()
+                .map(DBankAccountDto::new)
+                .collect(Collectors.toList());
+        passengerDto.setBankAccounts(bankAccounts);
+
+        // Set wallet
+        PassengerWalletDto wallet = new PassengerWalletDto(updatedUser.getPassengerWallet());
+        passengerDto.setWallet(wallet);
+
+        return passengerDto;
+    }
+
+    /**
+     * Changes the status of a passenger by ID.
+     */
+    @Transactional
+    public void changePassengerStatus(UUID id, String newStatus) {
+        User user = userRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Passenger not found"));
+        String cleanStatus = newStatus.replace("\"", "").trim();
+
+        // Validate newStatus against UserStatus enum
+        try {
+            UserStatus status = Arrays.stream(UserStatus.values())
+                    .filter(enumValue -> enumValue.name().equalsIgnoreCase(
+                            cleanStatus))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid user status provided."));
+            user.setStatus(status);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid user status provided.");
+        }
+
+        // Save the updated user status
+        userRepository.save(user);
     }
 
     /**
      * Deletes a passenger by ID.
      */
     @Transactional
-    public Map<String, Object> deletePassenger(UUID id) {
+    public void deletePassenger(UUID id) {
+        User user = userRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Passenger not found"));
+
+        // Delete the associated photo
+        Utils.deleteImage(user.getPhotoUrl());
+
         userRepository.deleteById(id);
-        return Map.of(
-                "success", true,
-                "message", "Passenger deleted successfully.");
     }
 
     /**
@@ -236,7 +299,7 @@ public class PassengerService {
      * 
      */
     @Transactional
-    private void replaceBankAccounts(User user, List<BankAccountDto> bankAccountDtos) {
+    private void replaceBankAccounts(User user, List<DBankAccountDto> bankAccountDtos) {
         // Delete existing bank accounts
         bankAccountRepository.deleteByUserId(user.getId());
 
@@ -245,8 +308,9 @@ public class PassengerService {
                 .map(bankDto -> {
                     BankAccount bankAccount = new BankAccount();
                     bankAccount.setAccountName(bankDto.getAccountName());
-                    bankAccount.setAccountNumber(bankDto.getAccountNumber());
+                    bankAccount.setAccountNumber(Long.parseLong(bankDto.getAccountNumber()));
                     bankAccount.setBankName(bankDto.getBankName());
+                    bankAccount.setDefault(bankDto.isDefault());
                     bankAccount.setUser(user);
                     return bankAccount;
                 })

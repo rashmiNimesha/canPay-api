@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${otp} is your CanPay verification code</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Helvetica, Arial, sans-serif;
+        }
+
+        .container {
+            background-color: #ffffff;
+            max-width: 600px;
+            margin: auto;
+            padding: 48px 32px;
+        }
+
+        .logo {
+            height: 40px;
+            margin-bottom: 32px;
+        }
+
+        .title {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            color: #000000;
+        }
+
+        .instruction {
+            font-size: 14px;
+            margin-top: 32px;
+            color: #000000;
+        }
+
+        .otp {
+            font-size: 40px;
+            font-weight: bold;
+            margin: 24px 0;
+            color: #000000;
+        }
+
+        .note {
+            font-size: 14px;
+            margin-top: 16px;
+            color: #000000;
+        }
+
+        .footer-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 64px;
+            color: #000000;
+        }
+
+        .footer-note {
+            font-size: 14px;
+            margin-top: 4px;
+            color: #000000;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <img src="https://dash.canpay.sehanw.com/canpay-logo.png" alt="canpay" class="logo" />
+
+        <h1 class="title">Verification code</h1>
+
+        <p class="instruction">Enter the following verification code when prompted:</p>
+
+        <div class="otp">${otp}</div>
+
+        <p class="note">To protect your account, do not share this code.</p>
+
+        <p class="footer-title">Didn't request this?</p>
+        <p class="footer-note">
+            This code was requested at <b>${timestamp}</b>.
+            If you didn't make this request, you can safely ignore this email.
+        </p>
+    </div>
+</body>
+
+</html>

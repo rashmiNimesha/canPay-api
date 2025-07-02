@@ -16,7 +16,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 
-
 @Service
 public class JwtService {
     private final JwtConfig jwtConfig;
@@ -64,4 +63,3 @@ public class JwtService {
     }
 
 }
-

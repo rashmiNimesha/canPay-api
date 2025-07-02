@@ -1,9 +1,12 @@
 package com.canpay.api.controller.canpayadmin;
 
 import com.canpay.api.dto.Dashboard.Passenger.PassengerDto;
+import com.canpay.api.dto.Dashboard.Passenger.PassengerListDto;
+import com.canpay.api.entity.ResponseEntityBuilder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.http.HttpStatus;
 
 import com.canpay.api.dto.Dashboard.Passenger.PassengerRegistrationRequestDto;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -50,10 +53,14 @@ public class PassengerController {
      * @return response entity with operation result
      */
     @PostMapping("/passengers")
-    public ResponseEntity<?> addPassenger(@RequestBody PassengerRegistrationRequestDto request) {
+    public ResponseEntity<?> addPassenger(@RequestBody @Valid PassengerRegistrationRequestDto request) {
         logger.info("Request received: {}", request);
-        Map<String, Object> response = passengerService.addPassenger(request);
-        return ResponseEntity.ok(response);
+        UUID passengerId = passengerService.addPassenger(request);
+        return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                .resultMessage("Passenger added successfully")
+                .httpStatus(HttpStatus.CREATED)
+                .body(Map.of("passengerId", passengerId))
+                .buildWrapped();
     }
 
     /**
@@ -63,11 +70,12 @@ public class PassengerController {
      */
     @GetMapping("/passengers")
     public ResponseEntity<?> getAllPassengers() {
-        List<PassengerDto> passengerDtos = passengerService.getAllPassengers();
-        return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "List of all passengers",
-                "data", passengerDtos));
+        List<PassengerListDto> passengerDtos = passengerService.getAllPassengers();
+        return new ResponseEntityBuilder.Builder<List<PassengerListDto>>()
+                .resultMessage("List of all passengers retrieved successfully")
+                .httpStatus(HttpStatus.OK)
+                .body(passengerDtos)
+                .buildWrapped();
     }
 
     /**
@@ -78,8 +86,12 @@ public class PassengerController {
      */
     @GetMapping("/passengers/{id}")
     public ResponseEntity<?> getPassengerById(@PathVariable UUID id) {
-        Map<String, Object> response = passengerService.getPassengerById(id);
-        return ResponseEntity.ok(response);
+        PassengerDto response = passengerService.getPassengerById(id);
+        return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                .resultMessage("Passenger details retrieved successfully")
+                .httpStatus(HttpStatus.OK)
+                .body(Map.of("passenger", response))
+                .buildWrapped();
     }
 
     /**
@@ -93,8 +105,29 @@ public class PassengerController {
     public ResponseEntity<?> editPassenger(@PathVariable UUID id,
             @RequestBody @Valid PassengerRegistrationRequestDto request) {
         logger.info("Request received: {}", request);
-        Map<String, Object> response = passengerService.editPassenger(id, request);
-        return ResponseEntity.ok(response);
+        PassengerDto response = passengerService.editPassenger(id, request);
+        return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                .resultMessage("Passenger updated successfully")
+                .httpStatus(HttpStatus.OK)
+                .body(Map.of("passenger", response))
+                .buildWrapped();
+    }
+
+    /**
+     * Changes the status of a passenger.
+     * 
+     * @param id        the UUID of the passenger
+     * @param newStatus the new status to set
+     * @return response entity with operation result
+     */
+    @PutMapping("/passengers/{id}/status")
+    public ResponseEntity<?> changePassengerStatus(@PathVariable UUID id, @RequestBody String newStatus) {
+        passengerService.changePassengerStatus(id, newStatus);
+        return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                .resultMessage("Passenger status updated successfully")
+                .httpStatus(HttpStatus.OK)
+                .body(Map.of("updated", true))
+                .buildWrapped();
     }
 
     /**
@@ -105,8 +138,12 @@ public class PassengerController {
      */
     @DeleteMapping("/passengers/{id}")
     public ResponseEntity<?> deletePassenger(@PathVariable UUID id) {
-        Map<String, Object> response = passengerService.deletePassenger(id);
-        return ResponseEntity.ok(response);
+        passengerService.deletePassenger(id);
+        return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                .resultMessage("Passenger deleted successfully")
+                .httpStatus(HttpStatus.OK)
+                .body(Map.of("deleted", true))
+                .buildWrapped();
     }
 
     /**
@@ -117,9 +154,10 @@ public class PassengerController {
     @GetMapping("/passengers/count")
     public ResponseEntity<?> getPassengerCount() {
         long count = passengerService.getPassengerCount();
-        return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "Total number of passengers",
-                "data", Map.of("passengerCount", count)));
+        return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                .resultMessage("Total number of passengers retrieved successfully")
+                .httpStatus(HttpStatus.OK)
+                .body(Map.of("passengerCount", count))
+                .buildWrapped();
     }
 }
