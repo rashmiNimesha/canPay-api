@@ -1,6 +1,7 @@
 package com.canpay.api.controller.canpayadmin;
 
 import com.canpay.api.dto.Dashboard.Passenger.PassengerDto;
+import com.canpay.api.dto.Dashboard.Passenger.PassengerListDto;
 import com.canpay.api.entity.ResponseEntityBuilder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -69,8 +70,8 @@ public class PassengerController {
      */
     @GetMapping("/passengers")
     public ResponseEntity<?> getAllPassengers() {
-        List<PassengerDto> passengerDtos = passengerService.getAllPassengers();
-        return new ResponseEntityBuilder.Builder<List<PassengerDto>>()
+        List<PassengerListDto> passengerDtos = passengerService.getAllPassengers();
+        return new ResponseEntityBuilder.Builder<List<PassengerListDto>>()
                 .resultMessage("List of all passengers retrieved successfully")
                 .httpStatus(HttpStatus.OK)
                 .body(passengerDtos)

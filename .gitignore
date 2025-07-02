@@ -80,3 +80,4 @@ env*
 # Application properties
 **/application.properties
 images/
+static/

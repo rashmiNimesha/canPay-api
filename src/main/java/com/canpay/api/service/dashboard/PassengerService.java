@@ -8,16 +8,20 @@ import com.canpay.api.entity.User.UserStatus;
 import com.canpay.api.lib.Utils;
 import com.canpay.api.dto.Dashboard.DBankAccountDto;
 import com.canpay.api.dto.Dashboard.Passenger.PassengerDto;
+import com.canpay.api.dto.Dashboard.Passenger.PassengerListDto;
+import com.canpay.api.dto.Dashboard.Passenger.PassengerListWalletDto;
 import com.canpay.api.dto.Dashboard.Passenger.PassengerRegistrationRequestDto;
 import com.canpay.api.dto.Dashboard.Passenger.PassengerWalletDto;
 import com.canpay.api.repository.dashboard.DBankAccountRepository;
 import com.canpay.api.repository.dashboard.DUserRepository;
 import com.canpay.api.repository.dashboard.DPassengerWalletRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,6 +34,10 @@ public class PassengerService {
     private final DBankAccountRepository bankAccountRepository;
     // Repository for PassengerWallet entities
     private final DPassengerWalletRepository passengerWalletRepository;
+
+    // Base URL for image links, set in application.properties as app.base-url
+    @Value("${app.base-url}")
+    private String baseUrl;
 
     @Autowired
     public PassengerService(DUserRepository userRepository, DBankAccountRepository bankAccountRepository,
@@ -75,7 +83,7 @@ public class PassengerService {
         // Save the photo to system storage and set the photo URL
         if (request.getPhoto() != null && !request.getPhoto().isBlank()) {
             try {
-                String photoPath = Utils.saveImage(request.getPhoto(), UUID.randomUUID().toString() + ".png");
+                String photoPath = Utils.saveImage(request.getPhoto(), UUID.randomUUID().toString() + ".jpg");
                 passenger.setPhotoUrl(photoPath);
             } catch (IOException e) {
                 throw new RuntimeException("Failed to save passenger photo", e);
@@ -119,19 +127,20 @@ public class PassengerService {
     /**
      * Retrieves all passengers as a list of PassengerDto.
      */
-    public List<PassengerDto> getAllPassengers() {
+    public List<PassengerListDto> getAllPassengers() {
         List<User> passengers = userRepository.findByRole(UserRole.PASSENGER);
         return passengers.stream()
                 .map(user -> {
-                    PassengerDto dto = new PassengerDto(user);
-                    // Convert photo file path to data URL
+                    PassengerListDto dto = new PassengerListDto(user);
+                    // Set photo as public URL if exists
                     if (user.getPhotoUrl() != null && !user.getPhotoUrl().isBlank()) {
-                        dto.setPhoto(Utils.convertImageToDataUrl(user.getPhotoUrl()));
+                        String filename = Paths.get(user.getPhotoUrl()).getFileName().toString();
+                        dto.setPhoto(baseUrl + "/" + filename);
                     }
                     // Get wallet information
-                    PassengerWalletDto walletDto = passengerWalletRepository.findByPassenger_Id(user.getId())
-                            .map(PassengerWalletDto::new)
-                            .orElseThrow(() -> new NoSuchElementException("Wallet not found"));
+                    PassengerListWalletDto walletDto = passengerWalletRepository.findByPassenger_Id(user.getId())
+                            .map(PassengerListWalletDto::new)
+                            .orElse(null);
                     dto.setWallet(walletDto);
                     return dto;
                 })
@@ -148,9 +157,10 @@ public class PassengerService {
         // Create passenger DTO from entity
         PassengerDto passengerDto = new PassengerDto(user);
 
-        // Convert photo file path to data URL
+        // Set photo as public URL if exists
         if (user.getPhotoUrl() != null && !user.getPhotoUrl().isBlank()) {
-            passengerDto.setPhoto(Utils.convertImageToDataUrl(user.getPhotoUrl()));
+            String filename = Paths.get(user.getPhotoUrl()).getFileName().toString();
+            passengerDto.setPhoto(baseUrl + "/" + filename);
         }
 
         // Fetch and set bank accounts
@@ -162,7 +172,7 @@ public class PassengerService {
         // Fetch and set wallet
         PassengerWalletDto wallet = passengerWalletRepository.findByPassenger_Id(user.getId())
                 .map(PassengerWalletDto::new)
-                .orElseThrow(() -> new NoSuchElementException("Wallet not found"));
+                .orElse(null);
         passengerDto.setWallet(wallet);
 
         return passengerDto;
@@ -201,7 +211,7 @@ public class PassengerService {
                 Utils.deleteImage(user.getPhotoUrl());
 
                 // Save the new photo
-                String photoPath = Utils.saveImage(request.getPhoto(), UUID.randomUUID().toString() + ".png");
+                String photoPath = Utils.saveImage(request.getPhoto(), UUID.randomUUID().toString() + ".jpg");
                 user.setPhotoUrl(photoPath);
             } catch (IOException e) {
                 throw new RuntimeException("Failed to save passenger photo", e);
@@ -218,6 +228,12 @@ public class PassengerService {
 
         // Create response DTO with related data
         PassengerDto passengerDto = new PassengerDto(updatedUser);
+
+        // Set photo as public URL if exists
+        if (updatedUser.getPhotoUrl() != null && !updatedUser.getPhotoUrl().isBlank()) {
+            String filename = Paths.get(updatedUser.getPhotoUrl()).getFileName().toString();
+            passengerDto.setPhoto(baseUrl + "/" + filename);
+        }
 
         // Fetch and set bank accounts
         List<DBankAccountDto> bankAccounts = bankAccountRepository.findByUserId(updatedUser.getId()).stream()

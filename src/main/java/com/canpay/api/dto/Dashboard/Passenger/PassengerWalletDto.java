@@ -11,7 +11,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class PassengerWalletDto {
-    private UUID id; // corresponds to entity id
+    private UUID id;
     private String number;
     private BigDecimal balance;
     private LocalDateTime createdAt;

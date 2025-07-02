@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
-
 @Service
 public class UserServiceImpl implements UserSevice {
 
@@ -28,7 +27,7 @@ public class UserServiceImpl implements UserSevice {
     public User registerWithEmail(String email, String roleString) {
         User user = new User();
         user.setEmail(email);
-        
+
         // Convert string to enum
         UserRole role;
         try {
@@ -36,12 +35,13 @@ public class UserServiceImpl implements UserSevice {
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Invalid user role: " + roleString);
         }
-        
+
         user.setRole(role);
         return userRepository.save(user);
     }
 
-    public User updateProfileWithBankAccount(String email, String name, String nic, String accName, String bank, long accNo) {
+    public User updateProfileWithBankAccount(String email, String name, String nic, String accName, String bank,
+            long accNo) {
         Optional<User> userOpt = userRepository.findByEmail(email);
         if (userOpt.isEmpty()) {
             throw new RuntimeException("User not found");
@@ -80,13 +80,14 @@ public class UserServiceImpl implements UserSevice {
 
         user.setName(name);
         user.setNic(nic);
-     //   user.setProfileImage(profileImageBase64);
+        // user.setProfileImage(profileImageBase64);
 
         return userRepository.save(user);
     }
 
     @Override
-    public User updateOwnerProfile(String email, String name, String nic, String profileImageBase64, String accountHolderName, String bankName, long accountNumber) {
+    public User updateOwnerProfile(String email, String name, String nic, String profileImageBase64,
+            String accountHolderName, String bankName, long accountNumber) {
         Optional<User> userOpt = userRepository.findByEmail(email);
         if (userOpt.isEmpty()) {
             throw new RuntimeException("User not found with email: " + email);
@@ -99,7 +100,7 @@ public class UserServiceImpl implements UserSevice {
 
         user.setName(name);
         user.setNic(nic);
-       // user.setProfileImage(profileImageBase64);
+        // user.setProfileImage(profileImageBase64);
 
         BankAccount account = new BankAccount();
         account.setUser(user);
@@ -112,6 +113,5 @@ public class UserServiceImpl implements UserSevice {
         return userRepository.save(user);
 
     }
-
 
 }
