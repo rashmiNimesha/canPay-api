@@ -16,7 +16,7 @@ public class Utils {
     /**
      * Generates a unique 16-digit wallet number.
      */
-    public String generateUniqueWalletNumber(DPassengerWalletRepository passengerWalletRepository) {
+    public static String generateUniqueWalletNumber(DPassengerWalletRepository passengerWalletRepository) {
         String walletNumber;
         SecureRandom random = new SecureRandom();
         int attempts = 0;
@@ -36,7 +36,7 @@ public class Utils {
      * Saves an image from a data URL to the system storage and returns the file
      * path.
      */
-    public String saveImage(String dataUrl, String fileName) throws IOException {
+    public static String saveImage(String dataUrl, String fileName) throws IOException {
         if (dataUrl == null || dataUrl.isBlank()) {
             return null;
         }
@@ -71,7 +71,7 @@ public class Utils {
     /**
      * Deletes an image from the system storage.
      */
-    public void deleteImage(String filePath) {
+    public static void deleteImage(String filePath) {
         if (filePath != null && !filePath.isBlank()) {
             File imageFile = new File(filePath);
             if (imageFile.exists()) {
@@ -79,4 +79,5 @@ public class Utils {
             }
         }
     }
+
 }

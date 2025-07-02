@@ -1,22 +1,27 @@
 package com.canpay.api.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
-@EntityListeners(AuditingEntityListener.class)
 @Table(name = "transactions")
-public class Transaction {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+@Getter
+@Setter
+@NoArgsConstructor
+public class Transaction extends BaseEntity {
 
     @Column(nullable = false, precision = 19, scale = 2)
+    @NotNull
+    @DecimalMin(value = "0.01")
     private BigDecimal amount;
 
     @CreatedDate
@@ -25,14 +30,22 @@ public class Transaction {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @NotNull
     private TransactionType type;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @NotNull
     private TransactionStatus status = TransactionStatus.PENDING;
 
+    @Column(length = 500)
+    @Size(max = 500)
+    private String note;
+
+    // Relationships
     @ManyToOne
     @JoinColumn(name = "passenger_id", nullable = false)
+    @NotNull
     private User passenger;
 
     @ManyToOne
@@ -59,9 +72,7 @@ public class Transaction {
     @JoinColumn(name = "to_wallet_id")
     private BusWallet toWallet;
 
-    @Column(length = 500)
-    private String note;
-
+    // Enums
     public enum TransactionType {
         PAYMENT, RECHARGE, WITHDRAWAL, REFUND
     }
@@ -70,8 +81,7 @@ public class Transaction {
         PENDING, APPROVED, REJECTED, BLOCKED, ACTIVE, INACTIVE
     }
 
-    public Transaction() {}
-
+    // Business Constructor
     public Transaction(BigDecimal amount, TransactionType type, User passenger) {
         this.amount = amount;
         this.type = type;
@@ -79,13 +89,13 @@ public class Transaction {
         this.happenedAt = LocalDateTime.now();
     }
 
-    // Getters and setters
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
+    public Transaction(BigDecimal amount, TransactionType type, User passenger, Bus bus, User operator) {
+        this.amount = amount;
+        this.type = type;
+        this.passenger = passenger;
+        this.bus = bus;
+        this.operator = operator;
+        this.happenedAt = LocalDateTime.now();
     }
 
     public BigDecimal getAmount() {

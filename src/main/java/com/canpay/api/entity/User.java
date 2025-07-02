@@ -16,7 +16,6 @@ import java.util.List;
 @Table(name = "users")
 @Getter
 @Setter
-@NoArgsConstructor
 public class User extends BaseEntity {
     @Column(nullable = true)
     @Size(max = 100)
@@ -72,6 +71,16 @@ public class User extends BaseEntity {
         PENDING, ACTIVE, INACTIVE, BLOCKED
     }
 
+    public User() {
+    }
+
+    public User(String name, String nic, String email, UserRole role) {
+        this.name = name;
+        this.nic = nic;
+        this.email = email;
+        this.role = role;
+    }
+
     // Business Constructor
     public User(String name, String nic, String email, UserRole role, UserStatus status) {
         this.name = name;
@@ -79,5 +88,85 @@ public class User extends BaseEntity {
         this.email = email;
         this.role = role;
         this.status = status;
+    }
+
+    public @Size(max = 100) String getName() {
+        return name;
+    }
+
+    public void setName(@Size(max = 100) String name) {
+        this.name = name;
+    }
+
+    public @Size(max = 20) String getNic() {
+        return nic;
+    }
+
+    public void setNic(@Size(max = 20) String nic) {
+        this.nic = nic;
+    }
+
+    public @NotBlank @Email @Size(max = 255) String getEmail() {
+        return email;
+    }
+
+    public void setEmail(@NotBlank @Email @Size(max = 255) String email) {
+        this.email = email;
+    }
+
+    public @Size(max = 500) String getPhotoUrl() {
+        return photoUrl;
+    }
+
+    public void setPhotoUrl(@Size(max = 500) String photoUrl) {
+        this.photoUrl = photoUrl;
+    }
+
+    public @NotNull UserRole getRole() {
+        return role;
+    }
+
+    public void setRole(@NotNull UserRole role) {
+        this.role = role;
+    }
+
+    public @NotNull UserStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(@NotNull UserStatus status) {
+        this.status = status;
+    }
+
+    public List<BankAccount> getBankAccounts() {
+        return bankAccounts;
+    }
+
+    public void setBankAccounts(List<BankAccount> bankAccounts) {
+        this.bankAccounts = bankAccounts;
+    }
+
+    public List<Bus> getOwnedBuses() {
+        return ownedBuses;
+    }
+
+    public void setOwnedBuses(List<Bus> ownedBuses) {
+        this.ownedBuses = ownedBuses;
+    }
+
+    public List<OperatorAssignment> getOperatorAssignments() {
+        return operatorAssignments;
+    }
+
+    public void setOperatorAssignments(List<OperatorAssignment> operatorAssignments) {
+        this.operatorAssignments = operatorAssignments;
+    }
+
+    public PassengerWallet getPassengerWallet() {
+        return passengerWallet;
+    }
+
+    public void setPassengerWallet(PassengerWallet passengerWallet) {
+        this.passengerWallet = passengerWallet;
     }
 }

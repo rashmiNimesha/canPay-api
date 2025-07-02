@@ -3,50 +3,52 @@ package com.canpay.api.entity;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 @Entity
 @Table(name = "buses")
-public class Bus {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
-
-    @ManyToOne
-    @JoinColumn(name = "owner_id", nullable = false)
-    @JsonBackReference
-    private User owner;
+@Getter
+@Setter
+@NoArgsConstructor
+public class Bus extends BaseEntity {
 
     @Column(name = "bus_number", nullable = false)
+    @NotBlank
+    @Size(max = 20)
     private String busNumber;
 
     @Enumerated(EnumType.STRING)
     private BusType type;
 
     @Column(name = "route_from")
+    @Size(max = 100)
     private String routeFrom;
 
     @Column(name = "route_to")
+    @Size(max = 100)
     private String routeTo;
 
+    @Size(max = 50)
     private String province;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @NotNull
     private BusStatus status = BusStatus.PENDING;
 
-    @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @LastModifiedDate
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    // Relationships
+    @ManyToOne
+    @JoinColumn(name = "owner_id", nullable = false)
+    @JsonBackReference
+    @NotNull
+    private User owner;
 
     @OneToMany(mappedBy = "bus", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
@@ -56,33 +58,27 @@ public class Bus {
     @JsonManagedReference
     private BusWallet busWallet;
 
+    // Enums
     public enum BusType {
-        NORMAL, SEMI_LUXURY, LUXURY, AC
+        NORMAL, HIGHWAY, INTERCITY
     }
 
     public enum BusStatus {
-        PENDING, APPROVED, REJECTED, BLOCKED, ACTIVE, INACTIVE
+        PENDING, ACTIVE, INACTIVE, REJECTED, BLOCKED
     }
 
-    public Bus() {}
-
-    public Bus(User owner, String busNumber, BusType type, String routeFrom, String routeTo, String province) {
+    // Business Constructor
+    public Bus(User owner, String busNumber, BusType type, String routeFrom, String routeTo, String province,
+               BusStatus status) {
         this.owner = owner;
         this.busNumber = busNumber;
         this.type = type;
         this.routeFrom = routeFrom;
         this.routeTo = routeTo;
         this.province = province;
+        this.status = status;
     }
 
-    // Getters and setters
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
 
     public User getOwner() {
         return owner;
@@ -140,21 +136,6 @@ public class Bus {
         this.status = status;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
 
     public List<OperatorAssignment> getOperatorAssignments() {
         return operatorAssignments;

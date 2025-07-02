@@ -54,4 +54,61 @@ public class DBankAccountDto {
         this.accountName = accountName;
         this.isDefault = isDefault;
     }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public @NotBlank(message = "Bank name is required") String getBankName() {
+        return bankName;
+    }
+
+    public void setBankName(@NotBlank(message = "Bank name is required") String bankName) {
+        this.bankName = bankName;
+    }
+
+    public @NotBlank(message = "Account number is required") String getAccountNumber() {
+        return accountNumber;
+    }
+
+    public void setAccountNumber(@NotBlank(message = "Account number is required") String accountNumber) {
+        this.accountNumber = accountNumber;
+    }
+
+    public @NotBlank(message = "Account name is required") String getAccountName() {
+        return accountName;
+    }
+
+    public void setAccountName(@NotBlank(message = "Account name is required") String accountName) {
+        this.accountName = accountName;
+    }
+
+    @NotNull(message = "Default status is required")
+    public boolean isDefault() {
+        return isDefault;
+    }
+
+    public void setDefault(@NotNull(message = "Default status is required") boolean aDefault) {
+        isDefault = aDefault;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 }
