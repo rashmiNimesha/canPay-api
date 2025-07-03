@@ -1,5 +1,5 @@
 # Stage 1: Build the application using Maven and OpenJDK 21
-FROM maven:eclipse-temurin:17-jdk AS build
+FROM maven:3.9.6-eclipse-temurin-21-alpine AS build
 
 WORKDIR /build
 
@@ -11,7 +11,7 @@ COPY . .
 RUN mvn clean package -DskipTests 
 
 # Stage 2: Create a lightweight image to run the application
-FROM eclipse-temurin:17-jdk
+FROM maven:3.9.6-eclipse-temurin-21-alpine
 
 WORKDIR /canpay
 
