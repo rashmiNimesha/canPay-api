@@ -2,24 +2,24 @@
 FROM maven:3.9.6-eclipse-temurin-21-alpine AS build
 
 WORKDIR /build
+COPY . .
 
-# Copy all project files to the build context
+# Build the project and skip tests
+RUN mvn clean package -DskipTests
 
-COPY . . 
-
-# Build the project, skipping tests
-RUN mvn clean package -DskipTests 
-
-# Stage 2: Create a lightweight image to run the application
-FROM maven:3.9.6-eclipse-temurin-21-alpine
+# Stage 2: Lightweight runtime image
+FROM eclipse-temurin:21-jdk-alpine
 
 WORKDIR /canpay
 
-# Copy the built JAR from the build stage
+# Copy the built JAR from the builder stage
 COPY --from=build /build/target/*.jar canpay.jar
 
-# Expose port for the application
+# Set low-memory JVM options
+ENV JAVA_OPTS="-Xms256m -Xmx512m -XX:+UseSerialGC"
+
+# Expose the Spring Boot server port
 EXPOSE 8081
 
-# Run the application with specified JVM options
-ENTRYPOINT ["java", "-Xms256m", "-Xmx768m", "-jar", "canpay.jar"] 
+# Run the application
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar canpay.jar"]
