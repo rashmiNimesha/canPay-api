@@ -1,14 +1,25 @@
-# Use OpenJDK 17 (Temurin is stable and efficient)
+# Stage 1: Build the application using Maven and OpenJDK 21
+FROM maven:eclipse-temurin:17-jdk AS build
+
+WORKDIR /build
+
+# Copy all project files to the build context
+
+COPY . . 
+
+# Build the project, skipping tests
+RUN mvn clean package -DskipTests 
+
+# Stage 2: Create a lightweight image to run the application
 FROM eclipse-temurin:17-jdk
 
-# Set working directory
 WORKDIR /canpay
 
-# Copy built JAR (assumes build step already ran)
-COPY target/*.jar canpay.jar
+# Copy the built JAR from the build stage
+COPY --from=build /build/target/*.jar canpay.jar
 
-# Tune JVM memory: 512M max heap, 256M min
-ENV JAVA_OPTS="-Xmx512m -Xms256m"
+# Expose port for the application
+EXPOSE 8081
 
-# Run Spring Boot JAR
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+# Run the application with specified JVM options
+ENTRYPOINT ["java", "-Xms256m", "-Xmx768m", "-jar", "canpay.jar"] 
