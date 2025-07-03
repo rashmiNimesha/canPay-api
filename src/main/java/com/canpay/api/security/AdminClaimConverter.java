@@ -5,12 +5,13 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import java.util.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+// import org.slf4j.Logger;
+// import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
 
 public class AdminClaimConverter implements Converter<Jwt, Collection<GrantedAuthority>> {
-    private static final Logger log = LoggerFactory.getLogger(AdminClaimConverter.class);
+    // private static final Logger log =
+    // LoggerFactory.getLogger(AdminClaimConverter.class);
 
     /**
      * Converts a Jwt object into a collection of GrantedAuthority objects.

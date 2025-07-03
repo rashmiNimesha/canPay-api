@@ -109,15 +109,25 @@ public class ApplicationSecurityConfig {
         public CorsConfigurationSource corsConfigurationSource() {
                 CorsConfiguration configuration = new CorsConfiguration();
 
-                // Allowed origin list
-                configuration.setAllowedOriginPatterns(
+                // Use setAllowedOrigins instead of setAllowedOriginPatterns for exact matches
+                configuration.setAllowedOrigins(
                                 List.of("http://localhost:3000", "https://dash.canpay.sehanw.com"));
 
                 // Include all necessary HTTP methods
                 configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
 
-                // Allow only necessary headers
-                configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Origin"));
+                // Add more headers that might be needed
+                configuration.setAllowedHeaders(List.of(
+                                "Authorization",
+                                "Content-Type",
+                                "Accept",
+                                "Origin",
+                                "X-Requested-With",
+                                "Access-Control-Request-Method",
+                                "Access-Control-Request-Headers"));
+
+                // Expose headers that the client might need
+                configuration.setExposedHeaders(List.of("Authorization"));
 
                 // Required for cookies/auth headers
                 configuration.setAllowCredentials(true);
