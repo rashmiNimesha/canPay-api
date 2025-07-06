@@ -1,4 +1,4 @@
-package com.canpay.api.dto.Dashboard.Passenger;
+package com.canpay.api.dto.Dashboard.User;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -9,7 +9,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class PassengerTransactionDto {
+public class UserTransactionDto {
     private UUID id;
     private String transactionNumber;
     private BigDecimal amount;
@@ -22,11 +22,11 @@ public class PassengerTransactionDto {
     private LocalDateTime updatedAt;
 
     // No-argument constructor
-    public PassengerTransactionDto() {
+    public UserTransactionDto() {
     }
 
     // Constructor with basic fields
-    public PassengerTransactionDto(UUID id, String transactionNumber, BigDecimal amount, String type, String status) {
+    public UserTransactionDto(UUID id, String transactionNumber, BigDecimal amount, String type, String status) {
         this.id = id;
         this.transactionNumber = transactionNumber;
         this.amount = amount;

@@ -1,11 +1,11 @@
 package com.canpay.api.controller.canpayadmin;
 
-import com.canpay.api.dto.Dashboard.DBankAccountDto;
 import com.canpay.api.dto.Dashboard.User.UserDto;
 import com.canpay.api.dto.Dashboard.User.UserListDto;
 import com.canpay.api.dto.Dashboard.User.UserListWalletDto;
 import com.canpay.api.dto.Dashboard.User.UserRegistrationRequestDto;
 import com.canpay.api.dto.Dashboard.User.UserWalletDto;
+import com.canpay.api.dto.Dashboard.DBankAccountDto;
 import com.canpay.api.entity.ResponseEntityBuilder;
 import com.canpay.api.entity.User;
 import com.canpay.api.entity.User.UserRole;
@@ -35,26 +35,26 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * REST controller for managing passengers in the CanPay admin dashboard.
+ * REST controller for managing owners in the CanPay admin dashboard.
  */
 @RestController
 @RequestMapping("/api/v1/canpay-admin")
-public class PassengerController {
-    private static final Logger logger = LoggerFactory.getLogger(PassengerController.class);
+public class OwnerController {
+    private static final Logger logger = LoggerFactory.getLogger(OwnerController.class);
 
     private final DUserService userService;
     private final DWalletService walletService;
     private final DBankAccountService bankAccountService;
 
     /**
-     * Constructor for PassengerController.
+     * Constructor for UserController.
      * 
      * @param userService        the service handling user operations
      * @param walletService      the service handling wallet operations
      * @param bankAccountService the service handling bank account operations
      */
     @Autowired
-    public PassengerController(DUserService userService, DWalletService walletService,
+    public OwnerController(DUserService userService, DWalletService walletService,
             DBankAccountService bankAccountService) {
         this.userService = userService;
         this.walletService = walletService;
@@ -62,50 +62,50 @@ public class PassengerController {
     }
 
     /**
-     * Adds a new passenger.
+     * Adds a new owner.
      * 
-     * @param request the passenger registration request data
+     * @param request the owner registration request data
      * @return response entity with operation result
      */
-    @PostMapping("/passengers")
-    public ResponseEntity<?> addPassenger(@RequestBody @Valid UserRegistrationRequestDto request) {
+    @PostMapping("/owners")
+    public ResponseEntity<?> addUser(@RequestBody @Valid UserRegistrationRequestDto request) {
         logger.info("Request received: {}", request);
 
-        // Create the passenger user
-        User passenger = userService.createUser(
+        // Create the owner user
+        User owner = userService.createUser(
                 request.getName(),
                 request.getNic(),
                 request.getEmail(),
                 request.getPhoto(),
-                UserRole.PASSENGER);
+                UserRole.OWNER);
 
-        // Create and associate a wallet for the passenger
-        Wallet passengerWallet = walletService.createWallet(passenger, WalletType.PASSENGER);
-        passenger.setWallet(passengerWallet);
+        // Create and associate a wallet for the owner
+        Wallet ownerWallet = walletService.createWallet(owner, WalletType.OWNER);
+        owner.setWallet(ownerWallet);
 
         // Create bank accounts if provided
         System.out.println("Bank accounts provided: " + request.getBankAccounts().size());
         if (request.getBankAccounts() != null && !request.getBankAccounts().isEmpty()) {
-            bankAccountService.createBankAccounts(passenger, request.getBankAccounts());
+            bankAccountService.createBankAccounts(owner, request.getBankAccounts());
         }
 
         return new ResponseEntityBuilder.Builder<Map<String, Object>>()
-                .resultMessage("Passenger added successfully")
+                .resultMessage("User added successfully")
                 .httpStatus(HttpStatus.CREATED)
-                .body(Map.of("passengerId", passenger.getId()))
+                .body(Map.of("ownerId", owner.getId()))
                 .buildWrapped();
 
     }
 
     /**
-     * Retrieves all passengers.
+     * Retrieves all owners.
      * 
-     * @return response entity with list of all passengers
+     * @return response entity with list of all owners
      */
-    @GetMapping("/passengers")
-    public ResponseEntity<?> getAllPassengers() {
-        List<User> passengers = userService.getUsersByRole(UserRole.PASSENGER);
-        List<UserListDto> passengerDtos = passengers.stream()
+    @GetMapping("/owners")
+    public ResponseEntity<?> getAllUsers() {
+        List<User> owners = userService.getUsersByRole(UserRole.OWNER);
+        List<UserListDto> ownerDtos = owners.stream()
                 .map(user -> {
                     UserListDto dto = new UserListDto(user);
                     // Set photo as public URL if exists
@@ -115,7 +115,7 @@ public class PassengerController {
                     }
                     // Get wallet information
                     UserListWalletDto walletDto = walletService.getWalletByUserId(user.getId())
-                            .filter(wallet -> wallet.getType() == WalletType.PASSENGER)
+                            .filter(wallet -> wallet.getType() == WalletType.OWNER)
                             .map(UserListWalletDto::new)
                             .orElse(null);
                     dto.setWallet(walletDto);
@@ -124,70 +124,70 @@ public class PassengerController {
                 .collect(Collectors.toList());
 
         return new ResponseEntityBuilder.Builder<List<UserListDto>>()
-                .resultMessage("List of all passengers retrieved successfully")
+                .resultMessage("List of all owners retrieved successfully")
                 .httpStatus(HttpStatus.OK)
-                .body(passengerDtos)
+                .body(ownerDtos)
                 .buildWrapped();
     }
 
     /**
-     * Retrieves a passenger by their ID.
+     * Retrieves an owner by their ID.
      * 
-     * @param id the UUID of the passenger
-     * @return response entity with passenger details
+     * @param id the UUID of the owner
+     * @return response entity with owner details
      */
-    @GetMapping("/passengers/{id}")
-    public ResponseEntity<?> getPassengerById(@PathVariable UUID id) {
+    @GetMapping("/owners/{id}")
+    public ResponseEntity<?> getUserById(@PathVariable UUID id) {
         User user = userService.getUserById(id);
-        userService.validateUserRole(id, UserRole.PASSENGER);
+        userService.validateUserRole(id, UserRole.OWNER);
 
-        // Create passenger DTO from entity
-        UserDto passengerDto = new UserDto(user);
+        // Create owner DTO from entity
+        UserDto ownerDto = new UserDto(user);
 
         // Set photo as public URL if exists
         String publicPhotoUrl = userService.getPublicPhotoUrl(user.getPhotoUrl());
         if (publicPhotoUrl != null) {
-            passengerDto.setPhoto(publicPhotoUrl);
+            ownerDto.setPhoto(publicPhotoUrl);
         }
 
         // Fetch and set bank accounts
         List<DBankAccountDto> bankAccounts = bankAccountService.getBankAccountsByUserId(user.getId());
-        passengerDto.setBankAccounts(bankAccounts);
+        ownerDto.setBankAccounts(bankAccounts);
 
         // Fetch and set wallet
         UserWalletDto wallet = walletService.getWalletByUserId(user.getId())
-                .filter(w -> w.getType() == WalletType.PASSENGER)
+                .filter(w -> w.getType() == WalletType.OWNER)
                 .map(UserWalletDto::new)
                 .orElse(null);
-        passengerDto.setWallet(wallet);
+        ownerDto.setWallet(wallet);
 
         return new ResponseEntityBuilder.Builder<Map<String, Object>>()
-                .resultMessage("Passenger details retrieved successfully")
+                .resultMessage("User details retrieved successfully")
                 .httpStatus(HttpStatus.OK)
-                .body(Map.of("passenger", passengerDto))
+                .body(Map.of("owner", ownerDto))
                 .buildWrapped();
     }
 
     /**
-     * Edits an existing passenger.
+     * Edits an existing owner.
      * 
-     * @param id      the UUID of the passenger to edit
-     * @param request the updated passenger data
+     * @param id      the UUID of the owner to edit
+     * @param request the updated owner data
      * @return response entity with operation result
      */
-    @PutMapping("/passengers/{id}")
-    public ResponseEntity<?> editPassenger(@PathVariable UUID id,
+    @PutMapping("/owners/{id}")
+    public ResponseEntity<?> editUser(@PathVariable UUID id,
             @RequestBody @Valid UserRegistrationRequestDto request) {
         logger.info("Request received: {}", request);
 
-        userService.validateUserRole(id, UserRole.PASSENGER);
+        userService.validateUserRole(id, UserRole.OWNER);
 
         // Update user fields
         User user = userService.updateUser(id, request.getName(), request.getNic(), request.getEmail(),
                 request.getPhoto());
 
-        // Ensure passenger has a wallet
-        walletService.ensureUserWallet(user, WalletType.PASSENGER);
+        // Ensure owner has a wallet
+        walletService.ensureUserWallet(user, WalletType.OWNER);
 
         // Replace bank accounts if provided
         if (request.getBankAccounts() != null) {
@@ -195,77 +195,77 @@ public class PassengerController {
         }
 
         // Create response DTO with related data
-        UserDto passengerDto = new UserDto(user);
+        UserDto ownerDto = new UserDto(user);
 
         // Set photo as public URL if exists
         String publicPhotoUrl = userService.getPublicPhotoUrl(user.getPhotoUrl());
         if (publicPhotoUrl != null) {
-            passengerDto.setPhoto(publicPhotoUrl);
+            ownerDto.setPhoto(publicPhotoUrl);
         }
 
         // Fetch and set bank accounts
         List<DBankAccountDto> bankAccounts = bankAccountService.getBankAccountsByUserId(user.getId());
-        passengerDto.setBankAccounts(bankAccounts);
+        ownerDto.setBankAccounts(bankAccounts);
 
         // Set wallet
         UserWalletDto wallet = walletService.getWalletByUserId(user.getId())
-                .filter(w -> w.getType() == WalletType.PASSENGER)
+                .filter(w -> w.getType() == WalletType.OWNER)
                 .map(UserWalletDto::new)
                 .orElse(null);
-        passengerDto.setWallet(wallet);
+        ownerDto.setWallet(wallet);
 
         return new ResponseEntityBuilder.Builder<Map<String, Object>>()
-                .resultMessage("Passenger updated successfully")
+                .resultMessage("User updated successfully")
                 .httpStatus(HttpStatus.OK)
-                .body(Map.of("passenger", passengerDto))
+                .body(Map.of("owner", ownerDto))
                 .buildWrapped();
     }
 
     /**
-     * Changes the status of a passenger.
+     * Changes the status of an owner.
      * 
-     * @param id        the UUID of the passenger
+     * @param id        the UUID of the owner
      * @param newStatus the new status to set
      * @return response entity with operation result
      */
-    @PutMapping("/passengers/{id}/status")
-    public ResponseEntity<?> changePassengerStatus(@PathVariable UUID id, @RequestBody String newStatus) {
-        userService.changeUserStatusByRole(id, newStatus, UserRole.PASSENGER);
+    @PutMapping("/owners/{id}/status")
+    public ResponseEntity<?> changeUserStatus(@PathVariable UUID id, @RequestBody String newStatus) {
+        userService.changeUserStatusByRole(id, newStatus, UserRole.OWNER);
         return new ResponseEntityBuilder.Builder<Map<String, Object>>()
-                .resultMessage("Passenger status updated successfully")
+                .resultMessage("User status updated successfully")
                 .httpStatus(HttpStatus.OK)
                 .body(Map.of("updated", true))
                 .buildWrapped();
     }
 
     /**
-     * Deletes a passenger by their ID.
+     * Deletes an owner by their ID.
      * 
-     * @param id the UUID of the passenger to delete
+     * @param id the UUID of the owner to delete
      * @return response entity with operation result
      */
-    @DeleteMapping("/passengers/{id}")
-    public ResponseEntity<?> deletePassenger(@PathVariable UUID id) {
-        userService.deleteUserByRole(id, UserRole.PASSENGER);
+    @DeleteMapping("/owners/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable UUID id) {
+        userService.deleteUserByRole(id, UserRole.OWNER);
         return new ResponseEntityBuilder.Builder<Map<String, Object>>()
-                .resultMessage("Passenger deleted successfully")
+                .resultMessage("User deleted successfully")
                 .httpStatus(HttpStatus.OK)
                 .body(Map.of("deleted", true))
                 .buildWrapped();
     }
 
     /**
-     * Retrieves the total count of passengers.
+     * Retrieves the total count of owners.
      * 
-     * @return response entity with passenger count
+     * @return response entity with owner count
      */
-    @GetMapping("/passengers/count")
-    public ResponseEntity<?> getPassengerCount() {
-        long count = userService.getUserCountByRole(UserRole.PASSENGER);
+    @GetMapping("/owners/count")
+    public ResponseEntity<?> getUserCount() {
+        long count = userService.getUserCountByRole(UserRole.OWNER);
         return new ResponseEntityBuilder.Builder<Map<String, Object>>()
-                .resultMessage("Total number of passengers retrieved successfully")
+                .resultMessage("Total number of owners retrieved successfully")
                 .httpStatus(HttpStatus.OK)
-                .body(Map.of("passengerCount", count))
+                .body(Map.of("ownerCount", count))
                 .buildWrapped();
     }
 }

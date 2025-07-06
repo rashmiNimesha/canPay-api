@@ -7,60 +7,71 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.List;
 
+/**
+ * Represents a user entity in the system.
+ */
 @Entity
 @Table(name = "users")
 @Getter
 @Setter
 public class User extends BaseEntity {
+    /** Name of the user. */
     @Column(nullable = true)
     @Size(max = 100)
     private String name;
 
+    /** National identity card number. */
     @Column(nullable = true)
     @Size(max = 20)
     private String nic;
 
+    /** Email address of the user. */
     @Column(nullable = false)
     @NotBlank
     @Email
     @Size(max = 255)
     private String email;
 
+    /** URL to the user's photo. */
     @Column(name = "photo_url")
     @Size(max = 500)
     private String photoUrl;
 
+    /** Role of the user (OWNER, OPERATOR, PASSENGER). */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @NotNull
     private UserRole role;
 
+    /** Status of the user. */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @NotNull
     private UserStatus status = UserStatus.ACTIVE;
 
-    // Relationships
+    /** List of bank accounts owned by the user. */
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<BankAccount> bankAccounts;
 
+    /** List of buses owned by the user. */
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<Bus> ownedBuses;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    /** List of operator assignments for the operator. */
+    @OneToMany(mappedBy = "operator", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<OperatorAssignment> operatorAssignments;
 
-    @OneToOne(mappedBy = "passenger", cascade = CascadeType.ALL)
+    /** Wallet associated with the user. */
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
-    private PassengerWallet passengerWallet;
+    private Wallet wallet;
 
     // Enums
     public enum UserRole {
@@ -162,11 +173,12 @@ public class User extends BaseEntity {
         this.operatorAssignments = operatorAssignments;
     }
 
-    public PassengerWallet getPassengerWallet() {
-        return passengerWallet;
+    public Wallet getWallet() {
+        return wallet;
     }
 
-    public void setPassengerWallet(PassengerWallet passengerWallet) {
-        this.passengerWallet = passengerWallet;
+    public void setWallet(Wallet wallet) {
+        this.wallet = wallet;
     }
+
 }

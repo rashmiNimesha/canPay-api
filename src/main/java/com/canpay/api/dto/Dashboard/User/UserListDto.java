@@ -1,4 +1,4 @@
-package com.canpay.api.dto.Dashboard.Passenger;
+package com.canpay.api.dto.Dashboard.User;
 
 import java.util.UUID;
 
@@ -10,21 +10,21 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class PassengerListDto {
+public class UserListDto {
     private UUID id;
     private String name;
     private String email;
     private String nic;
     private String photo;
     private UserStatus status;
-    private PassengerListWalletDto wallet;
+    private UserListWalletDto wallet;
 
     // No-argument constructor
-    public PassengerListDto() {
+    public UserListDto() {
     }
 
     // Constructor from User entity
-    public PassengerListDto(User user) {
+    public UserListDto(User user) {
         this.id = user.getId();
         this.name = user.getName();
         this.email = user.getEmail();
@@ -33,9 +33,9 @@ public class PassengerListDto {
         this.status = user.getStatus();
     }
 
-    public void setWallet(PassengerListWalletDto walletDto) {
+    public void setWallet(UserListWalletDto walletDto) {
         if (walletDto != null) {
-            this.wallet = new PassengerListWalletDto();
+            this.wallet = new UserListWalletDto();
             this.wallet.setNumber(walletDto.getNumber());
             this.wallet.setBalance(walletDto.getBalance());
         } else {
@@ -91,7 +91,7 @@ public class PassengerListDto {
         this.status = status;
     }
 
-    public PassengerListWalletDto getWallet() {
+    public UserListWalletDto getWallet() {
         return wallet;
     }
 }

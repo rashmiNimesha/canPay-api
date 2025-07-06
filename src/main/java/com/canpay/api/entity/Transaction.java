@@ -12,74 +12,83 @@ import org.springframework.data.annotation.CreatedDate;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * Represents a transaction entity in the system.
+ */
 @Entity
 @Table(name = "transactions")
 @Getter
 @Setter
 @NoArgsConstructor
 public class Transaction extends BaseEntity {
-
+    /** Transaction amount. */
     @Column(nullable = false, precision = 19, scale = 2)
     @NotNull
     @DecimalMin(value = "0.01")
     private BigDecimal amount;
 
+    /** Timestamp when the transaction happened. */
     @CreatedDate
     @Column(name = "happened_at", nullable = false)
     private LocalDateTime happenedAt;
 
+    /** Type of the transaction. */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @NotNull
     private TransactionType type;
 
+    /** Status of the transaction. */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @NotNull
     private TransactionStatus status = TransactionStatus.PENDING;
 
+    /** Optional note for the transaction. */
     @Column(length = 500)
     @Size(max = 500)
     private String note;
 
-    // Relationships
+    /** Passenger involved in the transaction. */
     @ManyToOne
     @JoinColumn(name = "passenger_id", nullable = false)
     @NotNull
     private User passenger;
 
+    /** Bus involved in the transaction, if any. */
     @ManyToOne
     @JoinColumn(name = "bus_id")
     private Bus bus;
 
+    /** Operator involved in the transaction, if any. */
     @ManyToOne
     @JoinColumn(name = "operator_id")
     private User operator;
 
+    /** Owner involved in the transaction, if any. */
+    @ManyToOne
+    @JoinColumn(name = "owner_id")
+    private User owner;
+
+    /** Source bank account for the transaction, if any. */
     @ManyToOne
     @JoinColumn(name = "from_bank_account_id")
     private BankAccount fromBankAccount;
 
+    /** Destination bank account for the transaction, if any. */
     @ManyToOne
     @JoinColumn(name = "to_bank_account_id")
     private BankAccount toBankAccount;
 
+    /** Source wallet for the transaction, if any. */
     @ManyToOne
     @JoinColumn(name = "from_wallet_id")
-    private PassengerWallet fromWallet;
+    private Wallet fromWallet;
 
+    /** Destination wallet for the transaction, if any. */
     @ManyToOne
     @JoinColumn(name = "to_wallet_id")
-    private BusWallet toWallet;
-
-    // Enums
-    public enum TransactionType {
-        PAYMENT, RECHARGE, WITHDRAWAL, REFUND
-    }
-
-    public enum TransactionStatus {
-        PENDING, APPROVED, REJECTED, BLOCKED, ACTIVE, INACTIVE
-    }
+    private Wallet toWallet;
 
     // Business Constructor
     public Transaction(BigDecimal amount, TransactionType type, User passenger) {
@@ -130,6 +139,14 @@ public class Transaction extends BaseEntity {
         this.status = status;
     }
 
+    public String getNote() {
+        return note;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
+    }
+
     public User getPassenger() {
         return passenger;
     }
@@ -154,6 +171,14 @@ public class Transaction extends BaseEntity {
         this.operator = operator;
     }
 
+    public User getOwner() {
+        return owner;
+    }
+
+    public void setOwner(User owner) {
+        this.owner = owner;
+    }
+
     public BankAccount getFromBankAccount() {
         return fromBankAccount;
     }
@@ -170,27 +195,29 @@ public class Transaction extends BaseEntity {
         this.toBankAccount = toBankAccount;
     }
 
-    public PassengerWallet getFromWallet() {
+    public Wallet getFromWallet() {
         return fromWallet;
     }
 
-    public void setFromWallet(PassengerWallet fromWallet) {
+    public void setFromWallet(Wallet fromWallet) {
         this.fromWallet = fromWallet;
     }
 
-    public BusWallet getToWallet() {
+    public Wallet getToWallet() {
         return toWallet;
     }
 
-    public void setToWallet(BusWallet toWallet) {
+    public void setToWallet(Wallet toWallet) {
         this.toWallet = toWallet;
     }
 
-    public String getNote() {
-        return note;
+    // Enums
+    public enum TransactionType {
+        PAYMENT, RECHARGE, WITHDRAWAL, REFUND
     }
 
-    public void setNote(String note) {
-        this.note = note;
+    public enum TransactionStatus {
+        PENDING, APPROVED, REJECTED, BLOCKED, ACTIVE, INACTIVE
     }
+
 }
