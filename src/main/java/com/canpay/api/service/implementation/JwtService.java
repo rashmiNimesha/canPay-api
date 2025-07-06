@@ -46,7 +46,7 @@ public class JwtService {
                 .claim("nic", user.getNic())
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
-                .signWith(key, SignatureAlgorithm.HS256)
+                .signWith(key, SignatureAlgorithm.RS256)
                 .compact();
     }
 
