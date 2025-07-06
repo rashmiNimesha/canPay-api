@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.util.Date;
 
 @Service
 public class JwtUtil {
@@ -35,12 +36,30 @@ public class JwtUtil {
         return extractAllClaims(token).get("role", String.class);
     }
 
+//    public boolean isTokenValid(String token) {
+//        try {
+//            extractAllClaims(token);
+//            return true;
+//        } catch (Exception e) {
+//            return false;
+//        }
+//    }
+
     public boolean isTokenValid(String token) {
         try {
-            extractAllClaims(token);
+            Jwts.parser().setSigningKey(key).parseClaimsJws(token);
             return true;
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    public boolean isTokenExpired(String token) {
+        try {
+            Claims claims = Jwts.parser().setSigningKey(key).parseClaimsJws(token).getBody();
+            return claims.getExpiration().before(new Date());
+        } catch (Exception e) {
+            return true; // Treat invalid tokens as expired
         }
     }
 }

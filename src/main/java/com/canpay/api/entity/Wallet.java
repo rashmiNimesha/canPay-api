@@ -26,7 +26,6 @@ import lombok.Setter;
 @Table(name = "wallets")
 @Getter
 @Setter
-@NoArgsConstructor
 public class Wallet extends BaseEntity {
 
     /** Current balance of the wallet. */
@@ -59,11 +58,14 @@ public class Wallet extends BaseEntity {
     @JsonBackReference
     private Bus bus;
 
+
     // Enums
     public enum WalletType {
         OWNER, PASSENGER, BUS
     }
+    public Wallet() {
 
+    }
     // Business Constructors
     public Wallet(User user, WalletType type) {
         this.user = user;

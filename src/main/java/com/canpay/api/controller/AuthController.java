@@ -32,23 +32,6 @@ public class AuthController {
         this.jwtService = jwtService;
     }
 
-//    @PostMapping("/send-otp")
-//    public ResponseEntity<?> sendOtp(@RequestBody Map<String, String> request) {
-//        String email = request.get("email");
-//        if (email == null || email.isBlank()) {
-//            return new ResponseEntityBuilder.Builder<Void>()
-//                    .resultMessage("Email is required")
-//                    .httpStatus(HttpStatus.BAD_REQUEST)
-//                    .buildWrapped();
-//        }
-//
-//        otpService.sendOtp(email);
-//        return new ResponseEntityBuilder.Builder<Void>()
-//                .resultMessage("OTP sent successfully")
-//                .httpStatus(HttpStatus.OK)
-//                .buildWrapped();
-//    }
-
     @PostMapping("/send-otp")
     public ResponseEntity<?> sendOtp(@RequestBody Map<String, String> request) {
         logger.debug("Received send-otp request: {}", request);
@@ -384,6 +367,48 @@ public class AuthController {
                         "canRegisterNewRole", roleCount < 3 && !exists
                 ))
                 .buildWrapped();
+    }
+
+
+
+// validate token
+    // ===============================================
+
+
+    @GetMapping("/validate-token")
+    public ResponseEntity<?> validateToken(@RequestHeader(value = "Authorization") String authHeader) {
+        logger.debug("Received token validation request");
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            logger.warn("Authorization header missing or invalid");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Authorization header with Bearer token is required", "action", "otp"));
+        }
+
+        String token = authHeader.substring(7);
+        try {
+            if (!jwtService.isTokenValid(token)) {
+                logger.warn("Invalid or expired token");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("success", false, "message", "Invalid or expired token", "action", "otp"));
+            }
+
+            String email = jwtService.extractEmail(token);
+            String role = jwtService.extractRole(token);
+
+            logger.info("Token validated for email: {}, role: {}", email, role);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Token is valid",
+                    "action", "pin",
+                    "data", Map.of("email", email, "role", role)
+            ));
+
+        } catch (Exception e) {
+            logger.error("Error validating token: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Invalid or expired token", "action", "otp"));
+        }
     }
 
 }
