@@ -33,7 +33,10 @@ public class JwtService {
 
     public String generateToken(User user) {
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtConfig.getTokenExpirationAfterDays() * 24 * 60 * 60 * 1000L);
+      //  Date expiryDate = new Date(now.getTime() + jwtConfig.getTokenExpirationAfterDays() * 24 * 60 * 60 * 1000L);
+
+        Date expiryDate = new Date(now.getTime() + jwtConfig.getTokenExpirationAfterMinutes() * 60 * 1000L); // Minutes to milliseconds
+
 
         return Jwts.builder()
                 .setSubject(user.getEmail())
@@ -43,7 +46,7 @@ public class JwtService {
                 .claim("nic", user.getNic())
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
-                .signWith(key, SignatureAlgorithm.HS256)
+                .signWith(key, SignatureAlgorithm.RS256)
                 .compact();
     }
 
@@ -60,6 +63,16 @@ public class JwtService {
                 .setSigningKey(key)
                 .parseClaimsJws(token)
                 .getBody();
+    }
+
+    public boolean isTokenValid(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            return !claims.getExpiration().before(new Date());
+        } catch (Exception e) {
+            logger.error("Invalid token: {}", e.getMessage());
+            return false;
+        }
     }
 
 }

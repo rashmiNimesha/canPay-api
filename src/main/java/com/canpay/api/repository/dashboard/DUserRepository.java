@@ -47,8 +47,8 @@ public interface DUserRepository extends JpaRepository<User, Long> {
     // Find user by operator assignment ID
     Optional<User> findByOperatorAssignments_Id(UUID assignmentId);
 
-    // Find user by passenger wallet ID
-    Optional<User> findByPassengerWallet_Id(UUID walletId);
+    // Find user by wallet ID
+    Optional<User> findByWallet_Id(UUID walletId);
 
     // Count users by status
     long countByStatus(UserStatus status);

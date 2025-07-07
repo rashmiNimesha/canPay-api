@@ -1,4 +1,4 @@
-package com.canpay.api.dto.Dashboard.Passenger;
+package com.canpay.api.dto.Dashboard.User;
 
 import java.util.List;
 import java.util.UUID;
@@ -14,7 +14,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class PassengerDto {
+public class UserDto {
     private UUID id;
     private String name;
     private String email;
@@ -23,17 +23,17 @@ public class PassengerDto {
     private UserRole role;
     private UserStatus status;
     private List<DBankAccountDto> bankAccounts;
-    private PassengerWalletDto wallet;
-    private List<PassengerTransactionDto> transactions;
+    private UserWalletDto wallet;
+    private List<UserTransactionDto> transactions;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     // No-argument constructor
-    public PassengerDto() {
+    public UserDto() {
     }
 
     // Constructor from User entity
-    public PassengerDto(User user) {
+    public UserDto(User user) {
         this.id = user.getId();
         this.name = user.getName();
         this.email = user.getEmail();
@@ -46,7 +46,7 @@ public class PassengerDto {
     }
 
     // Constructor for partial initialization
-    public PassengerDto(String name, String email, String nic, UserRole role) {
+    public UserDto(String name, String email, String nic, UserRole role) {
         this.name = name;
         this.email = email;
         this.nic = nic;
@@ -117,19 +117,19 @@ public class PassengerDto {
         this.bankAccounts = bankAccounts;
     }
 
-    public PassengerWalletDto getWallet() {
+    public UserWalletDto getWallet() {
         return wallet;
     }
 
-    public void setWallet(PassengerWalletDto wallet) {
+    public void setWallet(UserWalletDto wallet) {
         this.wallet = wallet;
     }
 
-    public List<PassengerTransactionDto> getTransactions() {
+    public List<UserTransactionDto> getTransactions() {
         return transactions;
     }
 
-    public void setTransactions(List<PassengerTransactionDto> transactions) {
+    public void setTransactions(List<UserTransactionDto> transactions) {
         this.transactions = transactions;
     }
 

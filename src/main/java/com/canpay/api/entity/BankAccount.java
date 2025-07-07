@@ -10,38 +10,45 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * Represents a bank account entity in the system.
+ */
 @Entity
 @Table(name = "bank_accounts")
 @Getter
 @Setter
 @NoArgsConstructor
 public class BankAccount extends BaseEntity {
-
+    /** Name of the bank. */
     @Column(name = "bank_name", nullable = false)
     @NotBlank
     @Size(max = 100)
     private String bankName;
 
+    /** Account number of the bank account. */
     @Column(name = "account_number", nullable = false)
     @NotNull
     @Positive
     private Long accountNumber;
 
+    /** Name of the account holder. */
     @Column(name = "account_name", nullable = false)
     @NotBlank
     @Size(max = 100)
     private String accountName;
 
+    /** Indicates if this is the default bank account. */
     @Column(name = "is_default", nullable = false)
     private boolean isDefault;
 
-    // Relationships
+    /** The user who owns this bank account. */
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     @JsonBackReference
     @NotNull
     private User user;
 
+    // Getters and Setters
     public String getBankName() {
         return bankName;
     }
@@ -70,8 +77,8 @@ public class BankAccount extends BaseEntity {
         return isDefault;
     }
 
-    public void setDefault(boolean isDefault) {
-        this.isDefault = isDefault;
+    public void setDefault(boolean aDefault) {
+        isDefault = aDefault;
     }
 
     public User getUser() {

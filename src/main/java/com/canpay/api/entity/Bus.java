@@ -12,51 +12,61 @@ import lombok.Setter;
 
 import java.util.List;
 
+/**
+ * Represents a bus entity in the system.
+ */
 @Entity
 @Table(name = "buses")
 @Getter
 @Setter
 @NoArgsConstructor
 public class Bus extends BaseEntity {
-
+    /** Unique bus number. */
     @Column(name = "bus_number", nullable = false)
     @NotBlank
     @Size(max = 20)
     private String busNumber;
 
+    /** Type of the bus (NORMAL, HIGHWAY, INTERCITY). */
     @Enumerated(EnumType.STRING)
     private BusType type;
 
+    /** Starting point of the bus route. */
     @Column(name = "route_from")
     @Size(max = 100)
     private String routeFrom;
 
+    /** Destination of the bus route. */
     @Column(name = "route_to")
     @Size(max = 100)
     private String routeTo;
 
+    /** Province where the bus operates. */
     @Size(max = 50)
     private String province;
 
+    /** Current status of the bus. */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @NotNull
     private BusStatus status = BusStatus.PENDING;
 
-    // Relationships
+    /** The owner of the bus. */
     @ManyToOne
     @JoinColumn(name = "owner_id", nullable = false)
     @JsonBackReference
     @NotNull
     private User owner;
 
+    /** List of operator assignments for this bus. */
     @OneToMany(mappedBy = "bus", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<OperatorAssignment> operatorAssignments;
 
+    /** Wallet associated with this bus. */
     @OneToOne(mappedBy = "bus", cascade = CascadeType.ALL)
     @JsonManagedReference
-    private BusWallet busWallet;
+    private Wallet wallet;
 
     // Enums
     public enum BusType {
@@ -69,7 +79,7 @@ public class Bus extends BaseEntity {
 
     // Business Constructor
     public Bus(User owner, String busNumber, BusType type, String routeFrom, String routeTo, String province,
-               BusStatus status) {
+            BusStatus status) {
         this.owner = owner;
         this.busNumber = busNumber;
         this.type = type;
@@ -77,15 +87,6 @@ public class Bus extends BaseEntity {
         this.routeTo = routeTo;
         this.province = province;
         this.status = status;
-    }
-
-
-    public User getOwner() {
-        return owner;
-    }
-
-    public void setOwner(User owner) {
-        this.owner = owner;
     }
 
     public String getBusNumber() {
@@ -136,6 +137,13 @@ public class Bus extends BaseEntity {
         this.status = status;
     }
 
+    public User getOwner() {
+        return owner;
+    }
+
+    public void setOwner(User owner) {
+        this.owner = owner;
+    }
 
     public List<OperatorAssignment> getOperatorAssignments() {
         return operatorAssignments;
@@ -145,11 +153,11 @@ public class Bus extends BaseEntity {
         this.operatorAssignments = operatorAssignments;
     }
 
-    public BusWallet getBusWallet() {
-        return busWallet;
+    public Wallet getWallet() {
+        return wallet;
     }
 
-    public void setBusWallet(BusWallet busWallet) {
-        this.busWallet = busWallet;
+    public void setWallet(Wallet wallet) {
+        this.wallet = wallet;
     }
 }

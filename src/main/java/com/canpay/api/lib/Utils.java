@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.Base64;
 
-import com.canpay.api.repository.dashboard.DPassengerWalletRepository;
+import com.canpay.api.repository.dashboard.DWalletRepository;
 
 import lombok.experimental.UtilityClass;
 
@@ -16,7 +16,7 @@ public class Utils {
     /**
      * Generates a unique 16-digit wallet number.
      */
-    public static String generateUniqueWalletNumber(DPassengerWalletRepository passengerWalletRepository) {
+    public static String generateUniqueWalletNumber(DWalletRepository walletRepository) {
         String walletNumber;
         SecureRandom random = new SecureRandom();
         int attempts = 0;
@@ -28,7 +28,7 @@ public class Utils {
             // Generate random 16-digit number
             walletNumber = String.format("%0" + WALLET_NUMBER_LENGTH + "d",
                     Math.abs(random.nextLong()) % WALLET_NUMBER_MODULO);
-        } while (passengerWalletRepository.findByWalletNumber(walletNumber).isPresent());
+        } while (walletRepository.findByWalletNumber(walletNumber).isPresent());
         return walletNumber;
     }
 

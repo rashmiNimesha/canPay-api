@@ -10,6 +10,9 @@ import org.springframework.data.annotation.CreatedDate;
 
 import java.time.LocalDateTime;
 
+/**
+ * Represents an operator assignment to a bus.
+ */
 @Entity
 @Table(name = "operator_assignments")
 @Getter
@@ -17,22 +20,25 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class OperatorAssignment extends BaseEntity {
 
+    /** Timestamp when the operator was assigned. */
     @CreatedDate
     @Column(name = "assigned_at", nullable = false)
     private LocalDateTime assignedAt;
 
+    /** Status of the assignment. */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @NotNull
     private AssignmentStatus status = AssignmentStatus.PENDING;
 
-    // Relationships
+    /** The user assigned as operator. */
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     @JsonBackReference
     @NotNull
-    private User user;
+    private User operator;
 
+    /** The bus to which the operator is assigned. */
     @ManyToOne
     @JoinColumn(name = "bus_id", nullable = false)
     @JsonBackReference
@@ -41,33 +47,18 @@ public class OperatorAssignment extends BaseEntity {
 
     // Enums
     public enum AssignmentStatus {
-        PENDING, APPROVED, REJECTED, BLOCKED, ACTIVE, INACTIVE
+        PENDING, ACTIVE, INACTIVE, REJECTED, BLOCKED
     }
 
     // Business Constructor
     public OperatorAssignment(User user, Bus bus, AssignmentStatus status) {
-        this.user = user;
+        this.operator = user;
         this.bus = bus;
         this.status = status;
         this.assignedAt = LocalDateTime.now();
     }
 
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public Bus getBus() {
-        return bus;
-    }
-
-    public void setBus(Bus bus) {
-        this.bus = bus;
-    }
-
+    // Explicit Getters and Setters
     public LocalDateTime getAssignedAt() {
         return assignedAt;
     }
@@ -83,4 +74,21 @@ public class OperatorAssignment extends BaseEntity {
     public void setStatus(AssignmentStatus status) {
         this.status = status;
     }
+
+    public User getUser() {
+        return operator;
+    }
+
+    public void setUser(User user) {
+        this.operator = user;
+    }
+
+    public Bus getBus() {
+        return bus;
+    }
+
+    public void setBus(Bus bus) {
+        this.bus = bus;
+    }
+
 }

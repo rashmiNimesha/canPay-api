@@ -1,16 +1,16 @@
-package com.canpay.api.dto.Dashboard.Passenger;
+package com.canpay.api.dto.Dashboard.User;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import com.canpay.api.entity.PassengerWallet;
+import com.canpay.api.entity.Wallet;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class PassengerWalletDto {
+public class UserWalletDto {
     private UUID id;
     private String number;
     private BigDecimal balance;
@@ -18,12 +18,12 @@ public class PassengerWalletDto {
     private LocalDateTime updatedAt;
 
     // No-argument constructor
-    public PassengerWalletDto() {
+    public UserWalletDto() {
         // no-arg constructor for serialization/deserialization
     }
 
-    // Constructor from entity (assuming entity class PassengerWallet)
-    public PassengerWalletDto(PassengerWallet entity) {
+    // Constructor from entity (using consolidated Wallet entity)
+    public UserWalletDto(Wallet entity) {
         if (entity != null) {
             this.id = entity.getId();
             this.number = entity.getWalletNumber();
@@ -34,7 +34,7 @@ public class PassengerWalletDto {
     }
 
     // Optional: custom constructor for partial initialization
-    public PassengerWalletDto(BigDecimal balance, String passengerId) {
+    public UserWalletDto(BigDecimal balance, String passengerId) {
         this.balance = balance;
     }
 

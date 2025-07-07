@@ -32,23 +32,6 @@ public class AuthController {
         this.jwtService = jwtService;
     }
 
-//    @PostMapping("/send-otp")
-//    public ResponseEntity<?> sendOtp(@RequestBody Map<String, String> request) {
-//        String email = request.get("email");
-//        if (email == null || email.isBlank()) {
-//            return new ResponseEntityBuilder.Builder<Void>()
-//                    .resultMessage("Email is required")
-//                    .httpStatus(HttpStatus.BAD_REQUEST)
-//                    .buildWrapped();
-//        }
-//
-//        otpService.sendOtp(email);
-//        return new ResponseEntityBuilder.Builder<Void>()
-//                .resultMessage("OTP sent successfully")
-//                .httpStatus(HttpStatus.OK)
-//                .buildWrapped();
-//    }
-
     @PostMapping("/send-otp")
     public ResponseEntity<?> sendOtp(@RequestBody Map<String, String> request) {
         logger.debug("Received send-otp request: {}", request);
@@ -76,7 +59,6 @@ public class AuthController {
                     .buildWrapped();
         }
     }
-
 
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@RequestBody Map<String, String> request) {
@@ -120,8 +102,7 @@ public class AuthController {
             Map<String, Object> responseData = Map.of(
                     "newUser", false,
                     "token", token,
-                    "profile", new UserDto(user)
-            );
+                    "profile", new UserDto(user));
             return new ResponseEntityBuilder.Builder<Map<String, Object>>()
                     .resultMessage("Login successful")
                     .httpStatus(HttpStatus.OK)
@@ -137,8 +118,7 @@ public class AuthController {
             Map<String, Object> responseData = Map.of(
                     "newUser", true,
                     "token", token,
-                    "profile", new UserDto(newUser)
-            );
+                    "profile", new UserDto(newUser));
             return new ResponseEntityBuilder.Builder<Map<String, Object>>()
                     .resultMessage("OTP verified and new role registered")
                     .httpStatus(HttpStatus.OK)
@@ -152,7 +132,6 @@ public class AuthController {
                     .buildWrapped();
         }
     }
-
 
     @PostMapping("/create-profile")
     public ResponseEntity<?> createProfile(
@@ -195,7 +174,8 @@ public class AuthController {
         }
 
         if (email == null || name == null || nic == null) {
-            logger.warn("Missing required fields in create-profile request: email={}, name={}, nic={}", email, name, nic);
+            logger.warn("Missing required fields in create-profile request: email={}, name={}, nic={}", email, name,
+                    nic);
             return new ResponseEntityBuilder.Builder<Map<String, Object>>()
                     .resultMessage("Missing required fields")
                     .httpStatus(HttpStatus.BAD_REQUEST)
@@ -229,7 +209,8 @@ public class AuthController {
                     String accNameP = request.get("accName");
 
                     if (accNoStrP == null || bankP == null || accNameP == null) {
-                        logger.warn("Missing bank details for PASSENGER profile: accNo={}, bank={}, accName={}", accNoStrP, bankP, accNameP);
+                        logger.warn("Missing bank details for PASSENGER profile: accNo={}, bank={}, accName={}",
+                                accNoStrP, bankP, accNameP);
                         return new ResponseEntityBuilder.Builder<Map<String, Object>>()
                                 .resultMessage("Missing bank details")
                                 .httpStatus(HttpStatus.BAD_REQUEST)
@@ -247,11 +228,13 @@ public class AuthController {
                                 .buildWrapped();
                     }
 
-                    logger.debug("Attempting to update PASSENGER profile for email: {}, name: {}, nic: {}, accName: {}, bank: {}, accNo: {}",
+                    logger.debug(
+                            "Attempting to update PASSENGER profile for email: {}, name: {}, nic: {}, accName: {}, bank: {}, accNo: {}",
                             email, name, nic, accNameP, bankP, accNoP);
                     user = userServiceImpl.updatePassengerProfile(email, name, nic, accNameP, bankP, accNoP, role);
                     if (user == null) {
-                        logger.error("updateProfileWithBankAccount returned null for email: {} and role: {}", email, role);
+                        logger.error("updateProfileWithBankAccount returned null for email: {} and role: {}", email,
+                                role);
                         return new ResponseEntityBuilder.Builder<Map<String, Object>>()
                                 .resultMessage("Failed to update profile: User not found or invalid data")
                                 .httpStatus(HttpStatus.NOT_FOUND)
@@ -268,7 +251,8 @@ public class AuthController {
                                 .httpStatus(HttpStatus.BAD_REQUEST)
                                 .buildWrapped();
                     }
-                    logger.debug("Attempting to update OPERATOR profile for email: {}, name: {}, nic: {}, profileImage: {}",
+                    logger.debug(
+                            "Attempting to update OPERATOR profile for email: {}, name: {}, nic: {}, profileImage: {}",
                             email, name, nic, profileImageOp);
                     user = userServiceImpl.updateOperatorProfile(email, name, nic, profileImageOp, role);
                     if (user == null) {
@@ -287,7 +271,8 @@ public class AuthController {
                     String accNameOw = request.get("accName");
 
                     if (profileImageOw == null || accNoStrOw == null || bankOw == null || accNameOw == null) {
-                        logger.warn("Missing owner data: profileImage={}, accNo={}, bank={}, accName={}", profileImageOw, accNoStrOw, bankOw, accNameOw);
+                        logger.warn("Missing owner data: profileImage={}, accNo={}, bank={}, accName={}",
+                                profileImageOw, accNoStrOw, bankOw, accNameOw);
                         return new ResponseEntityBuilder.Builder<Map<String, Object>>()
                                 .resultMessage("Missing owner data")
                                 .httpStatus(HttpStatus.BAD_REQUEST)
@@ -304,9 +289,11 @@ public class AuthController {
                                 .buildWrapped();
                     }
 
-                    logger.debug("Attempting to update OWNER profile for email: {}, name: {}, nic: {}, profileImage: {}, accName: {}, bank: {}, accNo: {}",
+                    logger.debug(
+                            "Attempting to update OWNER profile for email: {}, name: {}, nic: {}, profileImage: {}, accName: {}, bank: {}, accNo: {}",
                             email, name, nic, profileImageOw, accNameOw, bankOw, accNoOw);
-                    user = userServiceImpl.updateOwnerProfile(email, name, nic, profileImageOw, accNameOw, bankOw, accNoOw, role);
+                    user = userServiceImpl.updateOwnerProfile(email, name, nic, profileImageOw, accNameOw, bankOw,
+                            accNoOw, role);
                     if (user == null) {
                         logger.error("updateOwnerProfile returned null for email: {} and role: {}", email, role);
                         return new ResponseEntityBuilder.Builder<Map<String, Object>>()
@@ -329,8 +316,7 @@ public class AuthController {
             logger.info("Profile updated successfully for email: {} and role: {}", email, role);
             Map<String, Object> responseData = Map.of(
                     "token", token,
-                    "profile", userDto
-            );
+                    "profile", userDto);
             return new ResponseEntityBuilder.Builder<Map<String, Object>>()
                     .resultMessage("Profile updated successfully")
                     .httpStatus(HttpStatus.OK)
@@ -338,14 +324,15 @@ public class AuthController {
                     .buildWrapped();
 
         } catch (RuntimeException e) {
-            logger.error("Failed to update profile for email: {} and role: {}. Reason: {}", email, role, e.getMessage(), e);
+            logger.error("Failed to update profile for email: {} and role: {}. Reason: {}", email, role, e.getMessage(),
+                    e);
             return new ResponseEntityBuilder.Builder<Map<String, Object>>()
-                    .resultMessage("Failed to update profile: " + (e.getMessage() != null ? e.getMessage() : "Internal error"))
+                    .resultMessage(
+                            "Failed to update profile: " + (e.getMessage() != null ? e.getMessage() : "Internal error"))
                     .httpStatus(HttpStatus.INTERNAL_SERVER_ERROR)
                     .buildWrapped();
         }
     }
-
 
     @PostMapping("/check-user")
     public ResponseEntity<?> checkUser(@RequestBody Map<String, String> request) {
@@ -374,18 +361,55 @@ public class AuthController {
 
         boolean exists = userServiceImpl.findByEmailAndRole(email, role).isPresent();
         long roleCount = userServiceImpl.countRolesByEmail(email);
-        logger.info("Check user completed for email: {} and role: {}. Exists: {}, CanRegisterNewRole: {}", email, role, exists, roleCount < 3 && !exists);
+        logger.info("Check user completed for email: {} and role: {}. Exists: {}, CanRegisterNewRole: {}", email, role,
+                exists, roleCount < 3 && !exists);
 
         return new ResponseEntityBuilder.Builder<Map<String, Object>>()
                 .resultMessage("Check completed")
                 .httpStatus(HttpStatus.OK)
                 .body(Map.of(
                         "exists", exists,
-                        "canRegisterNewRole", roleCount < 3 && !exists
-                ))
+                        "canRegisterNewRole", roleCount < 3 && !exists))
                 .buildWrapped();
     }
 
+    // validate token
+    // ===============================================
 
+    @GetMapping("/validate-token")
+    public ResponseEntity<?> validateToken(@RequestHeader(value = "Authorization") String authHeader) {
+        logger.debug("Received token validation request");
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            logger.warn("Authorization header missing or invalid");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Authorization header with Bearer token is required",
+                            "action", "otp"));
+        }
+
+        String token = authHeader.substring(7);
+        try {
+            if (!jwtService.isTokenValid(token)) {
+                logger.warn("Invalid or expired token");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("success", false, "message", "Invalid or expired token", "action", "otp"));
+            }
+
+            String email = jwtService.extractEmail(token);
+            String role = jwtService.extractRole(token);
+
+            logger.info("Token validated for email: {}, role: {}", email, role);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Token is valid",
+                    "action", "pin",
+                    "data", Map.of("email", email, "role", role)));
+
+        } catch (Exception e) {
+            logger.error("Error validating token: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Invalid or expired token", "action", "otp"));
+        }
+    }
 
 }

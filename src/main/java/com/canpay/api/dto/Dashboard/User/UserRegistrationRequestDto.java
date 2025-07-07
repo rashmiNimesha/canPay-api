@@ -1,4 +1,4 @@
-package com.canpay.api.dto.Dashboard.Passenger;
+package com.canpay.api.dto.Dashboard.User;
 
 import java.util.List;
 
@@ -9,7 +9,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class PassengerRegistrationRequestDto {
+public class UserRegistrationRequestDto {
     private String name;
     private String nic;
     private String email;
@@ -17,11 +17,11 @@ public class PassengerRegistrationRequestDto {
     private List<DBankAccountDto> bankAccounts;
 
     // No-argument constructor
-    public PassengerRegistrationRequestDto() {
+    public UserRegistrationRequestDto() {
     }
 
     // Constructor with basic fields
-    public PassengerRegistrationRequestDto(String name, String nic, String email, String photo) {
+    public UserRegistrationRequestDto(String name, String nic, String email, String photo) {
         this.name = name;
         this.nic = nic;
         this.email = email;

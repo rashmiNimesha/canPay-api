@@ -9,7 +9,8 @@ import org.springframework.http.HttpHeaders;
 public class JwtConfig {
     private String secretKey;
     private String tokenPrefix;
-    private Integer tokenExpirationAfterDays;
+ //   private Integer tokenExpirationAfterDays;
+    private Integer tokenExpirationAfterMinutes; // Changed from tokenExpirationAfterDays
 
     public JwtConfig() {
     }
@@ -31,15 +32,28 @@ public class JwtConfig {
         this.tokenPrefix = tokenPrefix;
     }
 
-    public Integer getTokenExpirationAfterDays() {
-        return tokenExpirationAfterDays;
+//    correct one
+//    public Integer getTokenExpirationAfterDays() {
+//        return tokenExpirationAfterDays;
+//    }
+
+//    public void setTokenExpirationAfterDays(Integer tokenExpirationAfterDays) {
+//        this.tokenExpirationAfterDays = tokenExpirationAfterDays;
+//    }
+
+//this is correct one
+//    public void setTokenExpirationAfterDays(Integer tokenExpirationAfterDays) {
+//        this.tokenExpirationAfterDays = tokenExpirationAfterDays != null ? tokenExpirationAfterDays : 1; // Default to 1 day
+//    }
+
+
+    public Integer getTokenExpirationAfterMinutes() {
+        return tokenExpirationAfterMinutes;
     }
 
-    public void setTokenExpirationAfterDays(Integer tokenExpirationAfterDays) {
-        this.tokenExpirationAfterDays = tokenExpirationAfterDays;
+    public void setTokenExpirationAfterMinutes(Integer tokenExpirationAfterMinutes) {
+        this.tokenExpirationAfterMinutes = tokenExpirationAfterMinutes != null ? tokenExpirationAfterMinutes : 5; // Default to 5 minutes
     }
-
-
 
     public String getAuthorizationHeader(){
         return HttpHeaders.AUTHORIZATION;
