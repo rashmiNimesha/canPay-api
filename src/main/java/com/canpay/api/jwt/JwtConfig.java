@@ -49,10 +49,13 @@ public class JwtConfig {
     }
 
     public void setTokenExpirationAfterMinutes(Integer tokenExpirationAfterMinutes) {
-        this.tokenExpirationAfterMinutes = tokenExpirationAfterMinutes != null ? tokenExpirationAfterMinutes : 5; // Default to 5 minutes
+        this.tokenExpirationAfterMinutes = tokenExpirationAfterMinutes != null ? tokenExpirationAfterMinutes : 5; // Default
+                                                                                                                  // to
+                                                                                                                  // 5
+                                                                                                                  // minutes
     }
 
-    public String getAuthorizationHeader(){
+    public String getAuthorizationHeader() {
         return HttpHeaders.AUTHORIZATION;
     }
 
