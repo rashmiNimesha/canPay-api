@@ -2,7 +2,7 @@ package com.canpay.api.controller.account;
 
 import com.canpay.api.dto.UserDto;
 import com.canpay.api.entity.User;
-import com.canpay.api.jwt.JwtUtil;
+// import com.canpay.api.jwt.JwtUtil;
 import com.canpay.api.service.implementation.BankAccountServiceImpl;
 import com.canpay.api.service.implementation.JwtService;
 import com.canpay.api.service.implementation.UserServiceImpl;
@@ -20,18 +20,17 @@ import java.util.Map;
 public class AccountController {
 
     public final UserServiceImpl userService;
-    private final JwtUtil jwtUtil;
+    // private final JwtUtil jwtUtil;
     private final JwtService jwtService;
     private final BankAccountServiceImpl bankAccountService;
     private final Logger logger = LoggerFactory.getLogger(AccountController.class);
 
-    public AccountController(UserServiceImpl userService, JwtUtil jwtUtil, JwtService jwtService, BankAccountServiceImpl bankAccountService) {
+    public AccountController(UserServiceImpl userService, JwtService jwtService,
+            BankAccountServiceImpl bankAccountService) {
         this.userService = userService;
-        this.jwtUtil = jwtUtil;
         this.jwtService = jwtService;
         this.bankAccountService = bankAccountService;
     }
-
 
     @PatchMapping("/passenger-account")
     @PreAuthorize("hasRole('PASSENGER')")
@@ -70,7 +69,6 @@ public class AccountController {
                         return new RuntimeException("User not found for email: " + email);
                     });
 
-
             boolean updated = false;
             if (request.containsKey("name")) {
                 String name = request.get("name");
@@ -91,7 +89,6 @@ public class AccountController {
                 }
             }
 
-
             String newEmail = request.get("newemail");
             boolean emailChanged = false;
             if (newEmail != null && !newEmail.equalsIgnoreCase(email)) {
@@ -111,17 +108,16 @@ public class AccountController {
 
             Map<String, Object> data = Map.of(
                     "profile", userDto,
-                    "token", tokenResponse != null ? tokenResponse : ""
-            );
+                    "token", tokenResponse != null ? tokenResponse : "");
 
             logger.info("Passenger account updated for email: {}, newEmail: {}, nameUpdated: {}, bankAccountAdded: {}",
-                    email, newEmail != null ? newEmail : "none", request.containsKey("name"), request.containsKey("accNo"));
+                    email, newEmail != null ? newEmail : "none", request.containsKey("name"),
+                    request.containsKey("accNo"));
 
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "message", "Passenger account updated",
-                    "data", data
-            ));
+                    "data", data));
 
         } catch (IllegalArgumentException e) {
             logger.warn("Invalid input for email: {}. Reason: {}", email, e.getMessage());

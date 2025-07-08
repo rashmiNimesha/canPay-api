@@ -56,6 +56,9 @@ public interface DUserRepository extends JpaRepository<User, Long> {
     // Count users by role
     long countByRole(UserRole role);
 
+    // Count users by status and role
+    long countByRoleAndStatus(UserRole role, UserStatus status);
+
     // Find users by name containing a substring
     List<User> findByNameContaining(String name);
 

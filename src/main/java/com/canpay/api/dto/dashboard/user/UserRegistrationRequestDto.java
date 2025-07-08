@@ -1,8 +1,8 @@
-package com.canpay.api.dto.Dashboard.User;
+package com.canpay.api.dto.dashboard.user;
 
 import java.util.List;
 
-import com.canpay.api.dto.Dashboard.DBankAccountDto;
+import com.canpay.api.dto.dashboard.DBankAccountDto;
 
 import lombok.Getter;
 import lombok.Setter;

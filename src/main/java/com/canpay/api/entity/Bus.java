@@ -68,6 +68,16 @@ public class Bus extends BaseEntity {
     @JsonManagedReference
     private Wallet wallet;
 
+    /** Vehicle insurance document (string format, not null). */
+    @Column(name = "vehicle_insurance", nullable = false)
+    @NotBlank
+    private String vehicleInsurance;
+
+    /** Vehicle revenue license document (string format, not null). */
+    @Column(name = "vehicle_revenue_license", nullable = false)
+    @NotBlank
+    private String vehicleRevenueLicense;
+
     // Enums
     public enum BusType {
         NORMAL, HIGHWAY, INTERCITY
@@ -79,7 +89,7 @@ public class Bus extends BaseEntity {
 
     // Business Constructor
     public Bus(User owner, String busNumber, BusType type, String routeFrom, String routeTo, String province,
-            BusStatus status) {
+            BusStatus status, String vehicleInsurance, String vehicleRevenueLicense) {
         this.owner = owner;
         this.busNumber = busNumber;
         this.type = type;
@@ -87,6 +97,8 @@ public class Bus extends BaseEntity {
         this.routeTo = routeTo;
         this.province = province;
         this.status = status;
+        this.vehicleInsurance = vehicleInsurance;
+        this.vehicleRevenueLicense = vehicleRevenueLicense;
     }
 
     public String getBusNumber() {
@@ -159,5 +171,21 @@ public class Bus extends BaseEntity {
 
     public void setWallet(Wallet wallet) {
         this.wallet = wallet;
+    }
+
+    public String getVehicleInsurance() {
+        return vehicleInsurance;
+    }
+
+    public void setVehicleInsurance(String vehicleInsurance) {
+        this.vehicleInsurance = vehicleInsurance;
+    }
+
+    public String getVehicleRevenueLicense() {
+        return vehicleRevenueLicense;
+    }
+
+    public void setVehicleRevenueLicense(String vehicleRevenueLicense) {
+        this.vehicleRevenueLicense = vehicleRevenueLicense;
     }
 }

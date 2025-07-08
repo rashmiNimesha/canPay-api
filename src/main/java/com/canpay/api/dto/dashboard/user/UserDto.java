@@ -1,10 +1,10 @@
-package com.canpay.api.dto.Dashboard.User;
+package com.canpay.api.dto.dashboard.user;
 
 import java.util.List;
 import java.util.UUID;
 import java.time.LocalDateTime;
 
-import com.canpay.api.dto.Dashboard.DBankAccountDto;
+import com.canpay.api.dto.dashboard.DBankAccountDto;
 import com.canpay.api.entity.User;
 import com.canpay.api.entity.User.UserRole;
 import com.canpay.api.entity.User.UserStatus;

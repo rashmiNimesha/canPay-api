@@ -25,6 +25,7 @@ public class JwtService {
     private UserRepository userRepository;
 
     public JwtService(JwtConfig jwtConfig, UserRepository userRepository) {
+        logger.info("JwtService initialized with RSA keys....");
         this.jwtConfig = jwtConfig;
         this.privateKey = jwtConfig.getPrivateKey();
         this.publicKey = jwtConfig.getPublicKey();
@@ -57,8 +58,9 @@ public class JwtService {
 
     private Claims extractAllClaims(String token) {
         try {
-            return Jwts.parser()
+            return Jwts.parserBuilder()
                     .setSigningKey(publicKey)
+                    .build()
                     .parseClaimsJws(token)
                     .getBody();
         } catch (Exception e) {
