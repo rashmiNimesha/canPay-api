@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -269,4 +270,13 @@ public class UserServiceImpl implements UserService {
         return userRepository.save(user);
     }
 
+    public Optional<User> findUserById(UUID operatorId) {
+        Optional<User> userOpt = userRepository.findById(operatorId);
+        if (userOpt.isPresent()) {
+            logger.debug("User found: {}", userOpt.get());
+        } else {
+            logger.warn("User not found with ID: {}", operatorId);
+        }
+        return userOpt;
+    }
 }
