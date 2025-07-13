@@ -138,6 +138,13 @@ public class DUserService {
     }
 
     /**
+     * Gets the count of users by role and status.
+     */
+    public long getUserCountByRoleAndStatus(UserRole role, UserStatus status) {
+        return userRepository.countByRoleAndStatus(role, status);
+    }
+
+    /**
      * Gets all users by role.
      */
     public List<User> getUsersByRole(UserRole role) {

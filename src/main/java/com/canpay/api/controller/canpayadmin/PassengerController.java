@@ -1,14 +1,15 @@
 package com.canpay.api.controller.canpayadmin;
 
-import com.canpay.api.dto.Dashboard.DBankAccountDto;
-import com.canpay.api.dto.Dashboard.User.UserDto;
-import com.canpay.api.dto.Dashboard.User.UserListDto;
-import com.canpay.api.dto.Dashboard.User.UserListWalletDto;
-import com.canpay.api.dto.Dashboard.User.UserRegistrationRequestDto;
-import com.canpay.api.dto.Dashboard.User.UserWalletDto;
+import com.canpay.api.dto.dashboard.DBankAccountDto;
+import com.canpay.api.dto.dashboard.user.UserDto;
+import com.canpay.api.dto.dashboard.user.UserListDto;
+import com.canpay.api.dto.dashboard.user.UserListWalletDto;
+import com.canpay.api.dto.dashboard.user.UserRegistrationRequestDto;
+import com.canpay.api.dto.dashboard.user.UserWalletDto;
 import com.canpay.api.entity.ResponseEntityBuilder;
 import com.canpay.api.entity.User;
 import com.canpay.api.entity.User.UserRole;
+import com.canpay.api.entity.User.UserStatus;
 import com.canpay.api.entity.Wallet;
 import com.canpay.api.entity.Wallet.WalletType;
 import com.canpay.api.service.dashboard.DUserService;
@@ -261,11 +262,16 @@ public class PassengerController {
      */
     @GetMapping("/passengers/count")
     public ResponseEntity<?> getPassengerCount() {
-        long count = userService.getUserCountByRole(UserRole.PASSENGER);
+        long countTotal = userService.getUserCountByRole(UserRole.PASSENGER);
+        long countActive = userService.getUserCountByRoleAndStatus(UserRole.PASSENGER, UserStatus.ACTIVE);
+        long countBlocked = userService.getUserCountByRoleAndStatus(UserRole.PASSENGER, UserStatus.BLOCKED);
         return new ResponseEntityBuilder.Builder<Map<String, Object>>()
                 .resultMessage("Total number of passengers retrieved successfully")
                 .httpStatus(HttpStatus.OK)
-                .body(Map.of("passengerCount", count))
+                .body(Map.of(
+                        "total", countTotal,
+                        "active", countActive,
+                        "blocked", countBlocked))
                 .buildWrapped();
     }
 }

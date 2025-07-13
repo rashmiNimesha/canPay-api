@@ -1,4 +1,4 @@
-package com.canpay.api.dto.Dashboard;
+package com.canpay.api.dto.dashboard;
 
 import java.util.UUID;
 import com.canpay.api.entity.BankAccount;

@@ -14,23 +14,22 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("api/v1/user-service")
 public class AccountController {
 
     public final UserServiceImpl userService;
+    // private final JwtUtil jwtUtil;
     private final JwtService jwtService;
     private final BankAccountServiceImpl bankAccountService;
     private final Logger logger = LoggerFactory.getLogger(AccountController.class);
-    private final UserServiceImpl userServiceImpl;
 
-    public AccountController(UserServiceImpl userService, JwtService jwtService, BankAccountServiceImpl bankAccountService, UserServiceImpl userServiceImpl) {
+    public AccountController(UserServiceImpl userService, JwtService jwtService,
+            BankAccountServiceImpl bankAccountService) {
         this.userService = userService;
         this.jwtService = jwtService;
         this.bankAccountService = bankAccountService;
-        this.userServiceImpl = userServiceImpl;
     }
 
 
@@ -159,7 +158,7 @@ public class AccountController {
         }
 
         try {
-            Map<String, Object> financialDetails = userServiceImpl.getUserFinancialDetails(email, userRole);
+            Map<String, Object> financialDetails = userService.getUserFinancialDetails(email, userRole);
             logger.info("Returning financial details for user: {}", email);
             return ResponseEntity.ok(Map.of(
                     "success", true,

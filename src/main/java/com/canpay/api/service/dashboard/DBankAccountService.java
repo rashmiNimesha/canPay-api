@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.canpay.api.dto.Dashboard.DBankAccountDto;
+import com.canpay.api.dto.dashboard.DBankAccountDto;
 import com.canpay.api.entity.BankAccount;
 import com.canpay.api.entity.User;
 import com.canpay.api.repository.dashboard.DBankAccountRepository;

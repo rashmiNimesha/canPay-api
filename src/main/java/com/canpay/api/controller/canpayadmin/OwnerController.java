@@ -1,11 +1,11 @@
 package com.canpay.api.controller.canpayadmin;
 
-import com.canpay.api.dto.Dashboard.User.UserDto;
-import com.canpay.api.dto.Dashboard.User.UserListDto;
-import com.canpay.api.dto.Dashboard.User.UserListWalletDto;
-import com.canpay.api.dto.Dashboard.User.UserRegistrationRequestDto;
-import com.canpay.api.dto.Dashboard.User.UserWalletDto;
-import com.canpay.api.dto.Dashboard.DBankAccountDto;
+import com.canpay.api.dto.dashboard.DBankAccountDto;
+import com.canpay.api.dto.dashboard.user.UserDto;
+import com.canpay.api.dto.dashboard.user.UserListDto;
+import com.canpay.api.dto.dashboard.user.UserListWalletDto;
+import com.canpay.api.dto.dashboard.user.UserRegistrationRequestDto;
+import com.canpay.api.dto.dashboard.user.UserWalletDto;
 import com.canpay.api.entity.ResponseEntityBuilder;
 import com.canpay.api.entity.User;
 import com.canpay.api.entity.User.UserRole;
@@ -261,11 +261,16 @@ public class OwnerController {
      */
     @GetMapping("/owners/count")
     public ResponseEntity<?> getUserCount() {
-        long count = userService.getUserCountByRole(UserRole.OWNER);
+        long countTotal = userService.getUserCountByRole(UserRole.OWNER);
+        long countActive = userService.getUserCountByRoleAndStatus(UserRole.OWNER, User.UserStatus.ACTIVE);
+        long countBlocked = userService.getUserCountByRoleAndStatus(UserRole.OWNER, User.UserStatus.BLOCKED);
         return new ResponseEntityBuilder.Builder<Map<String, Object>>()
                 .resultMessage("Total number of owners retrieved successfully")
                 .httpStatus(HttpStatus.OK)
-                .body(Map.of("ownerCount", count))
+                .body(Map.of(
+                        "total", countTotal,
+                        "active", countActive,
+                        "blocked", countBlocked))
                 .buildWrapped();
     }
 }

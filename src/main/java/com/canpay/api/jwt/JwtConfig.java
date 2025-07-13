@@ -50,9 +50,9 @@ public class JwtConfig {
 
     public void setTokenExpirationAfterMinutes(Integer tokenExpirationAfterMinutes) {
         this.tokenExpirationAfterMinutes = tokenExpirationAfterMinutes != null ? tokenExpirationAfterMinutes : 5; // Default
-        // to
-        // 5
-        // minutes
+                                                                                                                  // to
+                                                                                                                  // 5
+                                                                                                                  // minutes
     }
 
     public String getAuthorizationHeader() {
