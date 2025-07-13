@@ -26,8 +26,8 @@ import com.canpay.api.entity.Transaction.TransactionType;
 import com.canpay.api.service.dashboard.DTransactionService;
 import com.canpay.api.service.dashboard.DTransactionService.TransactionStatsDto;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+// import org.slf4j.Logger;
+// import org.slf4j.LoggerFactory;
 
 /**
  * REST controller for managing transactions in the CanPay admin dashboard.
@@ -37,7 +37,8 @@ import org.slf4j.LoggerFactory;
 @RestController
 @RequestMapping("/api/v1/canpay-admin")
 public class DTransactionController {
-        private static final Logger logger = LoggerFactory.getLogger(DTransactionController.class);
+        // private static final Logger logger =
+        // LoggerFactory.getLogger(DTransactionController.class);
 
         private final DTransactionService transactionService;
 
