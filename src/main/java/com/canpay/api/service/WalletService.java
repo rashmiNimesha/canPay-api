@@ -10,8 +10,8 @@ import java.util.UUID;
 @Service
 public interface WalletService {
 
-    @Transactional
-    UserWalletBalanceDto rechargePassengerWallet(String email, double amount);
+//    @Transactional
+//    UserWalletBalanceDto rechargePassengerWallet(String email, double amount);
 
     User getUserByEmailAndRole(String email);
 }

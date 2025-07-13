@@ -7,6 +7,7 @@ import com.canpay.api.entity.Wallet.WalletType;
 import com.canpay.api.lib.Utils;
 import com.canpay.api.repository.UserRepository;
 import com.canpay.api.repository.TransactionRepository;
+import com.canpay.api.repository.bankaccount.BankAccountRepository;
 import com.canpay.api.repository.dashboard.DWalletRepository;
 import com.canpay.api.service.WalletService;
 import org.slf4j.Logger;
@@ -24,12 +25,104 @@ public class WalletServiceImpl implements WalletService {
     private final UserRepository userRepository;
     private final TransactionRepository transactionRepository;
     private final DWalletRepository walletRepository;
+    private final BankAccountRepository bankAccountRepository;
 
-    public WalletServiceImpl(UserRepository userRepository, TransactionRepository transactionRepository, DWalletRepository walletRepository) {
+    public WalletServiceImpl(UserRepository userRepository, TransactionRepository transactionRepository, DWalletRepository walletRepository, BankAccountRepository bankAccountRepository) {
         this.userRepository = userRepository;
         this.transactionRepository = transactionRepository;
         this.walletRepository = walletRepository;
+        this.bankAccountRepository = bankAccountRepository;
     }
+
+//    @Transactional
+//    public UserWalletBalanceDto rechargePassengerWallet(String email, double amount) {
+//        logger.debug("Recharging passenger wallet for email: {}, amount: {}", email, amount);
+//
+//        User user = userRepository.findByEmailAndRole(email, UserRole.PASSENGER)
+//                .orElseThrow(() -> {
+//                    logger.error("User not found for email: {} and role: PASSENGER", email);
+//                    return new RuntimeException("User not found for email: " + email);
+//                });
+//
+//        BigDecimal amountDecimal = BigDecimal.valueOf(amount);
+//        Wallet wallet;
+//
+//        Optional<Wallet> existingWallet = walletRepository.findByUser_IdAndType(user.getId(), WalletType.PASSENGER);
+//        if (existingWallet.isPresent()) {
+//            wallet = existingWallet.get();
+//            wallet.setBalance(wallet.getBalance().add(amountDecimal));
+//            logger.info("Recharging existing wallet for email: {}, walletNumber: {}, amount: {}, new balance: {}",
+//                    email, wallet.getWalletNumber(), amount, wallet.getBalance());
+//        } else {
+//            wallet = new Wallet(user, Utils.generateUniqueWalletNumber(walletRepository), WalletType.PASSENGER);
+//            wallet.setBalance(amountDecimal);
+//            logger.info("Creating new wallet for email: {}, walletNumber: {}, initial balance: {}",
+//                    email, wallet.getWalletNumber(), amount);
+//        }
+//
+//        walletRepository.save(wallet);
+//
+//        return new UserWalletBalanceDto(
+//                wallet.getWalletNumber(),
+//                wallet.getBalance().doubleValue(),
+//                user.getName() != null ? user.getName() : "N/A"
+//        );
+//    }
+
+//    @Transactional
+//    public UserWalletBalanceDto rechargePassengerWallet(String email, double amount) {
+//        logger.debug("Recharging passenger wallet for email: {}, amount: {}", email, amount);
+//
+//        User user = userRepository.findByEmailAndRole(email, UserRole.PASSENGER)
+//                .orElseThrow(() -> {
+//                    logger.error("User not found for email: {} and role: PASSENGER", email);
+//                    return new RuntimeException("User not found for email: " + email);
+//                });
+//
+//        BankAccount bankAccount = bankAccountRepository.findByUserAndDefaultTrue(user)
+//                .orElseThrow(() -> {
+//                    logger.error("Default bank account not found for user: {}", email);
+//                    return new RuntimeException("Default bank account not found for user: " + email);
+//                });
+//
+//        BigDecimal amountDecimal = BigDecimal.valueOf(amount);
+//        Wallet wallet;
+//
+//        Optional<Wallet> existingWallet = walletRepository.findByUser_IdAndType(user.getId(), WalletType.PASSENGER);
+//        if (existingWallet.isPresent()) {
+//            wallet = existingWallet.get();
+//            wallet.setBalance(wallet.getBalance().add(amountDecimal));
+//            logger.info("Recharging existing wallet for email: {}, walletNumber: {}, amount: {}, new balance: {}",
+//                    email, wallet.getWalletNumber(), amount, wallet.getBalance());
+//        } else {
+//            wallet = new Wallet(user, Utils.generateUniqueWalletNumber(walletRepository), WalletType.PASSENGER);
+//            wallet.setBalance(amountDecimal);
+//            logger.info("Creating new wallet for email: {}, walletNumber: {}, initial balance: {}",
+//                    email, wallet.getWalletNumber(), amount);
+//        }
+//
+//        // Create transaction record
+//        Transaction transaction = new Transaction(amountDecimal, Transaction.TransactionType.RECHARGE, user);
+//        transaction.setStatus(Transaction.TransactionStatus.APPROVED);
+//        transaction.setNote("Wallet recharge from default bank account: " + bankAccount.getAccountNumber());
+//        transaction.setFromBankAccount(bankAccount);
+//        transaction.setToWallet(wallet);
+//        transaction.setHappenedAt(java.time.LocalDateTime.now());
+//
+//        // Save wallet and transaction
+//        walletRepository.save(wallet);
+//        transactionRepository.save(transaction);
+//
+//        logger.info("Transaction recorded for email: {}, amount: {}, fromBankAccount: {}, toWallet: {}",
+//                email, amount, bankAccount.getAccountName(), wallet.getWalletNumber());
+//
+//        return new UserWalletBalanceDto(
+//                wallet.getWalletNumber(),
+//                wallet.getBalance().doubleValue(),
+//                user.getName() != null ? user.getName() : "N/A"
+//        );
+//    }
+
 
     @Transactional
     public UserWalletBalanceDto rechargePassengerWallet(String email, double amount) {
@@ -40,6 +133,13 @@ public class WalletServiceImpl implements WalletService {
                     logger.error("User not found for email: {} and role: PASSENGER", email);
                     return new RuntimeException("User not found for email: " + email);
                 });
+
+        Optional<BankAccount> bankAccountOpt = bankAccountRepository.findByUserAndIsDefaultTrue(user);
+        if (bankAccountOpt.isEmpty()) {
+            logger.error("No default bank account found for user: {}", email);
+            throw new RuntimeException("No default bank account set for user: " + email);
+        }
+        BankAccount bankAccount = bankAccountOpt.get();
 
         BigDecimal amountDecimal = BigDecimal.valueOf(amount);
         Wallet wallet;
@@ -57,7 +157,20 @@ public class WalletServiceImpl implements WalletService {
                     email, wallet.getWalletNumber(), amount);
         }
 
+        // Create transaction record
+        Transaction transaction = new Transaction(amountDecimal, Transaction.TransactionType.RECHARGE, user);
+        transaction.setStatus(Transaction.TransactionStatus.APPROVED);
+        transaction.setNote("Wallet recharge from default bank account: " + bankAccount.getAccountNumber());
+        transaction.setFromBankAccount(bankAccount);
+        transaction.setFromWallet(wallet);
+        transaction.setHappenedAt(java.time.LocalDateTime.now());
+
+        // Save wallet and transaction
         walletRepository.save(wallet);
+        transactionRepository.save(transaction);
+
+        logger.info("Transaction recorded for email: {}, amount: {}, fromBankAccount: {}, toWallet: {}",
+                email, amount, bankAccount.getAccountNumber(), wallet.getWalletNumber());
 
         return new UserWalletBalanceDto(
                 wallet.getWalletNumber(),
@@ -65,6 +178,8 @@ public class WalletServiceImpl implements WalletService {
                 user.getName() != null ? user.getName() : "N/A"
         );
     }
+
+
 
     @Transactional(readOnly = true)
     public UserWalletBalanceDto getPassengerWalletBalanceForDash(String email) {
