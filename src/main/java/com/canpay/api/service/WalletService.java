@@ -1,5 +1,6 @@
 package com.canpay.api.service;
 
+import com.canpay.api.dto.UserWalletBalanceDto;
 import com.canpay.api.entity.User;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
@@ -10,9 +11,7 @@ import java.util.UUID;
 public interface WalletService {
 
     @Transactional
-    User rechargePassengerWallet(String email, double amount);
-
-    double getPassengerWalletBalance(String email);
+    UserWalletBalanceDto rechargePassengerWallet(String email, double amount);
 
     User getUserByEmailAndRole(String email);
 }
