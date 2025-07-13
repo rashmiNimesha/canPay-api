@@ -311,9 +311,21 @@ public class DBusService {
         Bus bus = busRepository.findById(busId)
                 .orElseThrow(() -> new RuntimeException("Bus not found with ID: " + busId));
 
+        // Get the current active operator assignment for this bus
+        String operatorId = bus.getOperatorAssignments().stream()
+                .filter(assignment -> assignment
+                        .getStatus() == com.canpay.api.entity.OperatorAssignment.AssignmentStatus.ACTIVE)
+                .findFirst()
+                .map(assignment -> assignment.getOperator().getId().toString())
+                .orElse(null);
+
+        if (operatorId == null) {
+            throw new RuntimeException("No active operator found for bus ID: " + busId);
+        }
+
         return Map.of(
                 "busId", bus.getId().toString(),
-                "operatorId", bus.getOwner().getId().toString());
+                "operatorId", operatorId);
     }
 
     /**
