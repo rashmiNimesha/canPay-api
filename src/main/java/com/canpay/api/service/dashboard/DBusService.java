@@ -10,12 +10,17 @@ import com.canpay.api.entity.Bus.BusType;
 import com.canpay.api.entity.User;
 import com.canpay.api.repository.dashboard.DBusRepository;
 import com.canpay.api.repository.UserRepository;
+import com.canpay.api.lib.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.nio.file.Paths;
 // import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -37,6 +42,10 @@ public class DBusService {
     @Autowired
     private DWalletService walletService;
 
+    // Base URL for document links, set in application.properties as app.base-url
+    @Value("${app.base-url}")
+    private String baseUrl;
+
     /**
      * Create a new bus.
      */
@@ -47,6 +56,10 @@ public class DBusService {
         }
         User owner = ownerOpt.get();
 
+        // Handle document uploads
+        String vehicleInsurancePath = handleDocumentUpload(requestDto.getVehicleInsurance(), null, "insurance");
+        String vehicleRevenueLicensePath = handleDocumentUpload(requestDto.getVehicleRevenueLicense(), null, "license");
+
         Bus bus = new Bus(
                 owner,
                 requestDto.getBusNumber(),
@@ -55,8 +68,8 @@ public class DBusService {
                 requestDto.getRouteTo(),
                 requestDto.getProvince(),
                 requestDto.getStatus() != null ? requestDto.getStatus() : BusStatus.PENDING,
-                requestDto.getVehicleInsurance(),
-                requestDto.getVehicleRevenueLicense());
+                vehicleInsurancePath,
+                vehicleRevenueLicensePath);
 
         Bus savedBus = busRepository.save(bus);
         return convertToResponseDto(savedBus);
@@ -137,11 +150,17 @@ public class DBusService {
         if (requestDto.getStatus() != null) {
             existingBus.setStatus(requestDto.getStatus());
         }
+
+        // Handle document uploads
         if (requestDto.getVehicleInsurance() != null) {
-            existingBus.setVehicleInsurance(requestDto.getVehicleInsurance());
+            String vehicleInsurancePath = handleDocumentUpload(requestDto.getVehicleInsurance(),
+                    existingBus.getVehicleInsurance(), "insurance");
+            existingBus.setVehicleInsurance(vehicleInsurancePath);
         }
         if (requestDto.getVehicleRevenueLicense() != null) {
-            existingBus.setVehicleRevenueLicense(requestDto.getVehicleRevenueLicense());
+            String vehicleRevenueLicensePath = handleDocumentUpload(requestDto.getVehicleRevenueLicense(),
+                    existingBus.getVehicleRevenueLicense(), "license");
+            existingBus.setVehicleRevenueLicense(vehicleRevenueLicensePath);
         }
 
         Bus updatedBus = busRepository.save(existingBus);
@@ -155,6 +174,16 @@ public class DBusService {
         if (!busRepository.existsById(id)) {
             throw new IllegalArgumentException("Bus not found with ID: " + id);
         }
+
+        // Get the bus first to delete associated documents
+        Optional<Bus> busOpt = busRepository.findById(id);
+        if (busOpt.isPresent()) {
+            Bus bus = busOpt.get();
+            // Delete associated documents
+            Utils.deleteFile(bus.getVehicleInsurance());
+            Utils.deleteFile(bus.getVehicleRevenueLicense());
+        }
+
         busRepository.deleteById(id);
     }
 
@@ -259,6 +288,35 @@ public class DBusService {
     }
 
     /**
+     * Get total bus count.
+     */
+    @Transactional(readOnly = true)
+    public long getTotalBusCount() {
+        return busRepository.count();
+    }
+
+    /**
+     * Get bus count by status.
+     */
+    @Transactional(readOnly = true)
+    public long getBusCountByStatus(BusStatus status) {
+        return busRepository.countByStatus(status);
+    }
+
+    /**
+     * Generate QR code data for a bus.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, String> generateBusQrCodeData(UUID busId) {
+        Bus bus = busRepository.findById(busId)
+                .orElseThrow(() -> new RuntimeException("Bus not found with ID: " + busId));
+
+        return Map.of(
+                "busId", bus.getId().toString(),
+                "operatorId", bus.getOwner().getId().toString());
+    }
+
+    /**
      * Convert Bus entity to BusResponseDto.
      */
     private BusResponseDto convertToResponseDto(Bus bus) {
@@ -272,8 +330,11 @@ public class DBusService {
         dto.setStatus(bus.getStatus());
         dto.setOwnerId(bus.getOwner().getId());
         dto.setOwnerName(bus.getOwner().getName());
-        dto.setVehicleInsurance(bus.getVehicleInsurance());
-        dto.setVehicleRevenueLicense(bus.getVehicleRevenueLicense());
+
+        // Convert document paths to public URLs
+        dto.setVehicleInsurance(getPublicDocumentUrl(bus.getVehicleInsurance()));
+        dto.setVehicleRevenueLicense(getPublicDocumentUrl(bus.getVehicleRevenueLicense()));
+
         dto.setCreatedAt(bus.getCreatedAt());
         dto.setUpdatedAt(bus.getUpdatedAt());
         return dto;
@@ -291,6 +352,43 @@ public class DBusService {
                 .ifPresent(dto::setWallet);
 
         return dto;
+    }
+
+    /**
+     * Converts a document URL to a public URL format.
+     */
+    public String getPublicDocumentUrl(String documentPath) {
+        if (documentPath != null && !documentPath.isBlank()) {
+            String filename = Paths.get(documentPath).getFileName().toString();
+            return baseUrl + "/documents/" + filename;
+        }
+        return null;
+    }
+
+    /*
+     * --------------------- HELPER METHODS ---------------------
+     */
+
+    /**
+     * Handles document upload logic.
+     * If the document is a URL, it returns the old URL.
+     * If the document is a base64 string, it saves it and returns the new URL.
+     * If the document is null or blank, it returns the old URL.
+     */
+    private String handleDocumentUpload(String document, String oldDocumentPath, String documentType) {
+        if (document == null || document.isBlank())
+            return oldDocumentPath;
+        if (document.startsWith("http") || (baseUrl != null && document.startsWith(baseUrl))) {
+            return oldDocumentPath; // Already a URL, don't update
+        }
+        try {
+            if (oldDocumentPath != null) {
+                Utils.deleteFile(oldDocumentPath);
+            }
+            return Utils.saveDocument(document, UUID.randomUUID().toString() + "_" + documentType + ".jpg");
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to save bus document", e);
+        }
     }
 
     /**
