@@ -4,13 +4,16 @@ import com.canpay.api.entity.BankAccount;
 import com.canpay.api.entity.User;
 import com.canpay.api.entity.User.UserRole;
 import com.canpay.api.entity.Wallet;
+import com.canpay.api.lib.Utils;
 import com.canpay.api.repository.UserRepository;
 import com.canpay.api.repository.bankaccount.BankAccountRepository;
 import com.canpay.api.repository.dashboard.DWalletRepository;
 import com.canpay.api.service.UserService;
 import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -24,6 +27,8 @@ public class UserServiceImpl implements UserService {
     private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
     private final BankAccountRepository bankAccountRepository;
     private final DWalletRepository walletRepository;
+    @Value("${app.base-url}")
+    private String baseUrl;
 
     public UserServiceImpl(UserRepository userRepository, BankAccountRepository bankAccountRepository, DWalletRepository walletRepository) {
         this.userRepository = userRepository;
@@ -130,8 +135,8 @@ public class UserServiceImpl implements UserService {
 
         user.setName(name);
         user.setNic(nic);
-        user.setPhotoUrl(profileImage);
         user.setStatus(User.UserStatus.ACTIVE);
+        user.setPhotoUrl(handlePhotoUpload(profileImage, null));
 
         User updatedUser = userRepository.save(user);
         logger.info("OPERATOR profile updated successfully for email: {}", email);
@@ -326,5 +331,21 @@ public class UserServiceImpl implements UserService {
 
         logger.info("Successfully fetched financial details for user: {}", email);
         return result;
+    }
+
+    private String handlePhotoUpload(String photo, String oldPhotoUrl) {
+        if (photo == null || photo.isBlank())
+            return oldPhotoUrl;
+        if (photo.startsWith("http") || (baseUrl != null && photo.startsWith(baseUrl))) {
+            return oldPhotoUrl; // Already a URL, don't update
+        }
+        try {
+            if (oldPhotoUrl != null) {
+                Utils.deleteImage(oldPhotoUrl);
+            }
+            return Utils.saveImage(photo, UUID.randomUUID().toString() + ".jpg");
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to save user photo", e);
+        }
     }
 }
