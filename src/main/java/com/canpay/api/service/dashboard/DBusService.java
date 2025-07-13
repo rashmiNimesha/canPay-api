@@ -3,6 +3,7 @@ package com.canpay.api.service.dashboard;
 import com.canpay.api.dto.dashboard.bus.BusRequestDto;
 import com.canpay.api.dto.dashboard.bus.BusResponseDto;
 import com.canpay.api.dto.dashboard.bus.BusSearchDto;
+import com.canpay.api.dto.dashboard.bus.BusWalletDto;
 import com.canpay.api.entity.Bus;
 import com.canpay.api.entity.Bus.BusStatus;
 import com.canpay.api.entity.Bus.BusType;
@@ -32,6 +33,9 @@ public class DBusService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private DWalletService walletService;
 
     /**
      * Create a new bus.
@@ -67,7 +71,16 @@ public class DBusService {
         if (!busOpt.isPresent()) {
             throw new RuntimeException("Bus not found with ID: " + id);
         }
-        return convertToResponseDto(busOpt.get());
+        return convertToResponseDtoWithWallet(busOpt.get());
+    }
+
+    /**
+     * Find bus entity by ID.
+     */
+    @Transactional(readOnly = true)
+    public Bus findBusById(UUID id) {
+        return busRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Bus not found with ID: " + id));
     }
 
     /**
@@ -259,11 +272,24 @@ public class DBusService {
         dto.setStatus(bus.getStatus());
         dto.setOwnerId(bus.getOwner().getId());
         dto.setOwnerName(bus.getOwner().getName());
-        dto.setWalletId(bus.getWallet() != null ? bus.getWallet().getId() : null);
         dto.setVehicleInsurance(bus.getVehicleInsurance());
         dto.setVehicleRevenueLicense(bus.getVehicleRevenueLicense());
         dto.setCreatedAt(bus.getCreatedAt());
         dto.setUpdatedAt(bus.getUpdatedAt());
+        return dto;
+    }
+
+    /**
+     * Convert Bus entity to BusResponseDto with full wallet details.
+     */
+    private BusResponseDto convertToResponseDtoWithWallet(Bus bus) {
+        BusResponseDto dto = convertToResponseDto(bus);
+
+        // Fetch and set wallet details
+        walletService.getWalletByBusId(bus.getId())
+                .map(BusWalletDto::new)
+                .ifPresent(dto::setWallet);
+
         return dto;
     }
 

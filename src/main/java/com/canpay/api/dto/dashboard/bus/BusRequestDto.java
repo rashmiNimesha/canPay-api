@@ -49,7 +49,8 @@ public class BusRequestDto {
         return busNumber;
     }
 
-    public void setBusNumber(@NotBlank(message = "Bus number is required") @Size(max = 20, message = "Bus number must not exceed 20 characters") String busNumber) {
+    public void setBusNumber(
+            @NotBlank(message = "Bus number is required") @Size(max = 20, message = "Bus number must not exceed 20 characters") String busNumber) {
         this.busNumber = busNumber;
     }
 
@@ -113,7 +114,8 @@ public class BusRequestDto {
         return vehicleRevenueLicense;
     }
 
-    public void setVehicleRevenueLicense(@NotBlank(message = "Vehicle revenue license is required") String vehicleRevenueLicense) {
+    public void setVehicleRevenueLicense(
+            @NotBlank(message = "Vehicle revenue license is required") String vehicleRevenueLicense) {
         this.vehicleRevenueLicense = vehicleRevenueLicense;
     }
 }

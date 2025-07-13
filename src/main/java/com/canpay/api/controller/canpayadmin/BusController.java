@@ -3,10 +3,13 @@ package com.canpay.api.controller.canpayadmin;
 import com.canpay.api.dto.dashboard.bus.BusRequestDto;
 import com.canpay.api.dto.dashboard.bus.BusResponseDto;
 import com.canpay.api.dto.dashboard.bus.BusSearchDto;
+import com.canpay.api.entity.ResponseEntityBuilder;
 import com.canpay.api.entity.Bus.BusStatus;
 import com.canpay.api.entity.Bus.BusType;
+import com.canpay.api.entity.Bus;
 import com.canpay.api.service.dashboard.DBusService;
 import com.canpay.api.service.dashboard.DBusService.BusStatsDto;
+import com.canpay.api.service.dashboard.DWalletService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -14,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -27,6 +31,9 @@ public class BusController {
 
     @Autowired
     private DBusService busService;
+
+    @Autowired
+    private DWalletService walletService;
 
     /**
      * Create a new bus.
@@ -45,12 +52,20 @@ public class BusController {
      * Get bus by ID.
      */
     @GetMapping("/buses/{id}")
-    public ResponseEntity<BusResponseDto> getBusById(@PathVariable UUID id) {
+    public ResponseEntity<?> getBusById(@PathVariable UUID id) {
         try {
             BusResponseDto responseDto = busService.getBusById(id);
-            return new ResponseEntity<>(responseDto, HttpStatus.OK);
+            return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                    .resultMessage("Bus details retrieved successfully")
+                    .httpStatus(HttpStatus.OK)
+                    .body(Map.of("bus", responseDto))
+                    .buildWrapped();
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                    .resultMessage("Bus not found")
+                    .httpStatus(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", e.getMessage()))
+                    .buildWrapped();
         }
     }
 
@@ -71,9 +86,13 @@ public class BusController {
      * Get all buses.
      */
     @GetMapping("/buses")
-    public ResponseEntity<List<BusResponseDto>> getAllBuses() {
+    public ResponseEntity<?> getAllBuses() {
         List<BusResponseDto> buses = busService.getAllBuses();
-        return new ResponseEntity<>(buses, HttpStatus.OK);
+        return new ResponseEntityBuilder.Builder<List<BusResponseDto>>()
+                .resultMessage("List of all buses retrieved successfully")
+                .httpStatus(HttpStatus.OK)
+                .body(buses)
+                .buildWrapped();
     }
 
     /**
@@ -143,12 +162,30 @@ public class BusController {
      * Update bus status.
      */
     @PatchMapping("/buses/{id}/status")
-    public ResponseEntity<BusResponseDto> updateBusStatus(@PathVariable UUID id, @RequestParam BusStatus status) {
+    public ResponseEntity<?> updateBusStatus(@PathVariable UUID id, @RequestParam BusStatus status) {
         try {
             BusResponseDto responseDto = busService.updateBusStatus(id, status);
-            return new ResponseEntity<>(responseDto, HttpStatus.OK);
+
+            // If status is being changed to ACTIVE, ensure bus has a wallet (only once)
+            if (status == BusStatus.ACTIVE) {
+                Bus bus = busService.findBusById(id);
+                if (bus != null && bus.getWallet() == null) {
+                    // Create wallet for bus when it becomes active for the first time
+                    walletService.createBusWallet(bus);
+                }
+            }
+
+            return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                    .resultMessage("Bus status updated successfully")
+                    .httpStatus(HttpStatus.OK)
+                    .body(Map.of("bus", responseDto))
+                    .buildWrapped();
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                    .resultMessage("Bus not found")
+                    .httpStatus(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", e.getMessage()))
+                    .buildWrapped();
         }
     }
 
@@ -156,73 +193,12 @@ public class BusController {
      * Get bus statistics.
      */
     @GetMapping("/buses/statistics")
-    public ResponseEntity<BusStatsDto> getBusStatistics() {
+    public ResponseEntity<?> getBusStatistics() {
         BusStatsDto stats = busService.getBusStatistics();
-        return new ResponseEntity<>(stats, HttpStatus.OK);
-    }
-
-    /**
-     * Approve bus (set status to ACTIVE).
-     */
-    @PatchMapping("/buses/{id}/approve")
-    public ResponseEntity<BusResponseDto> approveBus(@PathVariable UUID id) {
-        try {
-            BusResponseDto responseDto = busService.updateBusStatus(id, BusStatus.ACTIVE);
-            return new ResponseEntity<>(responseDto, HttpStatus.OK);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    /**
-     * Reject bus (set status to REJECTED).
-     */
-    @PatchMapping("/buses/{id}/reject")
-    public ResponseEntity<BusResponseDto> rejectBus(@PathVariable UUID id) {
-        try {
-            BusResponseDto responseDto = busService.updateBusStatus(id, BusStatus.REJECTED);
-            return new ResponseEntity<>(responseDto, HttpStatus.OK);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    /**
-     * Block bus (set status to BLOCKED).
-     */
-    @PatchMapping("/buses/{id}/block")
-    public ResponseEntity<BusResponseDto> blockBus(@PathVariable UUID id) {
-        try {
-            BusResponseDto responseDto = busService.updateBusStatus(id, BusStatus.BLOCKED);
-            return new ResponseEntity<>(responseDto, HttpStatus.OK);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    /**
-     * Activate bus (set status to ACTIVE).
-     */
-    @PatchMapping("/buses/{id}/activate")
-    public ResponseEntity<BusResponseDto> activateBus(@PathVariable UUID id) {
-        try {
-            BusResponseDto responseDto = busService.updateBusStatus(id, BusStatus.ACTIVE);
-            return new ResponseEntity<>(responseDto, HttpStatus.OK);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    /**
-     * Deactivate bus (set status to INACTIVE).
-     */
-    @PatchMapping("/buses/{id}/deactivate")
-    public ResponseEntity<BusResponseDto> deactivateBus(@PathVariable UUID id) {
-        try {
-            BusResponseDto responseDto = busService.updateBusStatus(id, BusStatus.INACTIVE);
-            return new ResponseEntity<>(responseDto, HttpStatus.OK);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                .resultMessage("Bus statistics retrieved successfully")
+                .httpStatus(HttpStatus.OK)
+                .body(Map.of("statistics", stats))
+                .buildWrapped();
     }
 }

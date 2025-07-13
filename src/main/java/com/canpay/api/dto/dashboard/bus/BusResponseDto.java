@@ -26,7 +26,7 @@ public class BusResponseDto {
     private BusStatus status;
     private UUID ownerId;
     private String ownerName;
-    private UUID walletId;
+    private BusWalletDto wallet;
     private String vehicleInsurance;
     private String vehicleRevenueLicense;
     private LocalDateTime createdAt;
@@ -104,12 +104,12 @@ public class BusResponseDto {
         this.ownerName = ownerName;
     }
 
-    public UUID getWalletId() {
-        return walletId;
+    public BusWalletDto getWallet() {
+        return wallet;
     }
 
-    public void setWalletId(UUID walletId) {
-        this.walletId = walletId;
+    public void setWallet(BusWalletDto wallet) {
+        this.wallet = wallet;
     }
 
     public String getVehicleInsurance() {
