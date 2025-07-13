@@ -184,7 +184,7 @@ public class UserServiceImpl implements UserService {
 
     @Transactional
     @Override
-    public void addBankAccount(String email, String accountName, String bankName, long accountNumber, boolean isDefault) {
+    public BankAccount addBankAccount(String email, String accountName, String bankName, long accountNumber, boolean isDefault) {
         logger.debug("Adding bank account for email: {}, accountNumber: {}", email, accountNumber);
         if (accountName == null || accountName.trim().isEmpty()) {
             logger.warn("Invalid account name for email: {}", email);
@@ -217,6 +217,7 @@ public class UserServiceImpl implements UserService {
         }
         userRepository.save(user);
         logger.info("Added bank account for email: {}, accountNumber: {}", email, accountNumber);
+        return bankAccount;
     }
 
     private User getUserOrThrow(String email) {
