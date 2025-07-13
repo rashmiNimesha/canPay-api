@@ -10,6 +10,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -19,7 +20,6 @@ import java.util.List;
 @Table(name = "buses")
 @Getter
 @Setter
-@NoArgsConstructor
 public class Bus extends BaseEntity {
     /** Unique bus number. */
     @Column(name = "bus_number", nullable = false)
@@ -61,7 +61,7 @@ public class Bus extends BaseEntity {
     /** List of operator assignments for this bus. */
     @OneToMany(mappedBy = "bus", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
-    private List<OperatorAssignment> operatorAssignments;
+    private List<OperatorAssignment> operatorAssignments = new ArrayList<>();;
 
     /** Wallet associated with this bus. */
     @OneToOne(mappedBy = "bus", cascade = CascadeType.ALL)
@@ -86,10 +86,9 @@ public class Bus extends BaseEntity {
     public enum BusStatus {
         PENDING, ACTIVE, INACTIVE, REJECTED, BLOCKED
     }
-
     // Business Constructor
     public Bus(User owner, String busNumber, BusType type, String routeFrom, String routeTo, String province,
-            BusStatus status, String vehicleInsurance, String vehicleRevenueLicense) {
+               BusStatus status, String vehicleInsurance, String vehicleRevenueLicense) {
         this.owner = owner;
         this.busNumber = busNumber;
         this.type = type;
@@ -97,8 +96,12 @@ public class Bus extends BaseEntity {
         this.routeTo = routeTo;
         this.province = province;
         this.status = status;
+        this.operatorAssignments = new ArrayList<>(); // Initialize in constructor
         this.vehicleInsurance = vehicleInsurance;
         this.vehicleRevenueLicense = vehicleRevenueLicense;
+    }
+    public Bus() {
+
     }
 
     public String getBusNumber() {

@@ -1,5 +1,6 @@
 package com.canpay.api.repository.dashboard;
 
+import com.canpay.api.entity.User;
 import com.canpay.api.entity.Wallet;
 import com.canpay.api.entity.Wallet.WalletType;
 
@@ -14,6 +15,7 @@ import org.springframework.lang.NonNull;
 public interface DWalletRepository extends JpaRepository<Wallet, UUID> {
     /** Find wallet by user ID */
     Optional<Wallet> findByUser_Id(UUID userId);
+    Optional<Wallet> findByUser(User user);
 
     /** Find wallet by bus ID */
     Optional<Wallet> findByBus_Id(UUID busId);
@@ -43,4 +45,7 @@ public interface DWalletRepository extends JpaRepository<Wallet, UUID> {
 
     /** Count wallets by type */
     long countByType(WalletType type);
+
+    Optional<Wallet> findByUserAndType(User user, Wallet.WalletType type);
+
 }

@@ -44,4 +44,76 @@ public class BusRequestDto {
 
     @NotBlank(message = "Vehicle revenue license is required")
     private String vehicleRevenueLicense;
+
+    public @NotBlank(message = "Bus number is required") @Size(max = 20, message = "Bus number must not exceed 20 characters") String getBusNumber() {
+        return busNumber;
+    }
+
+    public void setBusNumber(@NotBlank(message = "Bus number is required") @Size(max = 20, message = "Bus number must not exceed 20 characters") String busNumber) {
+        this.busNumber = busNumber;
+    }
+
+    public @NotNull(message = "Bus type is required") BusType getType() {
+        return type;
+    }
+
+    public void setType(@NotNull(message = "Bus type is required") BusType type) {
+        this.type = type;
+    }
+
+    public @Size(max = 100, message = "Route from must not exceed 100 characters") String getRouteFrom() {
+        return routeFrom;
+    }
+
+    public void setRouteFrom(@Size(max = 100, message = "Route from must not exceed 100 characters") String routeFrom) {
+        this.routeFrom = routeFrom;
+    }
+
+    public @Size(max = 100, message = "Route to must not exceed 100 characters") String getRouteTo() {
+        return routeTo;
+    }
+
+    public void setRouteTo(@Size(max = 100, message = "Route to must not exceed 100 characters") String routeTo) {
+        this.routeTo = routeTo;
+    }
+
+    public @Size(max = 50, message = "Province must not exceed 50 characters") String getProvince() {
+        return province;
+    }
+
+    public void setProvince(@Size(max = 50, message = "Province must not exceed 50 characters") String province) {
+        this.province = province;
+    }
+
+    public BusStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(BusStatus status) {
+        this.status = status;
+    }
+
+    public @NotNull(message = "Owner ID is required") UUID getOwnerId() {
+        return ownerId;
+    }
+
+    public void setOwnerId(@NotNull(message = "Owner ID is required") UUID ownerId) {
+        this.ownerId = ownerId;
+    }
+
+    public @NotBlank(message = "Vehicle insurance is required") String getVehicleInsurance() {
+        return vehicleInsurance;
+    }
+
+    public void setVehicleInsurance(@NotBlank(message = "Vehicle insurance is required") String vehicleInsurance) {
+        this.vehicleInsurance = vehicleInsurance;
+    }
+
+    public @NotBlank(message = "Vehicle revenue license is required") String getVehicleRevenueLicense() {
+        return vehicleRevenueLicense;
+    }
+
+    public void setVehicleRevenueLicense(@NotBlank(message = "Vehicle revenue license is required") String vehicleRevenueLicense) {
+        this.vehicleRevenueLicense = vehicleRevenueLicense;
+    }
 }

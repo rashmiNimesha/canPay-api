@@ -13,6 +13,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Date;
+import java.util.UUID;
 
 @Service
 public class JwtService {
@@ -54,6 +55,10 @@ public class JwtService {
 
     public String extractRole(String token) {
         return extractAllClaims(token).get("role", String.class);
+    }
+
+    public UUID extractUserId(String token) {
+        return UUID.fromString(extractAllClaims(token).get("id", String.class));
     }
 
     private Claims extractAllClaims(String token) {

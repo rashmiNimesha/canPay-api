@@ -3,15 +3,16 @@ package com.canpay.api.service.implementation;
 import com.canpay.api.entity.BankAccount;
 import com.canpay.api.entity.User;
 import com.canpay.api.entity.User.UserRole;
+import com.canpay.api.entity.Wallet;
 import com.canpay.api.repository.UserRepository;
+import com.canpay.api.repository.bankaccount.BankAccountRepository;
+import com.canpay.api.repository.dashboard.DWalletRepository;
 import com.canpay.api.service.UserService;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,9 +22,13 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
+    private final BankAccountRepository bankAccountRepository;
+    private final DWalletRepository walletRepository;
 
-    public UserServiceImpl(UserRepository userRepository) {
+    public UserServiceImpl(UserRepository userRepository, BankAccountRepository bankAccountRepository, DWalletRepository walletRepository) {
         this.userRepository = userRepository;
+        this.bankAccountRepository = bankAccountRepository;
+        this.walletRepository = walletRepository;
     }
 
     @Transactional
@@ -269,4 +274,56 @@ public class UserServiceImpl implements UserService {
         return userRepository.save(user);
     }
 
+    public Optional<User> findUserById(UUID operatorId) {
+        Optional<User> userOpt = userRepository.findById(operatorId);
+        if (userOpt.isPresent()) {
+            logger.debug("User found: {}", userOpt.get());
+        } else {
+            logger.warn("User not found with ID: {}", operatorId);
+        }
+        return userOpt;
+    }
+
+
+    public Map<String, Object> getUserFinancialDetails(String email, UserRole role) {
+        logger.debug("Fetching financial details for user: {}", email);
+
+        // Find user by email
+        User user = userRepository.findByEmailAndRole(email, role)
+                .orElseThrow(() -> {
+                    logger.warn("User not found: {}", email);
+                    return new RuntimeException("User not found");
+                });
+
+        // Find default bank account
+        Optional<BankAccount> bankAccountOpt = bankAccountRepository.findByUserAndIsDefaultTrue(user);
+        Map<String, Object> bankDetails = new HashMap<>();
+        if (bankAccountOpt.isPresent()) {
+            BankAccount bankAccount = bankAccountOpt.get();
+            bankDetails.put("accountNumber", bankAccount.getAccountNumber());
+            bankDetails.put("accountName", bankAccount.getAccountName());
+        } else {
+            logger.info("No default bank account found for user: {}", email);
+            bankDetails.put("accountNumber", null);
+            bankDetails.put("accountName", null);
+        }
+
+        // Find wallet balance
+        Optional<Wallet> walletOpt = walletRepository.findByUser(user);
+        Map<String, Object> walletDetails = new HashMap<>();
+        if (walletOpt.isPresent()) {
+            walletDetails.put("balance", walletOpt.get().getBalance());
+        } else {
+            logger.info("No wallet found for user: {}", email);
+            walletDetails.put("balance", null);
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("email", email);
+        result.put("bankAccount", bankDetails);
+        result.put("wallet", walletDetails);
+
+        logger.info("Successfully fetched financial details for user: {}", email);
+        return result;
+    }
 }
