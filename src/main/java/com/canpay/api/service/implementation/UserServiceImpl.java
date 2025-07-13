@@ -30,7 +30,8 @@ public class UserServiceImpl implements UserService {
     @Value("${app.base-url}")
     private String baseUrl;
 
-    public UserServiceImpl(UserRepository userRepository, BankAccountRepository bankAccountRepository, DWalletRepository walletRepository) {
+    public UserServiceImpl(UserRepository userRepository, BankAccountRepository bankAccountRepository,
+            DWalletRepository walletRepository) {
         this.userRepository = userRepository;
         this.bankAccountRepository = bankAccountRepository;
         this.walletRepository = walletRepository;
@@ -46,7 +47,6 @@ public class UserServiceImpl implements UserService {
     public Optional<User> findByEmailAndRole(String email, UserRole role) {
         return userRepository.findByEmailAndRole(email, role);
     }
-
 
     public User registerWithEmail(String email, String roleStr) {
         UserRole role = UserRole.valueOf(roleStr.toUpperCase());
@@ -71,7 +71,8 @@ public class UserServiceImpl implements UserService {
 
     @Transactional
     @Override
-    public User updatePassengerProfile(String email, String name, String nic, String accName, String bank, long accNo, UserRole role) {
+    public User updatePassengerProfile(String email, String name, String nic, String accName, String bank, long accNo,
+            UserRole role) {
         logger.debug("Updating PASSENGER profile for email: {}, name: {}, nic: {}, accName: {}, bank: {}, accNo: {}",
                 email, name, nic, accName, bank, accNo);
 
@@ -118,14 +119,16 @@ public class UserServiceImpl implements UserService {
             return updatedUser;
         } catch (Exception e) {
             logger.error("Failed to update PASSENGER profile for email: {}. Reason: {}", email, e.getMessage(), e);
-            throw new RuntimeException("Failed to update profile: " + (e.getMessage() != null ? e.getMessage() : "Database error"));
+            throw new RuntimeException(
+                    "Failed to update profile: " + (e.getMessage() != null ? e.getMessage() : "Database error"));
         }
     }
 
     @Transactional
     @Override
     public User updateOperatorProfile(String email, String name, String nic, String profileImage, UserRole role) {
-        logger.debug("Updating OPERATOR profile for email: {}, name: {}, nic: {}, profileImage: {}", email, name, nic, profileImage);
+        logger.debug("Updating OPERATOR profile for email: {}, name: {}, nic: {}, profileImage: {}", email, name, nic,
+                profileImage);
 
         User user = userRepository.findByEmailAndRole(email, role)
                 .orElseThrow(() -> {
@@ -143,11 +146,12 @@ public class UserServiceImpl implements UserService {
         return updatedUser;
     }
 
-
     @Transactional
     @Override
-    public User updateOwnerProfile(String email, String name, String nic, String profileImage, String accName, String bank, long accNo, UserRole role) {
-        logger.debug("Updating OWNER profile for email: {}, name: {}, nic: {}, profileImage: {}, accName: {}, bank: {}, accNo: {}",
+    public User updateOwnerProfile(String email, String name, String nic, String profileImage, String accName,
+            String bank, long accNo, UserRole role) {
+        logger.debug(
+                "Updating OWNER profile for email: {}, name: {}, nic: {}, profileImage: {}, accName: {}, bank: {}, accNo: {}",
                 email, name, nic, profileImage, accName, bank, accNo);
 
         User user = userRepository.findByEmailAndRole(email, role)
@@ -189,7 +193,8 @@ public class UserServiceImpl implements UserService {
 
     @Transactional
     @Override
-    public BankAccount addBankAccount(String email, String accountName, String bankName, long accountNumber, boolean isDefault) {
+    public BankAccount addBankAccount(String email, String accountName, String bankName, long accountNumber,
+            boolean isDefault) {
         logger.debug("Adding bank account for email: {}, accountNumber: {}", email, accountNumber);
         if (accountName == null || accountName.trim().isEmpty()) {
             logger.warn("Invalid account name for email: {}", email);
@@ -240,7 +245,6 @@ public class UserServiceImpl implements UserService {
         return count;
     }
 
-
     @Override
     public User updateName(String email, String name) {
         logger.debug("Updating name for email: {}", email);
@@ -258,11 +262,11 @@ public class UserServiceImpl implements UserService {
         return userRepository.save(user);
     }
 
-
     @Override
     public User updateEmail(String email, String newEmail) {
         logger.debug("Updating email from {} to {}", email, newEmail);
-        if (newEmail == null || newEmail.trim().isEmpty() || !newEmail.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
+        if (newEmail == null || newEmail.trim().isEmpty()
+                || !newEmail.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
             logger.warn("Invalid new email provided: {}", newEmail);
             throw new IllegalArgumentException("Invalid email format");
         }
@@ -289,7 +293,6 @@ public class UserServiceImpl implements UserService {
         }
         return userOpt;
     }
-
 
     public Map<String, Object> getUserFinancialDetails(String email, UserRole role) {
         logger.debug("Fetching financial details for user: {}", email);
@@ -341,7 +344,7 @@ public class UserServiceImpl implements UserService {
         }
         try {
             if (oldPhotoUrl != null) {
-                Utils.deleteImage(oldPhotoUrl);
+                Utils.deleteFile(oldPhotoUrl);
             }
             return Utils.saveImage(photo, UUID.randomUUID().toString() + ".jpg");
         } catch (IOException e) {

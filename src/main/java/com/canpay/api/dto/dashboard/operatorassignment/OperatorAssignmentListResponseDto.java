@@ -1,7 +1,5 @@
 package com.canpay.api.dto.dashboard.operatorassignment;
 
-import com.canpay.api.dto.dashboard.bus.BusResponseDto;
-import com.canpay.api.dto.dashboard.user.UserDto;
 import com.canpay.api.entity.OperatorAssignment.AssignmentStatus;
 
 import java.time.LocalDateTime;
@@ -10,17 +8,21 @@ import java.util.UUID;
 /**
  * DTO for operator assignment response data.
  */
-public class OperatorAssignmentResponseDto {
+public class OperatorAssignmentListResponseDto {
 
     private UUID id;
-    private UserDto operator;
-    private BusResponseDto bus;
+    private UUID operatorId;
+    private String operatorName;
+    private UUID busId;
+    private String busNumber;
+    private UUID busOwnerId;
+    private String busOwnerName;
     private AssignmentStatus status;
     private LocalDateTime assignedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public OperatorAssignmentResponseDto() {
+    public OperatorAssignmentListResponseDto() {
     }
 
     // Getters and Setters
@@ -32,20 +34,52 @@ public class OperatorAssignmentResponseDto {
         this.id = id;
     }
 
-    public UserDto getOperator() {
-        return operator;
+    public UUID getOperatorId() {
+        return operatorId;
     }
 
-    public void setOperator(UserDto operator) {
-        this.operator = operator;
+    public void setOperatorId(UUID operatorId) {
+        this.operatorId = operatorId;
     }
 
-    public BusResponseDto getBus() {
-        return bus;
+    public String getOperatorName() {
+        return operatorName;
     }
 
-    public void setBus(BusResponseDto bus) {
-        this.bus = bus;
+    public void setOperatorName(String operatorName) {
+        this.operatorName = operatorName;
+    }
+
+    public UUID getBusId() {
+        return busId;
+    }
+
+    public void setBusId(UUID busId) {
+        this.busId = busId;
+    }
+
+    public String getBusNumber() {
+        return busNumber;
+    }
+
+    public void setBusNumber(String busNumber) {
+        this.busNumber = busNumber;
+    }
+
+    public UUID getBusOwnerId() {
+        return busOwnerId;
+    }
+
+    public void setBusOwnerId(UUID busOwnerId) {
+        this.busOwnerId = busOwnerId;
+    }
+
+    public String getBusOwnerName() {
+        return busOwnerName;
+    }
+
+    public void setBusOwnerName(String busOwnerName) {
+        this.busOwnerName = busOwnerName;
     }
 
     public AssignmentStatus getStatus() {

@@ -86,9 +86,10 @@ public class Bus extends BaseEntity {
     public enum BusStatus {
         PENDING, ACTIVE, INACTIVE, REJECTED, BLOCKED
     }
+
     // Business Constructor
     public Bus(User owner, String busNumber, BusType type, String routeFrom, String routeTo, String province,
-               BusStatus status, String vehicleInsurance, String vehicleRevenueLicense) {
+            BusStatus status, String vehicleInsurance, String vehicleRevenueLicense) {
         this.owner = owner;
         this.busNumber = busNumber;
         this.type = type;
@@ -100,6 +101,7 @@ public class Bus extends BaseEntity {
         this.vehicleInsurance = vehicleInsurance;
         this.vehicleRevenueLicense = vehicleRevenueLicense;
     }
+
     public Bus() {
 
     }

@@ -66,6 +66,7 @@ public class ApplicationSecurityConfig {
                                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers("/api/v1/canpay-admin/**").hasRole("ADMIN")
+                                                .requestMatchers("/images/**", "/documents/**").permitAll()
                                                 .anyRequest().denyAll())
                                 .oauth2ResourceServer(oauth2 -> oauth2
                                                 .jwt(jwt -> jwt
@@ -89,10 +90,11 @@ public class ApplicationSecurityConfig {
                 http
                                 .securityMatcher("/api/v1/**")
                                 .csrf(csrf -> csrf.disable())
-//                                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                                // .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers("/api/v1/auth/**").permitAll()
+                                                .requestMatchers("/images/**", "/documents/**").permitAll()
                                                 .anyRequest().authenticated())
                                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

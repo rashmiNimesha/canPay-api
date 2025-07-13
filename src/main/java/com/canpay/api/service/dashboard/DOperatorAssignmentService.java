@@ -1,8 +1,11 @@
 package com.canpay.api.service.dashboard;
 
 import com.canpay.api.dto.dashboard.operatorassignment.OperatorAssignmentRequestDto;
+import com.canpay.api.dto.dashboard.operatorassignment.OperatorAssignmentListResponseDto;
 import com.canpay.api.dto.dashboard.operatorassignment.OperatorAssignmentResponseDto;
 import com.canpay.api.dto.dashboard.operatorassignment.OperatorAssignmentSearchDto;
+import com.canpay.api.dto.dashboard.bus.BusResponseDto;
+import com.canpay.api.dto.dashboard.user.UserDto;
 import com.canpay.api.entity.Bus;
 import com.canpay.api.entity.OperatorAssignment;
 import com.canpay.api.entity.OperatorAssignment.AssignmentStatus;
@@ -36,6 +39,12 @@ public class DOperatorAssignmentService {
     @Autowired
     private DBusRepository busRepository;
 
+    @Autowired
+    private DBusService busService;
+
+    @Autowired
+    private DUserService userService;
+
     /**
      * Create a new operator assignment.
      */
@@ -62,7 +71,7 @@ public class DOperatorAssignmentService {
         }
 
         OperatorAssignment savedAssignment = operatorAssignmentRepository.save(assignment);
-        return convertToResponseDto(savedAssignment);
+        return convertToSingleResponseDto(savedAssignment);
     }
 
     /**
@@ -74,14 +83,14 @@ public class DOperatorAssignmentService {
         if (!assignmentOpt.isPresent()) {
             throw new RuntimeException("Assignment not found with ID: " + id);
         }
-        return convertToResponseDto(assignmentOpt.get());
+        return convertToSingleResponseDto(assignmentOpt.get());
     }
 
     /**
      * Get all assignments.
      */
     @Transactional(readOnly = true)
-    public List<OperatorAssignmentResponseDto> getAllAssignments() {
+    public List<OperatorAssignmentListResponseDto> getAllAssignments() {
         return operatorAssignmentRepository.findAll().stream()
                 .map(this::convertToResponseDto)
                 .collect(Collectors.toList());
@@ -123,7 +132,7 @@ public class DOperatorAssignmentService {
         }
 
         OperatorAssignment updatedAssignment = operatorAssignmentRepository.save(existingAssignment);
-        return convertToResponseDto(updatedAssignment);
+        return convertToSingleResponseDto(updatedAssignment);
     }
 
     /**
@@ -140,7 +149,7 @@ public class DOperatorAssignmentService {
      * Search assignments based on criteria.
      */
     @Transactional(readOnly = true)
-    public List<OperatorAssignmentResponseDto> searchAssignments(OperatorAssignmentSearchDto searchDto) {
+    public List<OperatorAssignmentListResponseDto> searchAssignments(OperatorAssignmentSearchDto searchDto) {
         List<OperatorAssignment> assignments;
 
         if (searchDto.getOperatorId() != null && searchDto.getStatus() != null) {
@@ -192,7 +201,7 @@ public class DOperatorAssignmentService {
      * Get assignments by operator ID.
      */
     @Transactional(readOnly = true)
-    public List<OperatorAssignmentResponseDto> getAssignmentsByOperator(UUID operatorId) {
+    public List<OperatorAssignmentListResponseDto> getAssignmentsByOperator(UUID operatorId) {
         return operatorAssignmentRepository.findByOperator_Id(operatorId).stream()
                 .map(this::convertToResponseDto)
                 .collect(Collectors.toList());
@@ -202,7 +211,7 @@ public class DOperatorAssignmentService {
      * Get assignments by bus ID.
      */
     @Transactional(readOnly = true)
-    public List<OperatorAssignmentResponseDto> getAssignmentsByBus(UUID busId) {
+    public List<OperatorAssignmentListResponseDto> getAssignmentsByBus(UUID busId) {
         return operatorAssignmentRepository.findByBus_Id(busId).stream()
                 .map(this::convertToResponseDto)
                 .collect(Collectors.toList());
@@ -212,7 +221,7 @@ public class DOperatorAssignmentService {
      * Get assignments by status.
      */
     @Transactional(readOnly = true)
-    public List<OperatorAssignmentResponseDto> getAssignmentsByStatus(AssignmentStatus status) {
+    public List<OperatorAssignmentListResponseDto> getAssignmentsByStatus(AssignmentStatus status) {
         return operatorAssignmentRepository.findByStatus(status).stream()
                 .map(this::convertToResponseDto)
                 .collect(Collectors.toList());
@@ -222,7 +231,7 @@ public class DOperatorAssignmentService {
      * Get assignments by bus owner ID.
      */
     @Transactional(readOnly = true)
-    public List<OperatorAssignmentResponseDto> getAssignmentsByBusOwner(UUID ownerId) {
+    public List<OperatorAssignmentListResponseDto> getAssignmentsByBusOwner(UUID ownerId) {
         return operatorAssignmentRepository.findByBus_Owner_Id(ownerId).stream()
                 .map(this::convertToResponseDto)
                 .collect(Collectors.toList());
@@ -240,14 +249,14 @@ public class DOperatorAssignmentService {
 
         assignment.setStatus(status);
         OperatorAssignment updatedAssignment = operatorAssignmentRepository.save(assignment);
-        return convertToResponseDto(updatedAssignment);
+        return convertToSingleResponseDto(updatedAssignment);
     }
 
     /**
      * Get most recent assignment for operator.
      */
     @Transactional(readOnly = true)
-    public OperatorAssignmentResponseDto getMostRecentAssignmentForOperator(UUID operatorId) {
+    public OperatorAssignmentListResponseDto getMostRecentAssignmentForOperator(UUID operatorId) {
         Optional<OperatorAssignment> assignmentOpt = operatorAssignmentRepository
                 .findTopByOperator_IdOrderByAssignedAtDesc(operatorId);
         if (!assignmentOpt.isPresent()) {
@@ -260,7 +269,7 @@ public class DOperatorAssignmentService {
      * Get most recent assignment for bus.
      */
     @Transactional(readOnly = true)
-    public OperatorAssignmentResponseDto getMostRecentAssignmentForBus(UUID busId) {
+    public OperatorAssignmentListResponseDto getMostRecentAssignmentForBus(UUID busId) {
         Optional<OperatorAssignment> assignmentOpt = operatorAssignmentRepository
                 .findTopByBus_IdOrderByAssignedAtDesc(busId);
         if (!assignmentOpt.isPresent()) {
@@ -288,8 +297,35 @@ public class DOperatorAssignmentService {
     /**
      * Convert OperatorAssignment entity to OperatorAssignmentResponseDto.
      */
-    private OperatorAssignmentResponseDto convertToResponseDto(OperatorAssignment assignment) {
+    private OperatorAssignmentResponseDto convertToSingleResponseDto(OperatorAssignment assignment) {
         OperatorAssignmentResponseDto dto = new OperatorAssignmentResponseDto();
+        dto.setId(assignment.getId());
+
+        // Create full operator DTO
+        UserDto operatorDto = new UserDto(assignment.getUser());
+        // Set photo as public URL if exists
+        String publicPhotoUrl = userService.getPublicPhotoUrl(assignment.getUser().getPhotoUrl());
+        if (publicPhotoUrl != null) {
+            operatorDto.setPhoto(publicPhotoUrl);
+        }
+        dto.setOperator(operatorDto);
+
+        // Create full bus DTO
+        BusResponseDto busDto = busService.getBusById(assignment.getBus().getId());
+        dto.setBus(busDto);
+
+        dto.setStatus(assignment.getStatus());
+        dto.setAssignedAt(assignment.getAssignedAt());
+        dto.setCreatedAt(assignment.getCreatedAt());
+        dto.setUpdatedAt(assignment.getUpdatedAt());
+        return dto;
+    }
+
+    /**
+     * Convert OperatorAssignment entity to OperatorAssignmentListResponseDto.
+     */
+    private OperatorAssignmentListResponseDto convertToResponseDto(OperatorAssignment assignment) {
+        OperatorAssignmentListResponseDto dto = new OperatorAssignmentListResponseDto();
         dto.setId(assignment.getId());
         dto.setOperatorId(assignment.getUser().getId());
         dto.setOperatorName(assignment.getUser().getName());
