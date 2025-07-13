@@ -3,7 +3,7 @@ package com.canpay.api.controller.account;
 import com.canpay.api.entity.*;
 import com.canpay.api.repository.dashboard.DWalletRepository;
 import com.canpay.api.service.implementation.JwtService;
-import com.canpay.api.service.implementation.MqttService;
+//import com.canpay.api.service.implementation.MqttService;
 import com.canpay.api.service.implementation.UserServiceImpl;
 import com.canpay.api.repository.BusRepository;
 import com.canpay.api.repository.OperatorAssignmentRepository;
@@ -29,19 +29,22 @@ public class PaymentController {
     private final OperatorAssignmentRepository operatorAssignmentRepository;
     private final DWalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
-    private final MqttService mqttService;
+//    private final MqttService mqttService;
     private final Logger logger = LoggerFactory.getLogger(PaymentController.class);
 
     public PaymentController(JwtService jwtService, UserServiceImpl userService, BusRepository busRepository,
                              OperatorAssignmentRepository operatorAssignmentRepository, DWalletRepository walletRepository,
-                             TransactionRepository transactionRepository, MqttService mqttService) {
+                             TransactionRepository transactionRepository)
+
+//                             MqttService mqttService)
+    {
         this.jwtService = jwtService;
         this.userService = userService;
         this.busRepository = busRepository;
         this.operatorAssignmentRepository = operatorAssignmentRepository;
         this.walletRepository = walletRepository;
         this.transactionRepository = transactionRepository;
-        this.mqttService = mqttService;
+//        this.mqttService = mqttService;
     }
 
     @PostMapping("/process")
@@ -175,12 +178,12 @@ public class PaymentController {
             transactionRepository.save(transaction);
 
             // Send MQTT notifications
-            mqttService.sendPaymentNotification(passenger.getId().toString(), "passenger",
-                    "Payment of " + amount + " made for bus " + bus.getBusNumber());
-            mqttService.sendPaymentNotification(operator.getId().toString(), "operator",
-                    "Payment of " + amount + " received for bus " + bus.getBusNumber());
-            mqttService.sendPaymentNotification(owner.getId().toString(), "owner",
-                    "Payment of " + amount + " credited for bus " + bus.getBusNumber());
+//            mqttService.sendPaymentNotification(passenger.getId().toString(), "passenger",
+//                    "Payment of " + amount + " made for bus " + bus.getBusNumber());
+//            mqttService.sendPaymentNotification(operator.getId().toString(), "operator",
+//                    "Payment of " + amount + " received for bus " + bus.getBusNumber());
+//            mqttService.sendPaymentNotification(owner.getId().toString(), "owner",
+//                    "Payment of " + amount + " credited for bus " + bus.getBusNumber());
 
             logger.info("Payment processed: passenger={}, bus={}, operator={}, owner={}, amount={}",
                     passengerEmail, busId, operatorId, owner.getId(), amount);
