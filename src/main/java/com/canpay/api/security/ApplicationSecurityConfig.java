@@ -89,7 +89,7 @@ public class ApplicationSecurityConfig {
                 http
                                 .securityMatcher("/api/v1/**")
                                 .csrf(csrf -> csrf.disable())
-                                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+//                                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers("/api/v1/auth/**").permitAll()
