@@ -81,3 +81,7 @@ env*
 **/application.properties
 images/
 static/
+# Don't ignore the static resources directory structure
+!src/main/resources/static/
+!src/main/resources/static/images/
+!src/main/resources/static/documents/
