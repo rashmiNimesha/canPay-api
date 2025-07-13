@@ -2,7 +2,7 @@ package com.canpay.api.controller.account;
 
 import com.canpay.api.dto.UserDto;
 import com.canpay.api.entity.User;
-import com.canpay.api.jwt.JwtUtil;
+//import com.canpay.api.jwt.JwtUtil;
 import com.canpay.api.service.implementation.BankAccountServiceImpl;
 import com.canpay.api.service.implementation.JwtService;
 import com.canpay.api.service.implementation.UserServiceImpl;
@@ -14,22 +14,23 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("api/v1/user-service")
 public class AccountController {
 
     public final UserServiceImpl userService;
-    private final JwtUtil jwtUtil;
     private final JwtService jwtService;
     private final BankAccountServiceImpl bankAccountService;
     private final Logger logger = LoggerFactory.getLogger(AccountController.class);
+    private final UserServiceImpl userServiceImpl;
 
-    public AccountController(UserServiceImpl userService, JwtUtil jwtUtil, JwtService jwtService, BankAccountServiceImpl bankAccountService) {
+    public AccountController(UserServiceImpl userService, JwtService jwtService, BankAccountServiceImpl bankAccountService, UserServiceImpl userServiceImpl) {
         this.userService = userService;
-        this.jwtUtil = jwtUtil;
         this.jwtService = jwtService;
         this.bankAccountService = bankAccountService;
+        this.userServiceImpl = userServiceImpl;
     }
 
 
@@ -131,6 +132,47 @@ public class AccountController {
             logger.error("Failed to update passenger account for email: {}. Reason: {}", email, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Failed to update passenger account: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/financial-details")
+    @PreAuthorize("hasAnyRole('PASSENGER', 'OWNER')")
+    public ResponseEntity<?> getUserFinancialDetails(@RequestHeader(value = "Authorization") String authHeader) {
+        logger.debug("Received request for user financial details");
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            logger.warn("Authorization header missing or invalid");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Authorization header with Bearer token is required"));
+        }
+
+        String token = authHeader.substring(7);
+        String email;
+        User.UserRole userRole;
+        try {
+            email = jwtService.extractEmail(token);
+            userRole = User.UserRole.valueOf(jwtService.extractRole(token));
+        } catch (Exception e) {
+            logger.warn("Invalid token: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Invalid or expired token"));
+        }
+
+        try {
+            Map<String, Object> financialDetails = userServiceImpl.getUserFinancialDetails(email, userRole);
+            logger.info("Returning financial details for user: {}", email);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "data", financialDetails
+            ));
+        } catch (RuntimeException e) {
+            logger.error("Error fetching financial details: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Unexpected error: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Error fetching financial details"));
         }
     }
 }
