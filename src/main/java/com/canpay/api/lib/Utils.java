@@ -70,10 +70,21 @@ public class Utils {
             throw new IOException("Invalid image data");
         }
 
-        // Create storage directory structure: src/main/resources/static/{subfolder}/
-        File storageDir = new File("src/main/resources/static/" + subfolder + "/");
-        if (!storageDir.exists()) {
-            storageDir.mkdirs();
+        // Create storage directory structure
+        // For production (JAR), use external directory; for development, use
+        // src/main/resources/static/
+        File storageDir;
+        String jarDir = System.getProperty("user.dir");
+        File externalDir = new File(jarDir, "src/main/resources/static/" + subfolder + "/");
+
+        if (externalDir.exists() || externalDir.mkdirs()) {
+            storageDir = externalDir;
+        } else {
+            // Fallback to a writable directory
+            storageDir = new File(jarDir, "static/" + subfolder + "/");
+            if (!storageDir.exists()) {
+                storageDir.mkdirs();
+            }
         }
 
         // Always save as JPG (force extension to .jpg)

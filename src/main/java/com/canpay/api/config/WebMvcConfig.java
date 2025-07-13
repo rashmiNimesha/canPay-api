@@ -10,14 +10,25 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
-        // Serve images from classpath
+        // Get the current working directory (where the JAR is located)
+        String jarDir = System.getProperty("user.dir");
+
+        // Serve images from multiple locations (filesystem and classpath)
         registry.addResourceHandler("/images/**")
-                .addResourceLocations("classpath:/static/images/")
+                .addResourceLocations(
+                        "file:" + jarDir + "/src/main/resources/static/images/",
+                        "file:" + jarDir + "/static/images/",
+                        "file:src/main/resources/static/images/",
+                        "classpath:/static/images/")
                 .setCachePeriod(3600); // Cache for 1 hour
 
-        // Serve documents from classpath
+        // Serve documents from multiple locations (filesystem and classpath)
         registry.addResourceHandler("/documents/**")
-                .addResourceLocations("classpath:/static/documents/")
+                .addResourceLocations(
+                        "file:" + jarDir + "/src/main/resources/static/documents/",
+                        "file:" + jarDir + "/static/documents/",
+                        "file:src/main/resources/static/documents/",
+                        "classpath:/static/documents/")
                 .setCachePeriod(3600); // Cache for 1 hour
     }
 }
