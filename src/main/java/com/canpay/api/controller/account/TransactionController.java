@@ -77,8 +77,7 @@ public class TransactionController {
             logger.info("Returning {} recent transactions for passenger: {}", transactionData.size(), passengerEmail);
             return ResponseEntity.ok(Map.of(
                     "success", true,
-                    "data", transactionData
-            ));
+                    "data", transactionData));
         } catch (RuntimeException e) {
             logger.error("Error fetching transactions: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
