@@ -37,25 +37,41 @@ public class Utils {
      * path.
      */
     public static String saveImage(String dataUrl, String fileName) throws IOException {
+        return saveFile(dataUrl, fileName, "images");
+    }
+
+    /**
+     * Saves a document from a data URL to the system storage and returns the file
+     * path.
+     */
+    public static String saveDocument(String dataUrl, String fileName) throws IOException {
+        return saveFile(dataUrl, fileName, "documents");
+    }
+
+    /**
+     * Saves a file from a data URL to the system storage in the specified subfolder
+     * and returns the file path.
+     */
+    public static String saveFile(String dataUrl, String fileName, String subfolder) throws IOException {
         if (dataUrl == null || dataUrl.isBlank()) {
             return null;
         }
 
         // Extract base64 data from the data URL
         String base64Data = dataUrl.split(",")[1];
-        byte[] imageBytes = Base64.getDecoder().decode(base64Data);
+        byte[] fileBytes = Base64.getDecoder().decode(base64Data);
 
         // Read image from bytes
         java.awt.image.BufferedImage image;
-        try (java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(imageBytes)) {
+        try (java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(fileBytes)) {
             image = javax.imageio.ImageIO.read(bais);
         }
         if (image == null) {
             throw new IOException("Invalid image data");
         }
 
-        // Save to src/main/resources/static/
-        File storageDir = new File("src/main/resources/static/");
+        // Create storage directory structure: src/main/resources/static/{subfolder}/
+        File storageDir = new File("src/main/resources/static/" + subfolder + "/");
         if (!storageDir.exists()) {
             storageDir.mkdirs();
         }
@@ -69,15 +85,36 @@ public class Utils {
     }
 
     /**
-     * Deletes an image from the system storage.
+     * Deletes a file from the system storage.
      */
-    public static void deleteImage(String filePath) {
+    public static void deleteFile(String filePath) {
         if (filePath != null && !filePath.isBlank()) {
-            File imageFile = new File(filePath);
-            if (imageFile.exists()) {
-                imageFile.delete();
+            File file = new File(filePath);
+            if (file.exists()) {
+                file.delete();
             }
         }
+    }
+
+    /**
+     * Deletes an image from the system storage.
+     * 
+     * @deprecated Use deleteFile instead
+     */
+    @Deprecated
+    public static void deleteImage(String filePath) {
+        deleteFile(filePath);
+    }
+
+    /**
+     * Generates QR code data for a bus in JSON format.
+     * 
+     * @param busId      the UUID of the bus
+     * @param operatorId the UUID of the bus operator/owner
+     * @return JSON string containing bus and operator IDs
+     */
+    public static String generateBusQrCodeData(java.util.UUID busId, java.util.UUID operatorId) {
+        return String.format("{\"busId\":\"%s\",\"operatorId\":\"%s\"}", busId.toString(), operatorId.toString());
     }
 
 }

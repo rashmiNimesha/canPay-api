@@ -201,4 +201,55 @@ public class BusController {
                 .body(Map.of("statistics", stats))
                 .buildWrapped();
     }
+
+    /**
+     * Retrieves the total count of buses.
+     * 
+     * @return response entity with bus count
+     */
+    @GetMapping("/buses/count")
+    public ResponseEntity<?> getBusCount() {
+        long countTotal = busService.getTotalBusCount();
+        long countActive = busService.getBusCountByStatus(BusStatus.ACTIVE);
+        long countPending = busService.getBusCountByStatus(BusStatus.PENDING);
+        long countInactive = busService.getBusCountByStatus(BusStatus.INACTIVE);
+        long countRejected = busService.getBusCountByStatus(BusStatus.REJECTED);
+        long countBlocked = busService.getBusCountByStatus(BusStatus.BLOCKED);
+
+        return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                .resultMessage("Total number of buses retrieved successfully")
+                .httpStatus(HttpStatus.OK)
+                .body(Map.of(
+                        "total", countTotal,
+                        "active", countActive,
+                        "pending", countPending,
+                        "inactive", countInactive,
+                        "rejected", countRejected,
+                        "blocked", countBlocked))
+                .buildWrapped();
+    }
+
+    /**
+     * Generate QR code data for a bus.
+     * 
+     * @param id the UUID of the bus
+     * @return response entity with QR code data
+     */
+    @GetMapping("/buses/{id}/qr-code")
+    public ResponseEntity<?> getBusQrCode(@PathVariable UUID id) {
+        try {
+            Map<String, String> qrData = busService.generateBusQrCodeData(id);
+            return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                    .resultMessage("Bus QR code data generated successfully")
+                    .httpStatus(HttpStatus.OK)
+                    .body(Map.of("qrData", qrData))
+                    .buildWrapped();
+        } catch (RuntimeException e) {
+            return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                    .resultMessage("Bus not found")
+                    .httpStatus(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", e.getMessage()))
+                    .buildWrapped();
+        }
+    }
 }

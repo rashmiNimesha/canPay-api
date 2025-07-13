@@ -106,7 +106,7 @@ public class DUserService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         // Delete the associated photo
-        Utils.deleteImage(user.getPhotoUrl());
+        Utils.deleteFile(user.getPhotoUrl());
 
         userRepository.deleteById(userId);
     }
@@ -117,7 +117,7 @@ public class DUserService {
     public String getPublicPhotoUrl(String photoUrl) {
         if (photoUrl != null && !photoUrl.isBlank()) {
             String filename = Paths.get(photoUrl).getFileName().toString();
-            return baseUrl + "/" + filename;
+            return baseUrl + "/images/" + filename;
         }
         return null;
     }
@@ -237,7 +237,7 @@ public class DUserService {
         }
         try {
             if (oldPhotoUrl != null) {
-                Utils.deleteImage(oldPhotoUrl);
+                Utils.deleteFile(oldPhotoUrl);
             }
             return Utils.saveImage(photo, UUID.randomUUID().toString() + ".jpg");
         } catch (IOException e) {
