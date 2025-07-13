@@ -19,12 +19,12 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/bus")
-public class BusController {
+public class BusControllerAc {
     private final BusRepository busRepository;
     private final UserRepository userRepository;
-    private final Logger logger = LoggerFactory.getLogger(BusController.class);
+    private final Logger logger = LoggerFactory.getLogger(BusControllerAc.class);
 
-    public BusController(BusRepository busRepository, UserRepository userRepository) {
+    public BusControllerAc(BusRepository busRepository, UserRepository userRepository) {
         this.busRepository = busRepository;
         this.userRepository = userRepository;
     }

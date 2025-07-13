@@ -31,4 +31,109 @@ public class BusSearchDto {
     private LocalDateTime createdBefore;
     private LocalDateTime updatedAfter;
     private LocalDateTime updatedBefore;
+
+    public String getBusNumber() {
+
+        return busNumber;
+    }
+
+    public void setBusNumber(String busNumber) {
+        this.busNumber = busNumber;
+    }
+
+    public BusType getType() {
+        return type;
+    }
+
+    public void setType(BusType type) {
+        this.type = type;
+    }
+
+    public List<BusType> getTypes() {
+        return types;
+    }
+
+    public void setTypes(List<BusType> types) {
+        this.types = types;
+    }
+
+    public BusStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(BusStatus status) {
+        this.status = status;
+    }
+
+    public List<BusStatus> getStatuses() {
+        return statuses;
+    }
+
+    public void setStatuses(List<BusStatus> statuses) {
+        this.statuses = statuses;
+    }
+
+    public UUID getOwnerId() {
+        return ownerId;
+    }
+
+    public void setOwnerId(UUID ownerId) {
+        this.ownerId = ownerId;
+    }
+
+    public String getRouteFrom() {
+        return routeFrom;
+    }
+
+    public void setRouteFrom(String routeFrom) {
+        this.routeFrom = routeFrom;
+    }
+
+    public String getRouteTo() {
+        return routeTo;
+    }
+
+    public void setRouteTo(String routeTo) {
+        this.routeTo = routeTo;
+    }
+
+    public String getProvince() {
+        return province;
+    }
+
+    public void setProvince(String province) {
+        this.province = province;
+    }
+
+    public LocalDateTime getCreatedAfter() {
+        return createdAfter;
+    }
+
+    public void setCreatedAfter(LocalDateTime createdAfter) {
+        this.createdAfter = createdAfter;
+    }
+
+    public LocalDateTime getCreatedBefore() {
+        return createdBefore;
+    }
+
+    public void setCreatedBefore(LocalDateTime createdBefore) {
+        this.createdBefore = createdBefore;
+    }
+
+    public LocalDateTime getUpdatedAfter() {
+        return updatedAfter;
+    }
+
+    public void setUpdatedAfter(LocalDateTime updatedAfter) {
+        this.updatedAfter = updatedAfter;
+    }
+
+    public LocalDateTime getUpdatedBefore() {
+        return updatedBefore;
+    }
+
+    public void setUpdatedBefore(LocalDateTime updatedBefore) {
+        this.updatedBefore = updatedBefore;
+    }
 }
