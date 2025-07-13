@@ -15,6 +15,7 @@ import org.springframework.lang.NonNull;
 public interface DWalletRepository extends JpaRepository<Wallet, UUID> {
     /** Find wallet by user ID */
     Optional<Wallet> findByUser_Id(UUID userId);
+    Optional<Wallet> findByUser(User user);
 
     /** Find wallet by bus ID */
     Optional<Wallet> findByBus_Id(UUID busId);
