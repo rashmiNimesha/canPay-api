@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.canpay.api.dto.dashboard.transactions.GenericTransactionDto;
 import com.canpay.api.dto.dashboard.transactions.PaymentTransactionDto;
 import com.canpay.api.dto.dashboard.transactions.RechargeTransactionDto;
 import com.canpay.api.dto.dashboard.transactions.WithdrawalTransactionDto;
@@ -43,8 +44,10 @@ public class DTransactionService {
     /**
      * Gets all transactions.
      */
-    public List<Transaction> getAllTransactions() {
-        return transactionRepository.findAll();
+    public List<GenericTransactionDto> getAllTransactions() {
+        return transactionRepository.findAll().stream()
+                .map(this::convertToGenericDto)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -407,6 +410,47 @@ public class DTransactionService {
                 transaction.getToWallet() != null ? transaction.getToWallet().getId() : null,
                 transaction.getToWallet() != null ? transaction.getToWallet().getWalletNumber() : null,
                 transaction.getToWallet() != null ? transaction.getToWallet().getBalance() : null);
+    }
+
+    /**
+     * Converts Transaction entity to GenericTransactionDto.
+     */
+    private GenericTransactionDto convertToGenericDto(Transaction transaction) {
+        return new GenericTransactionDto(
+                transaction.getId(),
+                transaction.getType().toString(),
+                transaction.getStatus().toString(),
+                transaction.getAmount(),
+                transaction.getHappenedAt(),
+                transaction.getNote(),
+                // Passenger details
+                transaction.getPassenger() != null ? transaction.getPassenger().getId() : null,
+                transaction.getPassenger() != null ? transaction.getPassenger().getName() : null,
+                transaction.getPassenger() != null ? transaction.getPassenger().getEmail() : null,
+                // Operator details
+                transaction.getOperator() != null ? transaction.getOperator().getId() : null,
+                transaction.getOperator() != null ? transaction.getOperator().getName() : null,
+                transaction.getOperator() != null ? transaction.getOperator().getEmail() : null,
+                // Owner details
+                transaction.getOwner() != null ? transaction.getOwner().getId() : null,
+                transaction.getOwner() != null ? transaction.getOwner().getName() : null,
+                transaction.getOwner() != null ? transaction.getOwner().getEmail() : null,
+                // Bus details
+                transaction.getBus() != null ? transaction.getBus().getId() : null,
+                transaction.getBus() != null ? transaction.getBus().getBusNumber() : null,
+                transaction.getBus() != null && transaction.getBus().getRouteFrom() != null
+                        && transaction.getBus().getRouteTo() != null
+                                ? transaction.getBus().getRouteFrom() + " - " + transaction.getBus().getRouteTo()
+                                : null,
+                // From wallet details
+                transaction.getFromWallet() != null ? transaction.getFromWallet().getId() : null,
+                transaction.getFromWallet() != null ? transaction.getFromWallet().getWalletNumber() : null,
+                // To wallet details
+                transaction.getToWallet() != null ? transaction.getToWallet().getId() : null,
+                transaction.getToWallet() != null ? transaction.getToWallet().getWalletNumber() : null,
+                // Bank account details
+                transaction.getFromBankAccount() != null ? transaction.getFromBankAccount().getBankName() : null,
+                transaction.getToBankAccount() != null ? transaction.getToBankAccount().getBankName() : null);
     }
 
     /**

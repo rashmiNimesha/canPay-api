@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.canpay.api.dto.dashboard.transactions.GenericTransactionDto;
 import com.canpay.api.dto.dashboard.transactions.PaymentTransactionDto;
 import com.canpay.api.dto.dashboard.transactions.RechargeTransactionDto;
 import com.canpay.api.dto.dashboard.transactions.WithdrawalTransactionDto;
@@ -51,8 +52,8 @@ public class DTransactionController {
          */
         @GetMapping("/transactions")
         public ResponseEntity<?> getAllTransactions() {
-                List<Transaction> transactions = transactionService.getAllTransactions();
-                return new ResponseEntityBuilder.Builder<List<Transaction>>()
+                List<GenericTransactionDto> transactions = transactionService.getAllTransactions();
+                return new ResponseEntityBuilder.Builder<List<GenericTransactionDto>>()
                                 .resultMessage("All transactions retrieved successfully")
                                 .httpStatus(HttpStatus.OK)
                                 .body(transactions)
