@@ -13,7 +13,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class WalletServiceImpl implements WalletService {
@@ -71,6 +73,32 @@ public class WalletServiceImpl implements WalletService {
             return 0.0;
         }
         return wallet.getBalance().doubleValue();
+    }
+
+
+    public Map<String, Object> getPassengerWalletBalanceForDash(String email) {
+        logger.debug("Fetching passenger wallet balance for email: {}", email);
+
+        User user = userRepository.findByEmailAndRole(email, UserRole.PASSENGER)
+                .orElseThrow(() -> {
+                    logger.error("User not found for email: {} and role: PASSENGER", email);
+                    return new RuntimeException("User not found for email: " + email);
+                });
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("name", user.getName() != null ? user.getName() : "N/A");
+
+        Wallet wallet = user.getWallet();
+        if (wallet == null || wallet.getType() != Wallet.WalletType.PASSENGER) {
+            logger.debug("No passenger wallet found for email: {}", email);
+            result.put("walletNumber", null);
+            result.put("balance", 0.0);
+        } else {
+            result.put("walletNumber", wallet.getId().toString());
+            result.put("balance", wallet.getBalance().doubleValue());
+        }
+
+        return result;
     }
 
     @Override

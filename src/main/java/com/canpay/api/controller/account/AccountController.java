@@ -78,18 +78,21 @@ public class AccountController {
                 updated = true;
             }
 
-            if (request.containsKey("accName") && request.containsKey("accNo") && request.containsKey("bank")) {
-                try {
-                    long accNo = Long.parseLong(request.get("accNo"));
-                    boolean isDefault = Boolean.parseBoolean(request.getOrDefault("isDefault", "false"));
-                    userService.addBankAccount(email, request.get("accName"), request.get("bank"), accNo, isDefault);
-                    updated = true;
-                } catch (NumberFormatException e) {
-                    logger.warn("Invalid account number format: {}", request.get("accNo"));
-                    return ResponseEntity.badRequest()
-                            .body(Map.of("success", false, "message", "Invalid account number format"));
-                }
-            }
+            // tthis is add bank account logic,
+            // edit bank account needs
+
+//            if (request.containsKey("accName") && request.containsKey("accNo") && request.containsKey("bank")) {
+//                try {
+//                    long accNo = Long.parseLong(request.get("accNo"));
+//                    boolean isDefault = Boolean.parseBoolean(request.getOrDefault("isDefault", "false"));
+//                    userService.addBankAccount(email, request.get("accName"), request.get("bank"), accNo, isDefault);
+//                    updated = true;
+//                } catch (NumberFormatException e) {
+//                    logger.warn("Invalid account number format: {}", request.get("accNo"));
+//                    return ResponseEntity.badRequest()
+//                            .body(Map.of("success", false, "message", "Invalid account number format"));
+//                }
+//            }
 
 
             String newEmail = request.get("newemail");

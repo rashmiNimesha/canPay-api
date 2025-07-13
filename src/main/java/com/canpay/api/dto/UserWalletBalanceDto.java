@@ -7,6 +7,7 @@ public class UserWalletBalanceDto {
     private double balance;
     private Long accountNumber;
     private String accountName;
+    private String walletNumber;
 
     public UserWalletBalanceDto(String email ,double walletBalance) {
         this.email = email;
@@ -18,6 +19,12 @@ public class UserWalletBalanceDto {
         this.balance = balance;
         this.accountNumber = accountNumber;
         this.accountName = accountName;
+    }
+
+    public UserWalletBalanceDto(String walletNumber, Double balance, String name) {
+        this.walletNumber = walletNumber;
+        this.balance = balance;
+        this.accountName = name;
     }
 
 
@@ -51,5 +58,13 @@ public class UserWalletBalanceDto {
 
     public void setAccountName(String accountName) {
         this.accountName = accountName;
+    }
+
+    public String getWalletNumber() {
+        return walletNumber;
+    }
+
+    public void setWalletNumber(String walletNumber) {
+        this.walletNumber = walletNumber;
     }
 }

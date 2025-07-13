@@ -110,6 +110,72 @@ public class WalletController {
         }
     }
 
+//    @GetMapping("/balance")
+//    @PreAuthorize("hasRole('PASSENGER')")
+//    public ResponseEntity<?> getPassengerWalletBalance(
+//            @RequestHeader(value = "Authorization") String authHeader) {
+//        logger.debug("Received passenger wallet balance request");
+//
+//        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+//            logger.warn("Authorization header missing or invalid");
+//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+//                    .body(Map.of("success", false, "message", "Authorization header with Bearer token is required"));
+//        }
+//
+//        String token = authHeader.substring(7);
+//        String email;
+//        try {
+//            email = jwtService.extractEmail(token);
+//            String tokenRole = jwtService.extractRole(token);
+//            if (!"PASSENGER".equals(tokenRole)) {
+//                logger.warn("Invalid role in token: {}", tokenRole);
+//                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+//                        .body(Map.of("success", false, "message", "Invalid role for passenger wallet"));
+//            }
+//        } catch (Exception e) {
+//            logger.warn("Invalid token: {}", e.getMessage());
+//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+//                    .body(Map.of("success", false, "message", "Invalid or expired token"));
+//        }
+//
+//        try {
+//            User user = walletService.getUserByEmailAndRole(email);
+//            if (user == null) {
+//                logger.warn("User not found for email: {}", email);
+//                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+//                        .body(Map.of("success", false, "message", "User not found"));
+//            }
+//
+//            double walletBalance = walletService.getPassengerWalletBalance(email);
+//            BankAccount defaultBankAccount = user.getBankAccounts() != null ?
+//                    user.getBankAccounts().stream()
+//                            .filter(BankAccount::isDefault)
+//                            .findFirst()
+//                            .orElse(null) : null;
+//
+//            Long accountNumber = defaultBankAccount != null ? defaultBankAccount.getAccountNumber() : null;
+//            String accountName = defaultBankAccount != null ? defaultBankAccount.getAccountName() : null;
+//
+//            UserWalletBalanceDto responseDto = new UserWalletBalanceDto(walletBalance, accountNumber, accountName);
+//
+//            logger.info("Fetched wallet balance for email: {}, balance: {}, accountNumber: {}, accountName: {}",
+//                    email, walletBalance, accountNumber, accountName);
+//
+//            return ResponseEntity.ok(Map.of(
+//                    "success", true,
+//                    "message", "Successfully retrieved wallet balance",
+//                    "data", responseDto
+//            ));
+//
+//        } catch (RuntimeException e) {
+//            logger.error("Failed to fetch wallet balance for email: {}. Reason: {}", email, e.getMessage());
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("success", false, "message", "Failed to fetch wallet balance: " + e.getMessage()));
+//        }
+//    }
+
+
+
     @GetMapping("/balance")
     @PreAuthorize("hasRole('PASSENGER')")
     public ResponseEntity<?> getPassengerWalletBalance(
@@ -139,40 +205,34 @@ public class WalletController {
         }
 
         try {
-            User user = walletService.getUserByEmailAndRole(email);
-            if (user == null) {
-                logger.warn("User not found for email: {}", email);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("success", false, "message", "User not found"));
-            }
+            Map<String, Object> walletDetails = walletService.getPassengerWalletBalanceForDash(email);
+            UserWalletBalanceDto responseDto = new UserWalletBalanceDto(
+                    (String) walletDetails.get("walletNumber"),
+                    (Double) walletDetails.get("balance"),
+                    (String) walletDetails.get("name")
+            );
 
-            double walletBalance = walletService.getPassengerWalletBalance(email);
-            BankAccount defaultBankAccount = user.getBankAccounts() != null ?
-                    user.getBankAccounts().stream()
-                            .filter(BankAccount::isDefault)
-                            .findFirst()
-                            .orElse(null) : null;
-
-            Long accountNumber = defaultBankAccount != null ? defaultBankAccount.getAccountNumber() : null;
-            String accountName = defaultBankAccount != null ? defaultBankAccount.getAccountName() : null;
-
-            UserWalletBalanceDto responseDto = new UserWalletBalanceDto(walletBalance, accountNumber, accountName);
-
-            logger.info("Fetched wallet balance for email: {}, balance: {}, accountNumber: {}, accountName: {}",
-                    email, walletBalance, accountNumber, accountName);
+            logger.info("Fetched wallet balance for email: {}, walletNumber: {}, balance: {}, name: {}",
+                    email, walletDetails.get("walletNumber"), walletDetails.get("balance"), walletDetails.get("name"));
 
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "message", "Successfully retrieved wallet balance",
                     "data", responseDto
             ));
-
         } catch (RuntimeException e) {
             logger.error("Failed to fetch wallet balance for email: {}. Reason: {}", email, e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("success", false, "message", "User not found"));
+        } catch (Exception e) {
+            logger.error("Unexpected error for email: {}. Reason: {}", email, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Failed to fetch wallet balance: " + e.getMessage()));
         }
     }
+
+
+
 
 
     @GetMapping("/history")
