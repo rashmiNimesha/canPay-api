@@ -91,4 +91,11 @@ public class OperatorAssignment extends BaseEntity {
         this.bus = bus;
     }
 
+    public @NotNull User getOperator() {
+        return operator;
+    }
+
+    public void setOperator(@NotNull User operator) {
+        this.operator = operator;
+    }
 }
