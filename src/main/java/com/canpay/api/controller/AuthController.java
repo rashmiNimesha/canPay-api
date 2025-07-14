@@ -4,6 +4,8 @@ import com.canpay.api.dto.UserDto;
 import com.canpay.api.entity.ResponseEntityBuilder;
 import com.canpay.api.entity.User;
 import com.canpay.api.entity.User.UserRole;
+import com.canpay.api.entity.Wallet;
+import com.canpay.api.service.dashboard.DWalletService;
 import com.canpay.api.service.implementation.JwtService;
 import com.canpay.api.service.implementation.OTPService;
 import com.canpay.api.service.implementation.UserServiceImpl;
@@ -24,12 +26,14 @@ public class AuthController {
         private final UserServiceImpl userServiceImpl;
         private final OTPService otpService;
         private final JwtService jwtService;
+        private final DWalletService walletService;
         private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
-        public AuthController(OTPService otpService, UserServiceImpl userServiceImpl, JwtService jwtService) {
+        public AuthController(OTPService otpService, UserServiceImpl userServiceImpl, JwtService jwtService, DWalletService walletService) {
                 this.otpService = otpService;
                 this.userServiceImpl = userServiceImpl;
                 this.jwtService = jwtService;
+            this.walletService = walletService;
         }
 
         @PostMapping("/send-otp")
@@ -245,6 +249,10 @@ public class AuthController {
                                                                 .httpStatus(HttpStatus.NOT_FOUND)
                                                                 .buildWrapped();
                                         }
+
+                                        // Create wallet for PASSENGER
+                                        Wallet walletP = walletService.createWallet(user, Wallet.WalletType.PASSENGER);
+                                        logger.info("Created wallet for PASSENGER: walletNumber={}, userEmail={}", walletP.getWalletNumber(), email);
                                         break;
 
                                 case OPERATOR:
@@ -311,7 +319,11 @@ public class AuthController {
                                                                 .httpStatus(HttpStatus.NOT_FOUND)
                                                                 .buildWrapped();
                                         }
+                                        // Create wallet for OWNER
+                                        Wallet walletO = walletService.createWallet(user, Wallet.WalletType.OWNER);
+                                        logger.info("Created wallet for OWNER: walletNumber={}, userEmail={}", walletO.getWalletNumber(), email);
                                         break;
+
 
                                 default:
                                         logger.warn("Invalid role: {}", role);

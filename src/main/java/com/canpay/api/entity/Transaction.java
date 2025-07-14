@@ -19,7 +19,6 @@ import java.time.LocalDateTime;
 @Table(name = "transactions")
 @Getter
 @Setter
-@NoArgsConstructor
 public class Transaction extends BaseEntity {
     /** Transaction amount. */
     @Column(nullable = false, precision = 19, scale = 2)
@@ -105,6 +104,9 @@ public class Transaction extends BaseEntity {
         this.bus = bus;
         this.operator = operator;
         this.happenedAt = LocalDateTime.now();
+    }
+
+    public Transaction() {
     }
 
     public BigDecimal getAmount() {

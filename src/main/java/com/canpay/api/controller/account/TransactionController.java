@@ -1,5 +1,7 @@
 package com.canpay.api.controller.account;
 
+import com.canpay.api.dto.dashboard.transactions.RechargeTransactionDto;
+import com.canpay.api.entity.ResponseEntityBuilder;
 import com.canpay.api.entity.Transaction;
 
 import com.canpay.api.service.implementation.JwtService;
@@ -9,10 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -84,4 +83,18 @@ public class TransactionController {
                     .body(Map.of("success", false, "message", "Error fetching transactions: " + e.getMessage()));
         }
     }
+
+    @GetMapping("/passenger/{passengerId}")
+    @PreAuthorize("hasRole('PASSENGER')")
+    public ResponseEntity<?> getRechargeTransactionsByPassengerId(@PathVariable UUID passengerId) {
+        System.out.println("metha nat awa");
+        List<RechargeTransactionDto> transactions = transactionService
+                .getRechargeTransactionsByPassengerId(passengerId);
+        return new ResponseEntityBuilder.Builder<List<RechargeTransactionDto>>()
+                .resultMessage("Recharge transactions by passenger retrieved successfully")
+                .httpStatus(HttpStatus.OK)
+                .body(transactions)
+                .buildWrapped();
+    }
+
 }
