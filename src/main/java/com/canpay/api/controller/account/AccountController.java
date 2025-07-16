@@ -2,7 +2,6 @@ package com.canpay.api.controller.account;
 
 import com.canpay.api.dto.UserDto;
 import com.canpay.api.entity.User;
-//import com.canpay.api.jwt.JwtUtil;
 import com.canpay.api.service.implementation.BankAccountServiceImpl;
 import com.canpay.api.service.implementation.JwtService;
 import com.canpay.api.service.implementation.UserServiceImpl;
@@ -14,13 +13,13 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("api/v1/user-service")
 public class AccountController {
 
     public final UserServiceImpl userService;
-    // private final JwtUtil jwtUtil;
     private final JwtService jwtService;
     private final BankAccountServiceImpl bankAccountService;
     private final Logger logger = LoggerFactory.getLogger(AccountController.class);
@@ -70,36 +69,31 @@ public class AccountController {
                         return new RuntimeException("User not found for email: " + email);
                     });
 
+            if (!"PASSENGER".equals(user.getRole().toString())) {
+                logger.warn("User is not a passenger: {}", email);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("success", false, "message", "User is not a passenger"));
+            }
 
             boolean updated = false;
+            String newToken = "";
             if (request.containsKey("name")) {
                 String name = request.get("name");
                 user = userService.updateName(email, name);
                 updated = true;
             }
 
-            // tthis is add bank account logic,
-            // edit bank account needs
-
-//            if (request.containsKey("accName") && request.containsKey("accNo") && request.containsKey("bank")) {
-//                try {
-//                    long accNo = Long.parseLong(request.get("accNo"));
-//                    boolean isDefault = Boolean.parseBoolean(request.getOrDefault("isDefault", "false"));
-//                    userService.addBankAccount(email, request.get("accName"), request.get("bank"), accNo, isDefault);
-//                    updated = true;
-//                } catch (NumberFormatException e) {
-//                    logger.warn("Invalid account number format: {}", request.get("accNo"));
-//                    return ResponseEntity.badRequest()
-//                            .body(Map.of("success", false, "message", "Invalid account number format"));
-//                }
-//            }
-
-
             String newEmail = request.get("newemail");
-            boolean emailChanged = false;
             if (newEmail != null && !newEmail.equalsIgnoreCase(email)) {
+                // Check if new email already exists
+                Optional<User> existingUser = userService.findUserByEmail(newEmail);
+                if (existingUser.isPresent()) {
+                    logger.warn("New email already exists in database: {}", newEmail);
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("success", false, "message", "New email is already registered"));
+                }
                 user = userService.updateEmail(email, newEmail);
-                emailChanged = true;
+                newToken = jwtService.generateToken(user); // Generate new token for email update
                 updated = true;
             }
 
@@ -109,16 +103,14 @@ public class AccountController {
                         .body(Map.of("success", false, "message", "No valid update fields provided"));
             }
 
-            String tokenResponse = emailChanged ? jwtService.generateToken(user) : null;
             UserDto userDto = new UserDto(user.getName(), user.getEmail());
-
             Map<String, Object> data = Map.of(
                     "profile", userDto,
-                    "token", tokenResponse != null ? tokenResponse : ""
+                    "token", newToken
             );
 
-            logger.info("Passenger account updated for email: {}, newEmail: {}, nameUpdated: {}, bankAccountAdded: {}",
-                    email, newEmail != null ? newEmail : "none", request.containsKey("name"), request.containsKey("accNo"));
+            logger.info("Passenger account updated for email: {}, newEmail: {}, nameUpdated: {}",
+                    email, newEmail != null ? newEmail : "none", request.containsKey("name"));
 
             return ResponseEntity.ok(Map.of(
                     "success", true,
