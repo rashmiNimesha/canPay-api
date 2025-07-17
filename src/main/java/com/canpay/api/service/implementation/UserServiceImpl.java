@@ -162,7 +162,7 @@ public class UserServiceImpl implements UserService {
 
         user.setName(name);
         user.setNic(nic);
-        user.setPhotoUrl(profileImage);
+        user.setPhotoUrl(handlePhotoUpload(profileImage, null));
 
         List<BankAccount> bankAccounts = user.getBankAccounts();
         if (bankAccounts == null) {

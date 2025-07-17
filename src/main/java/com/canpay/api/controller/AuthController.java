@@ -36,6 +36,36 @@ public class AuthController {
             this.walletService = walletService;
         }
 
+
+        @PostMapping("/check-email")
+        public ResponseEntity<?> checkEmail(@RequestBody Map<String, String> request) {
+                logger.debug("Received check-email request: {}", request);
+                String email = request.get("email");
+                if (email == null || email.isBlank()) {
+                        logger.warn("Email is required in check-email request");
+                        return new ResponseEntityBuilder.Builder<Void>()
+                                .resultMessage("Email is required")
+                                .httpStatus(HttpStatus.BAD_REQUEST)
+                                .buildWrapped();
+                }
+
+                try {
+                        boolean exists = userServiceImpl.findUserByEmail(email).isPresent();
+                        logger.info("Email check for {}: {}", email, exists ? "exists" : "does not exist");
+                        return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                                .resultMessage(exists ? "Email is already registered" : "Email is available")
+                                .httpStatus(HttpStatus.OK)
+                                .body(Map.of("exists", exists))
+                                .buildWrapped();
+                } catch (Exception e) {
+                        logger.error("Failed to check email: {}", email, e);
+                        return new ResponseEntityBuilder.Builder<Void>()
+                                .resultMessage("Failed to check email: " + e.getMessage())
+                                .httpStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+                                .buildWrapped();
+                }
+        }
+
         @PostMapping("/send-otp")
         public ResponseEntity<?> sendOtp(@RequestBody Map<String, String> request) {
                 logger.debug("Received send-otp request: {}", request);
