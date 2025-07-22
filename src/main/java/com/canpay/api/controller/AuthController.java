@@ -100,73 +100,79 @@ public class AuthController {
                 String email = request.get("email");
                 String otp = request.get("otp");
                 String roleStr = request.getOrDefault("role", "").toUpperCase();
+
                 UserRole role;
                 try {
                         role = UserRole.valueOf(roleStr);
                 } catch (IllegalArgumentException e) {
                         logger.warn("Invalid role provided: {}", roleStr);
                         return new ResponseEntityBuilder.Builder<Map<String, Object>>()
-                                        .resultMessage("Invalid role")
-                                        .httpStatus(HttpStatus.BAD_REQUEST)
-                                        .buildWrapped();
+                                .resultMessage("Invalid role")
+                                .httpStatus(HttpStatus.BAD_REQUEST)
+                                .buildWrapped();
                 }
 
                 if (email == null || otp == null || roleStr.isBlank()) {
                         logger.warn("Missing required fields in verify-otp request: email={}, role={}", email, roleStr);
                         return new ResponseEntityBuilder.Builder<Map<String, Object>>()
-                                        .resultMessage("Missing required fields")
-                                        .httpStatus(HttpStatus.BAD_REQUEST)
-                                        .buildWrapped();
+                                .resultMessage("Missing required fields")
+                                .httpStatus(HttpStatus.BAD_REQUEST)
+                                .buildWrapped();
                 }
 
                 boolean valid = otpService.verifyOtp(email, otp);
                 if (!valid) {
                         logger.warn("Invalid OTP for email: {}", email);
                         return new ResponseEntityBuilder.Builder<Map<String, Object>>()
-                                        .resultMessage("Invalid OTP")
-                                        .httpStatus(HttpStatus.UNAUTHORIZED)
-                                        .buildWrapped();
+                                .resultMessage("Invalid OTP")
+                                .httpStatus(HttpStatus.UNAUTHORIZED)
+                                .buildWrapped();
                 }
 
                 Optional<User> existingUser = userServiceImpl.findByEmailAndRole(email, role);
                 if (existingUser.isPresent()) {
                         User user = existingUser.get();
                         String token = jwtService.generateToken(user);
+
+                        boolean isNewUser = user.getStatus() == User.UserStatus.PENDING;
+
                         logger.info("Login successful for email: {} and role: {}", email, role);
                         Map<String, Object> responseData = Map.of(
-                                        "newUser", false,
-                                        "token", token,
-                                        "profile", new UserDto(user));
+                                "newUser", isNewUser,
+                                "token", token,
+                                "profile", new UserDto(user));
                         return new ResponseEntityBuilder.Builder<Map<String, Object>>()
-                                        .resultMessage("Login successful")
-                                        .httpStatus(HttpStatus.OK)
-                                        .body(responseData)
-                                        .buildWrapped();
+                                .resultMessage("Login successful")
+                                .httpStatus(HttpStatus.OK)
+                                .body(responseData)
+                                .buildWrapped();
                 }
 
                 try {
                         User newUser = userServiceImpl.registerWithEmail(email, roleStr);
                         logger.info("New role registered for email: {} and role: {}", email, roleStr);
-                        String token = jwtService.generateToken(newUser); // Generate token for new user
+                        String token = jwtService.generateToken(newUser);
+
+                        boolean isNewUser = newUser.getStatus() == User.UserStatus.PENDING;
 
                         Map<String, Object> responseData = Map.of(
-                                        "newUser", true,
-                                        "token", token,
-                                        "profile", new UserDto(newUser));
+                                "newUser", isNewUser,
+                                "token", token,
+                                "profile", new UserDto(newUser));
                         return new ResponseEntityBuilder.Builder<Map<String, Object>>()
-                                        .resultMessage("OTP verified and new role registered")
-                                        .httpStatus(HttpStatus.OK)
-                                        .body(responseData)
-                                        .buildWrapped();
+                                .resultMessage("OTP verified and new role registered")
+                                .httpStatus(HttpStatus.OK)
+                                .body(responseData)
+                                .buildWrapped();
                 } catch (IllegalArgumentException e) {
-                        logger.warn("Registration failed for email: {} and role: {}. Reason: {}", email, roleStr,
-                                        e.getMessage());
+                        logger.warn("Registration failed for email: {} and role: {}. Reason: {}", email, roleStr, e.getMessage());
                         return new ResponseEntityBuilder.Builder<Map<String, Object>>()
-                                        .resultMessage(e.getMessage())
-                                        .httpStatus(HttpStatus.BAD_REQUEST)
-                                        .buildWrapped();
+                                .resultMessage(e.getMessage())
+                                .httpStatus(HttpStatus.BAD_REQUEST)
+                                .buildWrapped();
                 }
         }
+
 
         @PostMapping("/create-profile")
         public ResponseEntity<?> createProfile(
