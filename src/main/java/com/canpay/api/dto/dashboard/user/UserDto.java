@@ -9,6 +9,9 @@ import com.canpay.api.entity.User;
 import com.canpay.api.entity.User.UserRole;
 import com.canpay.api.entity.User.UserStatus;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -51,6 +54,11 @@ public class UserDto {
         this.email = email;
         this.nic = nic;
         this.role = role;
+    }
+
+    public UserDto(@Size(max = 100) String name, @NotBlank @Email @Size(max = 255) String email) {
+        this.name = name;
+        this.email = email;
     }
 
     public UUID getId() {

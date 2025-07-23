@@ -79,4 +79,18 @@ public class OperatorAssignmentResponseDto {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
+
+    public void setBusId(UUID busid) {
+        if (this.bus == null) {
+            this.bus = new BusResponseDto();
+        }
+        this.bus.setId(busid);
+    }
+
+    public void setOperatorId(UUID operatorid) {
+        if (this.operator == null) {
+            this.operator = new UserDto();
+        }
+        this.operator.setId(operatorid);
+    }
 }

@@ -1,6 +1,6 @@
 package com.canpay.api.controller;
 
-import com.canpay.api.dto.UserDto;
+import com.canpay.api.dto.dashboard.user.UserDto;
 import com.canpay.api.entity.ResponseEntityBuilder;
 import com.canpay.api.entity.User;
 import com.canpay.api.entity.User.UserRole;

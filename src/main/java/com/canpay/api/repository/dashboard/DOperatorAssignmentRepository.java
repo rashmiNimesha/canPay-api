@@ -100,4 +100,5 @@ public interface DOperatorAssignmentRepository extends JpaRepository<OperatorAss
 
     /** Delete operator assignments by operator ID and bus ID */
     void deleteByOperator_IdAndBus_Id(UUID operatorId, UUID busId);
+
 }
