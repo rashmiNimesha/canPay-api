@@ -1,18 +1,10 @@
 package com.canpay.api.entity;
 
 import org.springframework.http.HttpStatus;
-
 import org.springframework.http.ResponseEntity;
 
 public class ResponseEntityBuilder<T> {
-    private String resultMessage;
-    private HttpStatus httpStatus;
-    private T body;
-
     private ResponseEntityBuilder(Builder<T> builder) {
-        this.resultMessage = builder.resultMessage;
-        this.httpStatus = builder.httpStatus;
-        this.body = builder.body;
     }
 
     public static class Builder<T> {
@@ -43,21 +35,25 @@ public class ResponseEntityBuilder<T> {
 
         public ResponseEntity<ResponseWrapper<T>> buildWrapped() {
             ResponseWrapper<T> wrapper = new ResponseWrapper<>();
-            wrapper.setSuccess(httpStatus != null && httpStatus.is2xxSuccessful());
-            wrapper.setMessage(resultMessage);
+            HttpStatus status = httpStatus != null ? httpStatus : HttpStatus.OK;
+            wrapper.setSuccess(status.is2xxSuccessful());
+            wrapper.setMessage(
+                    resultMessage != null ? resultMessage : (status.is2xxSuccessful() ? "Success" : "Error"));
             wrapper.setData(body);
             return ResponseEntity
-                    .status(httpStatus != null ? httpStatus : HttpStatus.OK)
+                    .status(status)
                     .body(wrapper);
         }
     }
 }
- class ResponseWrapper<T> {
+
+class ResponseWrapper<T> {
     private boolean success;
     private String message;
     private T data;
 
-    public ResponseWrapper() {}
+    public ResponseWrapper() {
+    }
 
     public ResponseWrapper(boolean success, String message, T data) {
         this.success = success;
@@ -65,28 +61,27 @@ public class ResponseEntityBuilder<T> {
         this.data = data;
     }
 
-     public boolean isSuccess() {
-         return success;
-     }
+    public boolean isSuccess() {
+        return success;
+    }
 
-     public void setSuccess(boolean success) {
-         this.success = success;
-     }
+    public void setSuccess(boolean success) {
+        this.success = success;
+    }
 
-     public String getMessage() {
-         return message;
-     }
+    public String getMessage() {
+        return message;
+    }
 
-     public void setMessage(String message) {
-         this.message = message;
-     }
+    public void setMessage(String message) {
+        this.message = message;
+    }
 
-     public T getData() {
-         return data;
-     }
+    public T getData() {
+        return data;
+    }
 
-     public void setData(T data) {
-         this.data = data;
-     }
- }
-
+    public void setData(T data) {
+        this.data = data;
+    }
+}

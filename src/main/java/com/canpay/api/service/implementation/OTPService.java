@@ -2,6 +2,8 @@ package com.canpay.api.service.implementation;
 
 import org.springframework.stereotype.Service;
 
+import com.canpay.api.service.EmailService;
+
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;

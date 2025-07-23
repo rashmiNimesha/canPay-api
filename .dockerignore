@@ -1,0 +1,33 @@
+# Maven build artifacts
+
+target/
+
+# IntelliJ / VS Code
+
+.idea/
+.vscode/
+\*.iml
+
+# Git
+
+.git/
+.gitignore
+
+# OS / editor junk
+
+.DS_Store
+Thumbs.db
+
+# Env files (Coolify handles env vars)
+
+.env
+.env.\*
+
+# Logs
+
+\*.log
+
+# Node/yarn (if frontend exists in same repo)
+
+node_modules/
+dist/

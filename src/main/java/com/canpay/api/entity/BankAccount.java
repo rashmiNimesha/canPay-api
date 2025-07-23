@@ -2,30 +2,53 @@ package com.canpay.api.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+/**
+ * Represents a bank account entity in the system.
+ */
 @Entity
-public class BankAccount {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+@Table(name = "bank_accounts")
+@Getter
+@Setter
+@NoArgsConstructor
+public class BankAccount extends BaseEntity {
+    /** Name of the bank. */
+    @Column(name = "bank_name", nullable = false)
+    @NotBlank
+    @Size(max = 100)
     private String bankName;
-    private long accountNumber;
-    private String accountHolderName;
 
+    /** Account number of the bank account. */
+    @Column(name = "account_number", nullable = false)
+    @NotNull
+    @Positive
+    private Long accountNumber;
+
+    /** Name of the account holder. */
+    @Column(name = "account_name", nullable = false)
+    @NotBlank
+    @Size(max = 100)
+    private String accountName;
+
+    /** Indicates if this is the default bank account. */
+    @Column(name = "is_default", nullable = false)
+    private boolean isDefault;
+
+    /** The user who owns this bank account. */
     @ManyToOne
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     @JsonBackReference
+    @NotNull
     private User user;
 
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
+    // Getters and Setters
     public String getBankName() {
         return bankName;
     }
@@ -34,20 +57,28 @@ public class BankAccount {
         this.bankName = bankName;
     }
 
-    public long getAccountNumber() {
+    public Long getAccountNumber() {
         return accountNumber;
     }
 
-    public void setAccountNumber(long accountNumber) {
+    public void setAccountNumber(Long accountNumber) {
         this.accountNumber = accountNumber;
     }
 
-    public String getAccountHolderName() {
-        return accountHolderName;
+    public String getAccountName() {
+        return accountName;
     }
 
-    public void setAccountHolderName(String accountHolderName) {
-        this.accountHolderName = accountHolderName;
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
+    public boolean isDefault() {
+        return isDefault;
+    }
+
+    public void setDefault(boolean aDefault) {
+        isDefault = aDefault;
     }
 
     public User getUser() {

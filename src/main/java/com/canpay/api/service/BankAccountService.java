@@ -1,9 +1,12 @@
 package com.canpay.api.service;
 
-import com.canpay.api.entity.BankAccount;
+import com.canpay.api.dto.BankAccountDto;
+import com.canpay.api.entity.User;
 
 import java.util.List;
 
 public interface BankAccountService {
-    List<BankAccount> getAccountsByEmail(String email);
+    List<BankAccountDto> getAccountsByEmail(String email);
+
+    User getUserByEmailAndRole(String email);
 }
