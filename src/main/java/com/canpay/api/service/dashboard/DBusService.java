@@ -1,5 +1,6 @@
 package com.canpay.api.service.dashboard;
 
+import com.canpay.api.controller.account.AccountController;
 import com.canpay.api.dto.dashboard.bus.BusRequestDto;
 import com.canpay.api.dto.dashboard.bus.BusResponseDto;
 import com.canpay.api.dto.dashboard.bus.BusSearchDto;
@@ -7,10 +8,14 @@ import com.canpay.api.dto.dashboard.bus.BusWalletDto;
 import com.canpay.api.entity.Bus;
 import com.canpay.api.entity.Bus.BusStatus;
 import com.canpay.api.entity.Bus.BusType;
+import com.canpay.api.entity.OperatorAssignment;
 import com.canpay.api.entity.User;
+import com.canpay.api.repository.OperatorAssignmentRepository;
 import com.canpay.api.repository.dashboard.DBusRepository;
 import com.canpay.api.repository.UserRepository;
 import com.canpay.api.lib.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -18,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.nio.file.Paths;
-// import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -32,6 +36,7 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 public class DBusService {
+    private final Logger logger = LoggerFactory.getLogger(AccountController.class);
 
     @Autowired
     private DBusRepository busRepository;
@@ -42,9 +47,15 @@ public class DBusService {
     @Autowired
     private DWalletService walletService;
 
+    private final OperatorAssignmentRepository operatorAssignmentRepository;
+
     // Base URL for document links, set in application.properties as app.base-url
     @Value("${app.base-url}")
     private String baseUrl;
+
+    public DBusService(OperatorAssignmentRepository operatorAssignmentRepository) {
+        this.operatorAssignmentRepository = operatorAssignmentRepository;
+    }
 
     /**
      * Create a new bus.
@@ -401,6 +412,25 @@ public class DBusService {
         } catch (IOException e) {
             throw new RuntimeException("Failed to save bus document", e);
         }
+    }
+
+    public void assignOperator(OperatorAssignment assignment) {
+        try {
+            logger.debug("Saving OperatorAssignment: id={}, busId={}, operatorId={}, status={}",
+                    assignment.getId(), assignment.getBus().getId(), assignment.getOperator().getId(), assignment.getStatus());
+            operatorAssignmentRepository.saveAndFlush(assignment);
+            logger.debug("OperatorAssignment saved successfully: id={}", assignment.getId());
+        } catch (Exception e) {
+            logger.error("Failed to save OperatorAssignment: id={}, error={}", assignment.getId(), e.getMessage(), e);
+            throw e; // Re-throw to ensure the controller catches the exception
+        }
+    }
+
+    public boolean hasActiveOperatorAssignment(UUID busId, UUID operatorId) {
+        logger.debug("Checking active assignment: busId={}, operatorId={}", busId, operatorId);
+        boolean exists = operatorAssignmentRepository.findByBusIdAndOperatorIdAndStatus(busId, operatorId, OperatorAssignment.AssignmentStatus.ACTIVE).isPresent();
+        logger.debug("Active assignment exists: {}", exists);
+        return exists;
     }
 
     /**

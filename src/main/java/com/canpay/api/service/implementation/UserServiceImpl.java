@@ -37,11 +37,23 @@ public class UserServiceImpl implements UserService {
         this.walletRepository = walletRepository;
     }
 
+//    @Override
+//    public Optional<User> findUserByEmail(String email) {
+//        return Optional.empty();
+//    }
+
     @Transactional
     @Override
     public Optional<User> findUserByEmail(String email) {
         logger.debug("Finding user by email: {}", email);
         return userRepository.findByEmailAndRole(email, UserRole.PASSENGER);
+    }
+
+    @Transactional
+    @Override
+    public Optional<User> findUserByEmailAndRole(String email, UserRole role) {
+        logger.debug("Finding user by email: {}", email);
+        return userRepository.findByEmailAndRole(email, role);
     }
 
     public Optional<User> findByEmailAndRole(String email, UserRole role) {

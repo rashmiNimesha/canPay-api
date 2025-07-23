@@ -1,18 +1,20 @@
 package com.canpay.api.controller.account;
 
+import com.canpay.api.dto.dashboard.bus.BusRequestDto;
+import com.canpay.api.dto.dashboard.bus.BusResponseDto;
 import com.canpay.api.entity.Bus;
 import com.canpay.api.entity.User;
 import com.canpay.api.repository.BusRepository;
 import com.canpay.api.repository.UserRepository;
+import com.canpay.api.service.dashboard.DBusService;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 import java.util.UUID;
@@ -23,6 +25,8 @@ public class BusControllerAc {
     private final BusRepository busRepository;
     private final UserRepository userRepository;
     private final Logger logger = LoggerFactory.getLogger(BusControllerAc.class);
+    @Autowired
+    private   DBusService busService;
 
     public BusControllerAc(BusRepository busRepository, UserRepository userRepository) {
         this.busRepository = busRepository;
@@ -73,6 +77,19 @@ public class BusControllerAc {
             logger.error("Error fetching details: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/register-buses")
+    @PreAuthorize("hasRole('OWNER')")
+    public ResponseEntity<BusResponseDto> createBus(@Valid @RequestBody BusRequestDto requestDto) {
+        System.out.println("come to the reg buses");
+        try {
+            BusResponseDto responseDto = busService.createBus(requestDto);
+            return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
+        }
+        catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
         }
     }
 }

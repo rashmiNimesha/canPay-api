@@ -10,10 +10,12 @@ import java.util.Optional;
 
 
 public interface UserService {
-   // Optional<User> findByEmail(String email);
 
     @Transactional
     Optional<User> findUserByEmail(String email);
+
+    @Transactional
+    Optional<User> findUserByEmailAndRole(String email, UserRole role);
 
     @Transactional
     User registerWithEmail(String email, String roleString);
