@@ -28,7 +28,7 @@ public class BusControllerAc {
     private final BusRepository busRepository;
     private final UserRepository userRepository;
     private final Logger logger = LoggerFactory.getLogger(BusControllerAc.class);
-    private final  DBusService busService;
+    private final DBusService busService;
     private final JwtService jwtService;
     private final UserServiceImpl userServiceImpl;
 
@@ -94,8 +94,7 @@ public class BusControllerAc {
         try {
             BusResponseDto responseDto = busService.createBus(requestDto);
             return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
-        }
-        catch (RuntimeException e) {
+        } catch (RuntimeException e) {
             return ResponseEntity.badRequest().build();
         }
     }
@@ -159,6 +158,39 @@ public class BusControllerAc {
             logger.error("Failed to retrieve buses for ownerId={}: {}", ownerId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Failed to retrieve buses: " + e.getMessage()));
+        }
+    }
+
+
+    @GetMapping("/{busId}")
+    public ResponseEntity<?> getBusById(@PathVariable String busId) {
+        logger.debug("Received request to fetch bus with ID: {}", busId);
+        UUID busUuid;
+        try {
+            busUuid = UUID.fromString(busId);
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid UUID format for busId: {}", busId);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("success", false, "message", "Invalid bus ID format: " + busId));
+        }
+
+        BusResponseDto bus = busService.getBusById(busUuid);
+        if (bus == null) {
+            logger.warn("Bus not found for ID: {}", busId);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("success", false, "message", "Bus not found"));
+        }
+        try {
+            logger.info("Retrieved bus details for busId={}", busId);
+            return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                    .resultMessage("Bus details retrieved successfully")
+                    .httpStatus(HttpStatus.OK)
+                    .body(Map.of("data", bus))
+                    .buildWrapped();
+        } catch (Exception e) {
+            logger.error("Failed to retrieve bus for busId={}: {}", busId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Failed to retrieve bus: " + e.getMessage()));
         }
     }
 
