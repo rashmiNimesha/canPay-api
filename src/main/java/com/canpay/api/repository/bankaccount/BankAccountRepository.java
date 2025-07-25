@@ -10,9 +10,6 @@ import java.util.Optional;
 
 @Repository
 public interface BankAccountRepository extends JpaRepository<BankAccount, Long> {
-    List<BankAccount> findByUser(User user);
-//    Optional<BankAccount> findByUserAndDefaultTrue(User user);
-
 
     Optional<BankAccount> findByUserAndIsDefaultTrue(User user);
 }
