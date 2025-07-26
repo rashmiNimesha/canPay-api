@@ -19,6 +19,7 @@ public class OperatorAssignmentResponseDto {
     private LocalDateTime assignedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private boolean assigned; // Rashmi added
 
     public OperatorAssignmentResponseDto() {
     }
@@ -92,5 +93,13 @@ public class OperatorAssignmentResponseDto {
             this.operator = new UserDto();
         }
         this.operator.setId(operatorid);
+    }
+
+    public boolean isAssigned() {
+        return assigned;
+    }
+
+    public void setAssigned(boolean assigned) {
+        this.assigned = assigned;
     }
 }

@@ -1,13 +1,15 @@
-package com.canpay.api.controller.account;
+ package com.canpay.api.controller.account;
 
 import com.canpay.api.entity.*;
 import com.canpay.api.repository.dashboard.DWalletRepository;
 import com.canpay.api.service.implementation.JwtService;
-//import com.canpay.api.service.implementation.MqttService;
-import com.canpay.api.service.implementation.UserServiceImpl;
 import com.canpay.api.repository.BusRepository;
 import com.canpay.api.repository.OperatorAssignmentRepository;
 import com.canpay.api.repository.TransactionRepository;
+import com.canpay.api.service.implementation.UserServiceImpl;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -29,22 +31,19 @@ public class PaymentController {
     private final OperatorAssignmentRepository operatorAssignmentRepository;
     private final DWalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
-//    private final MqttService mqttService;
+    private final MqttClient mqttClient;
     private final Logger logger = LoggerFactory.getLogger(PaymentController.class);
 
     public PaymentController(JwtService jwtService, UserServiceImpl userService, BusRepository busRepository,
                              OperatorAssignmentRepository operatorAssignmentRepository, DWalletRepository walletRepository,
-                             TransactionRepository transactionRepository)
-
-//                             MqttService mqttService)
-    {
+                             TransactionRepository transactionRepository, MqttClient mqttClient) {
         this.jwtService = jwtService;
         this.userService = userService;
         this.busRepository = busRepository;
         this.operatorAssignmentRepository = operatorAssignmentRepository;
         this.walletRepository = walletRepository;
         this.transactionRepository = transactionRepository;
-//        this.mqttService = mqttService;
+        this.mqttClient = mqttClient;
     }
 
     @PostMapping("/process")
@@ -53,7 +52,6 @@ public class PaymentController {
     public ResponseEntity<?> processPayment(@RequestHeader(value = "Authorization") String authHeader,
                                             @RequestBody Map<String, String> request) {
         logger.debug("Received payment request: {}", request);
-        System.out.println("came to the processPayment");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             logger.warn("Authorization header missing or invalid");
@@ -177,13 +175,21 @@ public class PaymentController {
             transaction.setNote("Payment for bus " + bus.getBusNumber());
             transactionRepository.save(transaction);
 
-            // Send MQTT notifications
-//            mqttService.sendPaymentNotification(passenger.getId().toString(), "passenger",
-//                    "Payment of " + amount + " made for bus " + bus.getBusNumber());
-//            mqttService.sendPaymentNotification(operator.getId().toString(), "operator",
-//                    "Payment of " + amount + " received for bus " + bus.getBusNumber());
-//            mqttService.sendPaymentNotification(owner.getId().toString(), "owner",
-//                    "Payment of " + amount + " credited for bus " + bus.getBusNumber());
+            // Publish MQTT notification to operator
+            String topic = "bus/" + busId + "/payment";
+            String message = String.format(
+                    "{\"transactionId\": \"%s\", \"busId\": \"%s\", \"passengerId\": \"%s\", \"operatorId\": \"%s\", \"amount\": %s, \"busNumber\": \"%s\", \"status\": \"%s\"}",
+                    transaction.getId(), busId, passenger.getId(), operatorId, amount, bus.getBusNumber(), transaction.getStatus()
+            );
+            try {
+                MqttMessage mqttMessage = new MqttMessage(message.getBytes());
+                mqttMessage.setQos(1); // At least once delivery
+                mqttClient.publish(topic, mqttMessage);
+                logger.info("Published MQTT message to topic {}: {}", topic, message);
+            } catch (MqttException e) {
+                logger.error("Failed to publish MQTT message: {}", e.getMessage(), e);
+                // Continue processing even if MQTT fails to avoid blocking payment
+            }
 
             logger.info("Payment processed: passenger={}, bus={}, operator={}, owner={}, amount={}",
                     passengerEmail, busId, operatorId, owner.getId(), amount);
