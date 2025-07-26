@@ -30,9 +30,9 @@ public class TransactionController {
         this.jwtService = jwtService;
     }
 
-    @GetMapping("/recent")
+    @GetMapping("/recent/{passengerId}")
     @PreAuthorize("hasRole('PASSENGER')")
-    public ResponseEntity<?> getRecentTransactions(@RequestHeader(value = "Authorization") String authHeader) {
+    public ResponseEntity<?> getRecentTransactions(@RequestHeader(value = "Authorization") String authHeader, @PathVariable UUID passengerId) {
         logger.debug("Received request for recent transactions");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -58,7 +58,7 @@ public class TransactionController {
         }
 
         try {
-            List<Transaction> transactions = transactionService.getRecentTransactions(passengerEmail);
+            List<Transaction> transactions = transactionService.getRecentTransactions(passengerId);
             List<Map<String, Object>> transactionData = transactions.stream().map(t -> {
                 Map<String, Object> data = new HashMap<>();
                 data.put("transactionId", t.getId().toString());
