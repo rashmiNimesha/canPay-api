@@ -32,8 +32,17 @@ public class TransactionController {
 
     @GetMapping("/recent/{passengerId}")
     @PreAuthorize("hasRole('PASSENGER')")
-    public ResponseEntity<?> getRecentTransactions(@RequestHeader(value = "Authorization") String authHeader, @PathVariable UUID passengerId) {
+    public ResponseEntity<?> getRecentTransactions(@RequestHeader(value = "Authorization") String authHeader, @PathVariable String passengerId) {
         logger.debug("Received request for recent transactions");
+        UUID passengerUuid;
+        try {
+            passengerUuid = UUID.fromString(passengerId);
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid UUID format for busId: {}", passengerId);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("success", false, "message", "Invalid bus ID format: " + passengerId));
+        }
+
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             logger.warn("Authorization header missing or invalid");
@@ -58,7 +67,7 @@ public class TransactionController {
         }
 
         try {
-            List<Transaction> transactions = transactionService.getRecentTransactions(passengerId);
+            List<Transaction> transactions = transactionService.getRecentTransactions(passengerUuid);
             List<Map<String, Object>> transactionData = transactions.stream().map(t -> {
                 Map<String, Object> data = new HashMap<>();
                 data.put("transactionId", t.getId().toString());
