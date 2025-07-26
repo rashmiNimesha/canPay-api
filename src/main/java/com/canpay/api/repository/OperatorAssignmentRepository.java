@@ -13,4 +13,6 @@ import java.util.UUID;
 public interface OperatorAssignmentRepository extends JpaRepository<OperatorAssignment, UUID> {
     Optional<OperatorAssignment> findByOperatorAndBus(User operator, Bus bus);
     Optional<OperatorAssignment> findByBusIdAndOperatorIdAndStatus(UUID busId, UUID operatorId, OperatorAssignment.AssignmentStatus status);
+    OperatorAssignment findFirstByOperatorIdOrderByAssignedAtDesc(UUID operatorId);
+
 }
