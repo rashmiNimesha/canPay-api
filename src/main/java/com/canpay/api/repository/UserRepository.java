@@ -20,7 +20,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByNic(String nic);
     Optional<User> findById(UUID id);
 
-    @Query("SELECT COUNT(u) FROM User u WHERE u.role = com.canpay.api.entity.User$UserRole.PASSENGER")
+    @Query("SELECT COUNT(u) FROM User u WHERE u.role = com.canpay.api.entity.User.UserRole.PASSENGER")
     long countPassengers();
     boolean existsByEmail(String email);
     @Query(value = "SELECT COUNT(DISTINCT role) FROM users WHERE email = :email", nativeQuery = true)
