@@ -162,7 +162,7 @@ public class WalletServiceImpl implements WalletService {
         transaction.setStatus(Transaction.TransactionStatus.APPROVED);
         transaction.setNote("Wallet recharge from default bank account: " + bankAccount.getAccountNumber());
         transaction.setFromBankAccount(bankAccount);
-        transaction.setFromWallet(wallet);
+        transaction.setToWallet(wallet);
         transaction.setHappenedAt(java.time.LocalDateTime.now());
 
         // Save wallet and transaction
