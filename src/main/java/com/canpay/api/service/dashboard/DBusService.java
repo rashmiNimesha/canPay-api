@@ -10,10 +10,12 @@ import com.canpay.api.entity.Bus.BusStatus;
 import com.canpay.api.entity.Bus.BusType;
 import com.canpay.api.entity.OperatorAssignment;
 import com.canpay.api.entity.User;
+import com.canpay.api.entity.Wallet;
 import com.canpay.api.repository.OperatorAssignmentRepository;
 import com.canpay.api.repository.dashboard.DBusRepository;
 import com.canpay.api.repository.UserRepository;
 import com.canpay.api.lib.Utils;
+import com.canpay.api.repository.dashboard.DWalletRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +49,8 @@ public class DBusService {
 
     @Autowired
     private DWalletService walletService;
+    @Autowired
+    private  DWalletRepository walletRepository;
 
     private final OperatorAssignmentRepository operatorAssignmentRepository;
 
@@ -81,6 +86,13 @@ public class DBusService {
                 requestDto.getStatus() != null ? requestDto.getStatus() : BusStatus.PENDING,
                 vehicleInsurancePath,
                 vehicleRevenueLicensePath);
+
+        Wallet wallet = new Wallet(); // added rashmi when creating a bus, create a wallet too
+        wallet.setType(Wallet.WalletType.BUS);
+        wallet.setWalletNumber(Utils.generateUniqueWalletNumber(walletRepository));
+        wallet.setBalance(BigDecimal.valueOf(0));
+        wallet.setBus(bus);
+        bus.setWallet(wallet);
 
         Bus savedBus = busRepository.save(bus);
         return convertToResponseDto(savedBus);
@@ -360,6 +372,15 @@ public class DBusService {
 
         dto.setCreatedAt(bus.getCreatedAt());
         dto.setUpdatedAt(bus.getUpdatedAt());
+
+        // Set wallet details if available
+        if (bus.getWallet() != null) {
+            BusWalletDto walletDto = new BusWalletDto();
+            walletDto.setId(bus.getWallet().getId());
+            walletDto.setBalance(bus.getWallet().getBalance());
+            dto.setWallet(walletDto);
+        }
+
         return dto;
     }
 
