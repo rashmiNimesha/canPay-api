@@ -1,4 +1,4 @@
- package com.canpay.api.controller.account;
+package com.canpay.api.controller.account;
 
 import com.canpay.api.entity.*;
 import com.canpay.api.repository.dashboard.DWalletRepository;
@@ -139,11 +139,12 @@ public class PaymentController {
                         .body(Map.of("success", false, "message", "Invalid operator"));
             }
 
-            // Fetch operator assignment to get owner
-            OperatorAssignment assignment = operatorAssignmentRepository.findByOperatorAndBus(operator, bus)
+            // Fetch operator assignment to get owner (must be ACTIVE)
+            OperatorAssignment assignment = operatorAssignmentRepository
+                    .findByOperatorAndBusAndStatus(operator, bus, OperatorAssignment.AssignmentStatus.ACTIVE)
                     .orElseThrow(() -> {
-                        logger.warn("Operator {} not assigned to bus {}", operatorId, busId);
-                        return new RuntimeException("Operator not assigned to bus");
+                        logger.warn("Operator {} not assigned to bus {} with ACTIVE status", operatorId, busId);
+                        return new RuntimeException("Operator not assigned to bus or not ACTIVE");
                     });
 
             User owner = assignment.getBus().getOwner();
@@ -153,24 +154,24 @@ public class PaymentController {
                         .body(Map.of("success", false, "message", "Invalid owner"));
             }
 
-            // Fetch owner wallet
-            Wallet ownerWallet = walletRepository.findByUserAndType(owner, Wallet.WalletType.OWNER)
+            // Fetch bus wallet (instead of owner wallet)
+            Wallet busWallet = walletRepository.findByBusAndType(bus, Wallet.WalletType.BUS)
                     .orElseThrow(() -> {
-                        logger.warn("Owner wallet not found for email: {}", owner.getEmail());
-                        return new RuntimeException("Owner wallet not found");
+                        logger.warn("Bus wallet not found for bus: {}", bus.getId());
+                        return new RuntimeException("Bus wallet not found");
                     });
 
-            // Update wallets
+            // Update wallets: subtract from passenger, add to bus wallet
             passengerWallet.setBalance(passengerWallet.getBalance().subtract(amount));
-            ownerWallet.setBalance(ownerWallet.getBalance().add(amount));
+            busWallet.setBalance(busWallet.getBalance().add(amount));
             walletRepository.save(passengerWallet);
-            walletRepository.save(ownerWallet);
+            walletRepository.save(busWallet);
 
-            // Create transaction
+            // Create transaction (to_wallet is busWallet, owner is still set)
             Transaction transaction = new Transaction(amount, Transaction.TransactionType.PAYMENT, passenger, bus, operator);
             transaction.setOwner(owner);
             transaction.setFromWallet(passengerWallet);
-            transaction.setToWallet(ownerWallet);
+            transaction.setToWallet(busWallet);
             transaction.setStatus(Transaction.TransactionStatus.APPROVED);
             transaction.setNote("Payment for bus " + bus.getBusNumber());
             transactionRepository.save(transaction);
