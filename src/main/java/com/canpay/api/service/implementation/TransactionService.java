@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -70,6 +71,10 @@ public class TransactionService {
                 transaction.getToWallet() != null ? transaction.getToWallet().getId() : null,
                 transaction.getToWallet() != null ? transaction.getToWallet().getWalletNumber() : null,
                 transaction.getToWallet() != null ? transaction.getToWallet().getBalance() : null);
+    }
+
+    public BigDecimal sumPaymentsForBus(java.util.UUID busId) {
+        return transactionRepository.sumPaymentsForBus(busId);
     }
 
 }

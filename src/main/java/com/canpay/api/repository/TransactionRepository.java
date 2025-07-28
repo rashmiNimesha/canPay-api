@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,5 +24,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     /** Find recharge transactions by passenger ID */
     @Query("SELECT t FROM Transaction t WHERE t.type = 'RECHARGE' AND t.passenger.id = :passengerId ORDER BY t.happenedAt DESC")
     List<Transaction> findRechargeTransactionsByPassengerId(@Param("passengerId") UUID passengerId);
+
+    @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.bus.id = :busId AND t.type = com.canpay.api.entity.Transaction.TransactionType.PAYMENT AND t.status = com.canpay.api.entity.Transaction.TransactionStatus.APPROVED")
+    BigDecimal sumPaymentsForBus(UUID busId);
 
 }
