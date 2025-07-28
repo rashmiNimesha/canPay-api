@@ -182,6 +182,8 @@ public class PaymentController {
                     "{\"transactionId\": \"%s\", \"busId\": \"%s\", \"passengerId\": \"%s\", \"operatorId\": \"%s\", \"amount\": %s, \"busNumber\": \"%s\", \"status\": \"%s\"}",
                     transaction.getId(), busId, passenger.getId(), operatorId, amount, bus.getBusNumber(), transaction.getStatus()
             );
+            // Print to command line for debugging
+            System.out.println("MQTT DEBUG | Topic: " + topic + " | Message: " + message);
             try {
                 MqttMessage mqttMessage = new MqttMessage(message.getBytes());
                 mqttMessage.setQos(1); // At least once delivery
