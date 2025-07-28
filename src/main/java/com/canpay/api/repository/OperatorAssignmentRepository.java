@@ -14,5 +14,5 @@ public interface OperatorAssignmentRepository extends JpaRepository<OperatorAssi
     Optional<OperatorAssignment> findByOperatorAndBus(User operator, Bus bus);
     Optional<OperatorAssignment> findByBusIdAndOperatorIdAndStatus(UUID busId, UUID operatorId, OperatorAssignment.AssignmentStatus status);
     OperatorAssignment findFirstByOperatorIdOrderByAssignedAtDesc(UUID operatorId);
-
+    Optional<OperatorAssignment> findByOperatorAndBusAndStatus(User operator, Bus bus, OperatorAssignment.AssignmentStatus status);
 }
