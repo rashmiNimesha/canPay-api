@@ -416,5 +416,17 @@ public class AccountController {
                     .body(Map.of("success", false, "message", "Error fetching operator financial details"));
         }
     }
+
+    @GetMapping("/{ownerId}/total-operators")
+    @PreAuthorize("hasRole('OWNER')")
+    public ResponseEntity<?> getTotalOperatorsAssignedToOwner(@PathVariable UUID ownerId) {
+        long totalOperators = operatorAssignmentService.getTotalOperatorsAssignedToOwner(ownerId);
+        return new ResponseEntityBuilder.Builder<Long>()
+                .resultMessage("Total operators assigned to owner")
+                .body(totalOperators)
+                .buildWrapped();
+    }
+
+
 }
 

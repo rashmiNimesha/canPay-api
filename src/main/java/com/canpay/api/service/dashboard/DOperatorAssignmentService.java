@@ -386,4 +386,8 @@ public class DOperatorAssignmentService {
             return blockedAssignments;
         }
     }
+
+    public long getTotalOperatorsAssignedToOwner(UUID ownerId) {
+        return operatorAssignmentRepository.countDistinctOperatorsByOwnerId(ownerId);
+    }
 }

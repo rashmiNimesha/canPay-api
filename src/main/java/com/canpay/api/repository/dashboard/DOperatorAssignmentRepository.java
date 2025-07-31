@@ -4,6 +4,8 @@ import com.canpay.api.entity.OperatorAssignment;
 import com.canpay.api.entity.OperatorAssignment.AssignmentStatus;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.lang.NonNull;
 
@@ -101,4 +103,6 @@ public interface DOperatorAssignmentRepository extends JpaRepository<OperatorAss
     /** Delete operator assignments by operator ID and bus ID */
     void deleteByOperator_IdAndBus_Id(UUID operatorId, UUID busId);
 
+    @Query("SELECT COUNT(DISTINCT oa.operator.id) FROM OperatorAssignment oa WHERE oa.bus.owner.id = :ownerId")
+    long countDistinctOperatorsByOwnerId(@Param("ownerId") UUID ownerId);
 }
