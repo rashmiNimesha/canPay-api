@@ -1,9 +1,6 @@
 package com.canpay.api.service.dashboard;
 
-import com.canpay.api.dto.dashboard.operatorassignment.OperatorAssignmentRequestDto;
-import com.canpay.api.dto.dashboard.operatorassignment.OperatorAssignmentListResponseDto;
-import com.canpay.api.dto.dashboard.operatorassignment.OperatorAssignmentResponseDto;
-import com.canpay.api.dto.dashboard.operatorassignment.OperatorAssignmentSearchDto;
+import com.canpay.api.dto.dashboard.operatorassignment.*;
 import com.canpay.api.dto.dashboard.bus.BusResponseDto;
 import com.canpay.api.dto.dashboard.user.UserDto;
 import com.canpay.api.entity.Bus;
@@ -337,6 +334,12 @@ public class DOperatorAssignmentService {
         dto.setAssignedAt(assignment.getAssignedAt());
         dto.setCreatedAt(assignment.getCreatedAt());
         dto.setUpdatedAt(assignment.getUpdatedAt());
+//Rashmi added
+        dto.setBusStatus(assignment.getBus().getStatus());
+        dto.setBusRouteFrom(assignment.getBus().getRouteFrom());
+        dto.setBusRouteTo(assignment.getBus().getRouteTo());
+        dto.setBusWalletBalance(assignment.getBus().getWallet());
+        dto.setOperatorEmail(assignment.getUser().getEmail());
         return dto;
     }
 
@@ -352,7 +355,7 @@ public class DOperatorAssignmentService {
         private long blockedAssignments;
 
         public AssignmentStatsDto(long totalAssignments, long activeAssignments, long pendingAssignments,
-                long inactiveAssignments, long rejectedAssignments, long blockedAssignments) {
+                                  long inactiveAssignments, long rejectedAssignments, long blockedAssignments) {
             this.totalAssignments = totalAssignments;
             this.activeAssignments = activeAssignments;
             this.pendingAssignments = pendingAssignments;
@@ -385,5 +388,39 @@ public class DOperatorAssignmentService {
         public long getBlockedAssignments() {
             return blockedAssignments;
         }
+    }
+
+    public long getTotalOperatorsAssignedToOwner(UUID ownerId) {
+        return operatorAssignmentRepository.countDistinctOperatorsByOwnerId(ownerId);
+    }
+
+    public long countActiveOperatorsByOwnerId(UUID ownerId) {
+        return operatorAssignmentRepository.countDistinctActiveOperatorsByOwnerId(ownerId);
+    }
+
+    /**
+     * Get all ACTIVE operator assignments for a given owner.
+     */
+    @Transactional(readOnly = true)
+    public List<OperatorAssignmentListResponseDto> getActiveOperatorAssignmentsByOwnerId(UUID ownerId) {
+        return operatorAssignmentRepository
+                .findByBusOwnerIdAndStatus(ownerId, OperatorAssignment.AssignmentStatus.ACTIVE)
+                .stream()
+                .map(this::convertToResponseDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get total and list of operator assignments for a given owner and status.
+     */
+    @Transactional(readOnly = true)
+    public OperatorAssignmentListWithTotalDto getOperatorAssignmentsByOwnerIdAndStatus(UUID ownerId, OperatorAssignment.AssignmentStatus status) {
+        long total = operatorAssignmentRepository.countByBus_Owner_IdAndStatus(ownerId, status);
+        List<OperatorAssignmentListResponseDto> list = operatorAssignmentRepository
+                .findByBusOwnerIdAndStatus(ownerId, status)
+                .stream()
+                .map(this::convertToResponseDto)
+                .collect(java.util.stream.Collectors.toList());
+        return new com.canpay.api.dto.dashboard.operatorassignment.OperatorAssignmentListWithTotalDto(total, list);
     }
 }

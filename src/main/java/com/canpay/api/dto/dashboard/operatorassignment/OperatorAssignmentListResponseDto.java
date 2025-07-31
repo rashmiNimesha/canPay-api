@@ -1,7 +1,10 @@
 package com.canpay.api.dto.dashboard.operatorassignment;
 
+import com.canpay.api.entity.Bus;
 import com.canpay.api.entity.OperatorAssignment.AssignmentStatus;
+import com.canpay.api.entity.Wallet;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -21,6 +24,13 @@ public class OperatorAssignmentListResponseDto {
     private LocalDateTime assignedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    //Rashmi added
+    private String operatorEmail;
+    private String busRouteFrom;
+    private String busRouteTo;
+    private Wallet busWalletBalance;
+    private Bus.BusStatus busStatus;
 
     public OperatorAssignmentListResponseDto() {
     }
@@ -112,5 +122,45 @@ public class OperatorAssignmentListResponseDto {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getOperatorEmail() {
+        return operatorEmail;
+    }
+
+    public void setOperatorEmail(String operatorEmail) {
+        this.operatorEmail = operatorEmail;
+    }
+
+    public String getBusRouteFrom() {
+        return busRouteFrom;
+    }
+
+    public void setBusRouteFrom(String busRouteFrom) {
+        this.busRouteFrom = busRouteFrom;
+    }
+
+    public String getBusRouteTo() {
+        return busRouteTo;
+    }
+
+    public void setBusRouteTo(String busRouteTo) {
+        this.busRouteTo = busRouteTo;
+    }
+
+    public Wallet getBusWalletBalance() {
+        return busWalletBalance;
+    }
+
+    public void setBusWalletBalance(Wallet busWalletBalance) {
+        this.busWalletBalance = busWalletBalance;
+    }
+
+    public Bus.BusStatus getBusStatus() {
+        return busStatus;
+    }
+
+    public void setBusStatus(Bus.BusStatus busStatus) {
+        this.busStatus = busStatus;
     }
 }

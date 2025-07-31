@@ -1,5 +1,6 @@
 package com.canpay.api.repository.dashboard;
 
+import com.canpay.api.entity.Bus;
 import com.canpay.api.entity.User;
 import com.canpay.api.entity.Wallet;
 import com.canpay.api.entity.Wallet.WalletType;
@@ -48,5 +49,7 @@ public interface DWalletRepository extends JpaRepository<Wallet, UUID> {
     long countByType(WalletType type);
 
     Optional<Wallet> findByUserAndType(User user, Wallet.WalletType type);
+
+    Optional<Wallet> findByBusAndType(Bus bus, Wallet.WalletType type);
 
 }

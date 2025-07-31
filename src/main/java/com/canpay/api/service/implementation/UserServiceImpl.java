@@ -334,6 +334,7 @@ public class UserServiceImpl implements UserService {
         Map<String, Object> walletDetails = new HashMap<>();
         if (walletOpt.isPresent()) {
             walletDetails.put("balance", walletOpt.get().getBalance());
+            walletDetails.put("walletNumber", walletOpt.get().getWalletNumber());
         } else {
             logger.info("No wallet found for user: {}", email);
             walletDetails.put("balance", null);

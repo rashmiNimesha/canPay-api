@@ -10,10 +10,12 @@ import com.canpay.api.entity.Bus.BusStatus;
 import com.canpay.api.entity.Bus.BusType;
 import com.canpay.api.entity.OperatorAssignment;
 import com.canpay.api.entity.User;
-import com.canpay.api.repository.OperatorAssignmentRepository;
+import com.canpay.api.entity.Wallet;
+import com.canpay.api.repository.dashboard.DOperatorAssignmentRepository;
 import com.canpay.api.repository.dashboard.DBusRepository;
 import com.canpay.api.repository.UserRepository;
 import com.canpay.api.lib.Utils;
+import com.canpay.api.repository.dashboard.DWalletRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,11 +24,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Paths;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -46,14 +46,16 @@ public class DBusService {
 
     @Autowired
     private DWalletService walletService;
+    @Autowired
+    private  DWalletRepository walletRepository;
 
-    private final OperatorAssignmentRepository operatorAssignmentRepository;
+    private final DOperatorAssignmentRepository operatorAssignmentRepository;
 
     // Base URL for document links, set in application.properties as app.base-url
     @Value("${app.base-url}")
     private String baseUrl;
 
-    public DBusService(OperatorAssignmentRepository operatorAssignmentRepository) {
+    public DBusService(DOperatorAssignmentRepository operatorAssignmentRepository) {
         this.operatorAssignmentRepository = operatorAssignmentRepository;
     }
 
@@ -81,6 +83,13 @@ public class DBusService {
                 requestDto.getStatus() != null ? requestDto.getStatus() : BusStatus.PENDING,
                 vehicleInsurancePath,
                 vehicleRevenueLicensePath);
+
+        Wallet wallet = new Wallet(); // added rashmi when creating a bus, create a wallet too
+        wallet.setType(Wallet.WalletType.BUS);
+        wallet.setWalletNumber(Utils.generateUniqueWalletNumber(walletRepository));
+        wallet.setBalance(BigDecimal.valueOf(0));
+        wallet.setBus(bus);
+        bus.setWallet(wallet);
 
         Bus savedBus = busRepository.save(bus);
         return convertToResponseDto(savedBus);
@@ -360,6 +369,15 @@ public class DBusService {
 
         dto.setCreatedAt(bus.getCreatedAt());
         dto.setUpdatedAt(bus.getUpdatedAt());
+
+        // Set wallet details if available
+        if (bus.getWallet() != null) {
+            BusWalletDto walletDto = new BusWalletDto();
+            walletDto.setId(bus.getWallet().getId());
+            walletDto.setBalance(bus.getWallet().getBalance());
+            dto.setWallet(walletDto);
+        }
+
         return dto;
     }
 
@@ -433,6 +451,14 @@ public class DBusService {
         return exists;
     }
 
+    // Add this method to check for any assignment (any status)
+    public boolean hasAnyOperatorAssignment(UUID busId, UUID operatorId) {
+        logger.debug("Checking any assignment: busId={}, operatorId={}", busId, operatorId);
+        boolean exists = operatorAssignmentRepository.findByBusIdAndOperatorId(busId, operatorId).isPresent();
+        logger.debug("Any assignment exists: {}", exists);
+        return exists;
+    }
+
     /**
      * Inner class for bus statistics.
      */
@@ -497,4 +523,14 @@ public class DBusService {
             return intercityBuses;
         }
     }
+
+    public Map<String, Long> countBusesByStatusForOwner(UUID ownerId) {
+        List<Object[]> results = busRepository.countBusesByStatusForOwner(ownerId);
+        Map<String, Long> statusCount = new HashMap<>();
+        for (Object[] row : results) {
+            statusCount.put(row[0].toString(), (Long) row[1]);
+        }
+        return statusCount;
+    }
 }
+
