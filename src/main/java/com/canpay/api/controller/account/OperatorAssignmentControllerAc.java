@@ -166,6 +166,7 @@ public class OperatorAssignmentControllerAc {
     }
 
 
+    // total operators assigned to owner by number
     @GetMapping("/{ownerId}/total-operators")
     @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<?> getTotalOperatorsAssignedToOwner(@PathVariable UUID ownerId) {
