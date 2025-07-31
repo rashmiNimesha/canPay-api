@@ -1,6 +1,5 @@
 package com.canpay.api.dto;
 
-
 public class UserWalletBalanceDto {
 
     private String email;
@@ -27,6 +26,12 @@ public class UserWalletBalanceDto {
         this.accountName = name;
     }
 
+    public UserWalletBalanceDto(String email, double balance, String accountName, String walletNumber) {
+        this.email = email;
+        this.balance = balance;
+        this.accountName = accountName;
+        this.walletNumber = walletNumber;
+    }
 
     public String getEmail() {
         return email;
