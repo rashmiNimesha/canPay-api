@@ -1,20 +1,24 @@
 package com.canpay.api.controller.account;
 
+import com.canpay.api.dto.dashboard.operatorassignment.OperatorAssignmentListResponseDto;
 import com.canpay.api.dto.dashboard.operatorassignment.OperatorAssignmentResponseDto;
 import com.canpay.api.dto.dashboard.operatorassignment.OperatorAssignmentListWithTotalDto;
 import com.canpay.api.entity.OperatorAssignment;
 import com.canpay.api.entity.ResponseEntityBuilder;
 import com.canpay.api.repository.dashboard.DOperatorAssignmentRepository;
+import com.canpay.api.service.dashboard.DBusService;
 import com.canpay.api.service.implementation.JwtService;
 import com.canpay.api.service.dashboard.DOperatorAssignmentService;
+import com.canpay.api.service.implementation.UserServiceImpl;
 import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
+
 import com.canpay.api.entity.Bus;
 import com.canpay.api.entity.User;
 import com.canpay.api.dto.dashboard.bus.BusResponseDto;
@@ -29,13 +33,16 @@ public class OperatorAssignmentControllerAc {
 
     private final DOperatorAssignmentRepository operatorAssignmentRepository;
     private final JwtService jwtService;
+    public final UserServiceImpl userService;
+    private final DOperatorAssignmentService operatorAssignmentService;
+    private final DBusService busService;
 
-    @Autowired
-    private DOperatorAssignmentService operatorAssignmentService;
-
-    public OperatorAssignmentControllerAc(DOperatorAssignmentRepository operatorAssignmentRepository, JwtService jwtService) {
+    public OperatorAssignmentControllerAc(DOperatorAssignmentRepository operatorAssignmentRepository, JwtService jwtService, UserServiceImpl userService, DOperatorAssignmentService operatorAssignmentService, DBusService busService) {
         this.operatorAssignmentRepository = operatorAssignmentRepository;
         this.jwtService = jwtService;
+        this.userService = userService;
+        this.operatorAssignmentService = operatorAssignmentService;
+        this.busService = busService;
     }
 
     @GetMapping("/assignment-status/{operatorId}")
@@ -155,4 +162,57 @@ public class OperatorAssignmentControllerAc {
                 .buildWrapped();
     }
 
+
+    @GetMapping("/{ownerId}/total-operators")
+    @PreAuthorize("hasRole('OWNER')")
+    public ResponseEntity<?> getTotalOperatorsAssignedToOwner(@PathVariable UUID ownerId) {
+        long totalOperators = operatorAssignmentService.getTotalOperatorsAssignedToOwner(ownerId);
+        return new ResponseEntityBuilder.Builder<Long>()
+                .resultMessage("Total operators assigned to owner")
+                .body(totalOperators)
+                .buildWrapped();
+    }
+
+    @GetMapping("/{ownerId}/active-operators")
+    @PreAuthorize("hasRole('OWNER')")
+    public ResponseEntity<?> getTotalActiveOperatorsAssignedToOwner(@PathVariable UUID ownerId) {
+        long totalActiveOperators = operatorAssignmentService.countActiveOperatorsByOwnerId(ownerId);
+        return new ResponseEntityBuilder.Builder<Long>()
+                .resultMessage("Total ACTIVE operators assigned to owner's buses")
+                .body(totalActiveOperators)
+                .buildWrapped();
+    }
+
+    @GetMapping("/{ownerId}/active-operators-list")
+    @PreAuthorize("hasRole('OWNER')")
+    public ResponseEntity<?> getActiveOperatorsAssignedToOwner(@PathVariable UUID ownerId) {
+        List<OperatorAssignmentListResponseDto> activeAssignments =
+                operatorAssignmentService.getActiveOperatorAssignmentsByOwnerId(ownerId);
+
+        List<OperatorAssignmentListResponseDto> result = activeAssignments.stream().map(assignment -> {
+            var operator = userService.findUserById(assignment.getOperatorId()).orElse(null);
+            var bus = busService.findBusById(assignment.getBusId());
+            var wallet = bus != null ? bus.getWallet() : null;
+
+            OperatorAssignmentListResponseDto dto = new OperatorAssignmentListResponseDto();
+            dto.setOperatorId(assignment.getOperatorId());
+            dto.setOperatorName(assignment.getOperatorName());
+            dto.setOperatorEmail(operator != null ? operator.getEmail() : null);
+            dto.setBusId(assignment.getBusId());
+            dto.setBusNumber(assignment.getBusNumber());
+            dto.setBusRouteFrom(bus != null ? bus.getRouteFrom() : null);
+            dto.setBusRouteTo(bus != null ? bus.getRouteTo() : null);
+            dto.setBusWalletBalance(wallet != null && wallet.getBalance() != null ? wallet.getBalance() : null);
+            dto.setStatus(assignment.getStatus());
+            dto.setBusOwnerName(
+                    bus != null && bus.getOwner() != null ? bus.getOwner().getName() : null);
+            return dto;
+        }).toList();
+
+        return new ResponseEntityBuilder.Builder<List<OperatorAssignmentListResponseDto>>()
+                .resultMessage("List of ACTIVE operators assigned to owner's buses")
+                .body(result)
+                .buildWrapped();
+    }
 }
+
