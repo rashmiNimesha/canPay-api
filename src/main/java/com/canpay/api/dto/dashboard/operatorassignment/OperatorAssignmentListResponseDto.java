@@ -1,6 +1,8 @@
 package com.canpay.api.dto.dashboard.operatorassignment;
 
+import com.canpay.api.entity.Bus;
 import com.canpay.api.entity.OperatorAssignment.AssignmentStatus;
+import com.canpay.api.entity.Wallet;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -27,7 +29,8 @@ public class OperatorAssignmentListResponseDto {
     private String operatorEmail;
     private String busRouteFrom;
     private String busRouteTo;
-    private BigDecimal busWalletBalance;
+    private Wallet busWalletBalance;
+    private Bus.BusStatus busStatus;
 
     public OperatorAssignmentListResponseDto() {
     }
@@ -145,11 +148,19 @@ public class OperatorAssignmentListResponseDto {
         this.busRouteTo = busRouteTo;
     }
 
-    public BigDecimal getBusWalletBalance() {
+    public Wallet getBusWalletBalance() {
         return busWalletBalance;
     }
 
-    public void setBusWalletBalance(BigDecimal busWalletBalance) {
+    public void setBusWalletBalance(Wallet busWalletBalance) {
         this.busWalletBalance = busWalletBalance;
+    }
+
+    public Bus.BusStatus getBusStatus() {
+        return busStatus;
+    }
+
+    public void setBusStatus(Bus.BusStatus busStatus) {
+        this.busStatus = busStatus;
     }
 }

@@ -26,10 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Paths;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -525,6 +522,15 @@ public class DBusService {
         public long getIntercityBuses() {
             return intercityBuses;
         }
+    }
+
+    public Map<String, Long> countBusesByStatusForOwner(UUID ownerId) {
+        List<Object[]> results = busRepository.countBusesByStatusForOwner(ownerId);
+        Map<String, Long> statusCount = new HashMap<>();
+        for (Object[] row : results) {
+            statusCount.put(row[0].toString(), (Long) row[1]);
+        }
+        return statusCount;
     }
 }
 

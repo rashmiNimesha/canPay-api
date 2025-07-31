@@ -334,6 +334,12 @@ public class DOperatorAssignmentService {
         dto.setAssignedAt(assignment.getAssignedAt());
         dto.setCreatedAt(assignment.getCreatedAt());
         dto.setUpdatedAt(assignment.getUpdatedAt());
+//Rashmi added
+        dto.setBusStatus(assignment.getBus().getStatus());
+        dto.setBusRouteFrom(assignment.getBus().getRouteFrom());
+        dto.setBusRouteTo(assignment.getBus().getRouteTo());
+        dto.setBusWalletBalance(assignment.getBus().getWallet());
+        dto.setOperatorEmail(assignment.getUser().getEmail());
         return dto;
     }
 
@@ -349,7 +355,7 @@ public class DOperatorAssignmentService {
         private long blockedAssignments;
 
         public AssignmentStatsDto(long totalAssignments, long activeAssignments, long pendingAssignments,
-                long inactiveAssignments, long rejectedAssignments, long blockedAssignments) {
+                                  long inactiveAssignments, long rejectedAssignments, long blockedAssignments) {
             this.totalAssignments = totalAssignments;
             this.activeAssignments = activeAssignments;
             this.pendingAssignments = pendingAssignments;

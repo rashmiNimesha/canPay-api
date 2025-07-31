@@ -16,7 +16,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import com.canpay.api.entity.Bus;
@@ -149,6 +151,7 @@ public class OperatorAssignmentControllerAc {
                 .buildWrapped();
     }
 
+    // everyone get once
     @GetMapping("/owner/{ownerId}/operators")
     @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<?> getOperatorsByOwnerAndStatus(
@@ -202,7 +205,7 @@ public class OperatorAssignmentControllerAc {
             dto.setBusNumber(assignment.getBusNumber());
             dto.setBusRouteFrom(bus != null ? bus.getRouteFrom() : null);
             dto.setBusRouteTo(bus != null ? bus.getRouteTo() : null);
-            dto.setBusWalletBalance(wallet != null && wallet.getBalance() != null ? wallet.getBalance() : null);
+//            dto.setBusWalletBalance(wallet != null && wallet.getBalance() != null ? wallet.getBalance() : null);
             dto.setStatus(assignment.getStatus());
             dto.setBusOwnerName(
                     bus != null && bus.getOwner() != null ? bus.getOwner().getName() : null);
@@ -214,5 +217,44 @@ public class OperatorAssignmentControllerAc {
                 .body(result)
                 .buildWrapped();
     }
-}
 
+    // get buses count by status and list of buses by status
+    @GetMapping("owner/{ownerId}/buses/status-list")
+    @PreAuthorize("hasRole('OWNER')")
+    public ResponseEntity<?> getOwnerBusesStatusCount(@PathVariable UUID ownerId) {
+        Map<String, Long> statusCount = busService.countBusesByStatusForOwner(ownerId);
+        // Get all buses for the owner
+        List<BusResponseDto> buses = busService.getBusesByOwner(ownerId);
+
+        // Group buses by status
+        Map<String, List<BusResponseDto>> busesByStatus = new HashMap<>();
+        for (BusResponseDto bus : buses) {
+            String status = bus.getStatus() != null ? bus.getStatus().toString() : "UNKNOWN";
+            busesByStatus.computeIfAbsent(status, k -> new java.util.ArrayList<>()).add(bus);
+        }
+
+        // Prepare combined result
+        Map<String, Object> result = new HashMap<>();
+        result.put("count", statusCount);
+        result.put("buses", busesByStatus);
+
+        return new ResponseEntityBuilder.Builder<>()
+                .resultMessage("Owner's buses count and list by status fetched successfully")
+                .body(result)
+                .buildWrapped();
+    }
+
+    // get total  and total bus list for owner
+    @GetMapping("/owner/{ownerId}/buses/list")
+    @PreAuthorize("hasRole('OWNER')")
+    public ResponseEntity<?> getOwnerBuses(@PathVariable UUID ownerId) {
+        List<BusResponseDto> buses = busService.getBusesByOwner(ownerId);
+        Map<String, Object> result = new HashMap<>();
+        result.put("total", buses.size());
+        result.put("buses", buses);
+        return new ResponseEntityBuilder.Builder<>()
+                .resultMessage("Owner's buses fetched successfully")
+                .body(result)
+                .buildWrapped();
+    }
+}
