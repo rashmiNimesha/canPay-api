@@ -106,4 +106,5 @@ public interface DBusRepository extends JpaRepository<Bus, UUID> {
     /** Count buses by status for a specific owner */
     @Query("SELECT b.status, COUNT(b) FROM Bus b WHERE b.owner.id = :ownerId GROUP BY b.status")
     List<Object[]> countBusesByStatusForOwner(UUID ownerId);
+
 }
