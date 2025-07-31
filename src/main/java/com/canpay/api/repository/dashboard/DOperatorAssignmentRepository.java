@@ -119,4 +119,7 @@ public interface DOperatorAssignmentRepository extends JpaRepository<OperatorAss
     long countDistinctActiveOperatorsByOwnerId(@Param("ownerId") UUID ownerId);
 
     Optional<OperatorAssignment> findByBusIdAndOperatorId(UUID busId, UUID operatorId);
+
+    /** Find operator assignments by bus owner ID and status */
+    List<OperatorAssignment> findByBusOwnerIdAndStatus(UUID ownerId, OperatorAssignment.AssignmentStatus status);
 }

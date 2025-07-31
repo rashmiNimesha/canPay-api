@@ -394,4 +394,16 @@ public class DOperatorAssignmentService {
     public long countActiveOperatorsByOwnerId(UUID ownerId) {
         return operatorAssignmentRepository.countDistinctActiveOperatorsByOwnerId(ownerId);
     }
+
+    /**
+     * Get all ACTIVE operator assignments for a given owner.
+     */
+    @Transactional(readOnly = true)
+    public List<OperatorAssignmentListResponseDto> getActiveOperatorAssignmentsByOwnerId(UUID ownerId) {
+        return operatorAssignmentRepository
+                .findByBusOwnerIdAndStatus(ownerId, OperatorAssignment.AssignmentStatus.ACTIVE)
+                .stream()
+                .map(this::convertToResponseDto)
+                .collect(Collectors.toList());
+    }
 }
