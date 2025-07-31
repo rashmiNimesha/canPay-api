@@ -11,7 +11,7 @@ import com.canpay.api.entity.Bus.BusType;
 import com.canpay.api.entity.OperatorAssignment;
 import com.canpay.api.entity.User;
 import com.canpay.api.entity.Wallet;
-import com.canpay.api.repository.OperatorAssignmentRepository;
+import com.canpay.api.repository.dashboard.DOperatorAssignmentRepository;
 import com.canpay.api.repository.dashboard.DBusRepository;
 import com.canpay.api.repository.UserRepository;
 import com.canpay.api.lib.Utils;
@@ -52,13 +52,13 @@ public class DBusService {
     @Autowired
     private  DWalletRepository walletRepository;
 
-    private final OperatorAssignmentRepository operatorAssignmentRepository;
+    private final DOperatorAssignmentRepository operatorAssignmentRepository;
 
     // Base URL for document links, set in application.properties as app.base-url
     @Value("${app.base-url}")
     private String baseUrl;
 
-    public DBusService(OperatorAssignmentRepository operatorAssignmentRepository) {
+    public DBusService(DOperatorAssignmentRepository operatorAssignmentRepository) {
         this.operatorAssignmentRepository = operatorAssignmentRepository;
     }
 

@@ -3,7 +3,7 @@ package com.canpay.api.controller.account;
 import com.canpay.api.dto.dashboard.operatorassignment.OperatorAssignmentResponseDto;
 import com.canpay.api.entity.OperatorAssignment;
 import com.canpay.api.entity.ResponseEntityBuilder;
-import com.canpay.api.repository.OperatorAssignmentRepository;
+import com.canpay.api.repository.dashboard.DOperatorAssignmentRepository;
 import com.canpay.api.service.implementation.JwtService;
 import org.slf4j.Logger;
 import org.springframework.http.HttpStatus;
@@ -24,10 +24,10 @@ public class OperatorAssignmentControllerAc {
 
     private final Logger logger = org.slf4j.LoggerFactory.getLogger(OperatorAssignmentControllerAc.class);
 
-    private final OperatorAssignmentRepository operatorAssignmentRepository;
+    private final DOperatorAssignmentRepository operatorAssignmentRepository;
     private final JwtService jwtService;
 
-    public OperatorAssignmentControllerAc(OperatorAssignmentRepository operatorAssignmentRepository, JwtService jwtService) {
+    public OperatorAssignmentControllerAc(DOperatorAssignmentRepository operatorAssignmentRepository, JwtService jwtService) {
         this.operatorAssignmentRepository = operatorAssignmentRepository;
         this.jwtService = jwtService;
     }

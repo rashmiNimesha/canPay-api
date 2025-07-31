@@ -1,10 +1,10 @@
 package com.canpay.api.controller.account;
 
 import com.canpay.api.entity.*;
+import com.canpay.api.repository.dashboard.DOperatorAssignmentRepository;
 import com.canpay.api.repository.dashboard.DWalletRepository;
 import com.canpay.api.service.implementation.JwtService;
 import com.canpay.api.repository.BusRepository;
-import com.canpay.api.repository.OperatorAssignmentRepository;
 import com.canpay.api.repository.TransactionRepository;
 import com.canpay.api.service.implementation.UserServiceImpl;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -28,14 +28,14 @@ public class PaymentController {
     private final JwtService jwtService;
     private final UserServiceImpl userService;
     private final BusRepository busRepository;
-    private final OperatorAssignmentRepository operatorAssignmentRepository;
+    private final DOperatorAssignmentRepository operatorAssignmentRepository;
     private final DWalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
     private final MqttClient mqttClient;
     private final Logger logger = LoggerFactory.getLogger(PaymentController.class);
 
     public PaymentController(JwtService jwtService, UserServiceImpl userService, BusRepository busRepository,
-                             OperatorAssignmentRepository operatorAssignmentRepository, DWalletRepository walletRepository,
+                             DOperatorAssignmentRepository operatorAssignmentRepository, DWalletRepository walletRepository,
                              TransactionRepository transactionRepository, MqttClient mqttClient) {
         this.jwtService = jwtService;
         this.userService = userService;
