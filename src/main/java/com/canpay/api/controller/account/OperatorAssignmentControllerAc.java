@@ -1,11 +1,14 @@
 package com.canpay.api.controller.account;
 
 import com.canpay.api.dto.dashboard.operatorassignment.OperatorAssignmentResponseDto;
+import com.canpay.api.dto.dashboard.operatorassignment.OperatorAssignmentListWithTotalDto;
 import com.canpay.api.entity.OperatorAssignment;
 import com.canpay.api.entity.ResponseEntityBuilder;
 import com.canpay.api.repository.dashboard.DOperatorAssignmentRepository;
 import com.canpay.api.service.implementation.JwtService;
+import com.canpay.api.service.dashboard.DOperatorAssignmentService;
 import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,13 +22,16 @@ import com.canpay.api.dto.dashboard.user.UserDto;
 
 
 @RestController
-@RequestMapping("/api/v1/operator")
+@RequestMapping("/api/v1/operator-assignment")     // operator-assignment change
 public class OperatorAssignmentControllerAc {
 
     private final Logger logger = org.slf4j.LoggerFactory.getLogger(OperatorAssignmentControllerAc.class);
 
     private final DOperatorAssignmentRepository operatorAssignmentRepository;
     private final JwtService jwtService;
+
+    @Autowired
+    private DOperatorAssignmentService operatorAssignmentService;
 
     public OperatorAssignmentControllerAc(DOperatorAssignmentRepository operatorAssignmentRepository, JwtService jwtService) {
         this.operatorAssignmentRepository = operatorAssignmentRepository;
@@ -133,6 +139,19 @@ public class OperatorAssignmentControllerAc {
                 .resultMessage("Assignment status fetched successfully")
                 .body(responseDto)
                 .httpStatus(HttpStatus.OK)
+                .buildWrapped();
+    }
+
+    @GetMapping("/owner/{ownerId}/operators")
+    @PreAuthorize("hasRole('OWNER')")
+    public ResponseEntity<?> getOperatorsByOwnerAndStatus(
+            @PathVariable UUID ownerId,
+            @RequestParam("status") OperatorAssignment.AssignmentStatus status) {
+        OperatorAssignmentListWithTotalDto result =
+                operatorAssignmentService.getOperatorAssignmentsByOwnerIdAndStatus(ownerId, status);
+        return new ResponseEntityBuilder.Builder<OperatorAssignmentListWithTotalDto>()
+                .resultMessage("Operators with status " + status + " assigned to owner's buses")
+                .body(result)
                 .buildWrapped();
     }
 
