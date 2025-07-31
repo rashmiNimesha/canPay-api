@@ -52,4 +52,7 @@ public interface DWalletRepository extends JpaRepository<Wallet, UUID> {
 
     Optional<Wallet> findByBusAndType(Bus bus, Wallet.WalletType type);
 
+    // Add: Find all wallets by bus list and type
+    List<Wallet> findByBusInAndType(List<Bus> buses, Wallet.WalletType type);
+
 }

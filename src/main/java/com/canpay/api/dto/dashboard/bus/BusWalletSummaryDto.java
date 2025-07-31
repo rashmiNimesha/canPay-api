@@ -24,20 +24,25 @@ public class BusWalletSummaryDto {
     public BusWalletSummaryDto() {
     }
 
-    public BusWalletSummaryDto(UUID id, String busNumber, String s, BigDecimal bigDecimal, String routeFrom, String routeTo, String province, String name, UUID operatorId, String operatorName, String operatorEmail, BigDecimal todaysEarnings) {
-        this.busid = id;
+    public BusWalletSummaryDto(UUID busid, String busNumber, String walletNumber, BigDecimal walletBalance,
+                              String routeFrom, String routeTo, String province, String busStatus,
+                              UUID operatorId, String operatorName, String operatorEmail, BigDecimal todaysEarnings,
+                              UUID walletId, LocalDateTime createdAt, LocalDateTime updatedAt) {
+        this.busid = busid;
         this.busNumber = busNumber;
-        this.walletNumber = s;
-        this.walletBalance = bigDecimal;
+        this.walletNumber = walletNumber;
+        this.walletBalance = walletBalance;
         this.routeFrom = routeFrom;
         this.routeTo = routeTo;
         this.province = province;
+        this.busStatus = busStatus;
         this.operatorId = operatorId;
         this.operatorName = operatorName;
         this.operatorEmail = operatorEmail;
         this.todaysEarnings = todaysEarnings;
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        this.walletId = walletId;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
     }
 
     public UUID getBusid() {

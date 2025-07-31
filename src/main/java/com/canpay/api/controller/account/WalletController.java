@@ -1,6 +1,7 @@
 package com.canpay.api.controller.account;
 
 import com.canpay.api.dto.UserWalletBalanceDto;
+import com.canpay.api.dto.dashboard.bus.BusEarningsSummaryResponse;
 import com.canpay.api.dto.dashboard.bus.BusWalletDto;
 import com.canpay.api.dto.dashboard.bus.BusWalletSummaryDto;
 import com.canpay.api.entity.ResponseEntityBuilder;
@@ -155,10 +156,10 @@ public class WalletController {
     @GetMapping("/buses/{ownerId}/earnings")
     @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<?> getOwnerBusesEarningsSummary(@PathVariable UUID ownerId) {
-        List<BusWalletSummaryDto> summaries = walletService.getOwnerBusesWithWalletAndOperator(ownerId);
-        return new ResponseEntityBuilder.Builder<List<BusWalletSummaryDto>>()
+        BusEarningsSummaryResponse result = walletService.getOwnerBusesWithWalletAndOperator(ownerId);
+        return new ResponseEntityBuilder.Builder<BusEarningsSummaryResponse>()
                 .resultMessage("Fetched owner's buses and wallet details")
-                .body(summaries)
+                .body(result)
                 .buildWrapped();
     }
 
