@@ -265,9 +265,9 @@ public class AccountController {
             }
             logger.debug("Bus validated: id={}, ownerId={}", bus.getId(), bus.getOwner().getId());
 
-            // Check for existing active assignment
-            if (busService.hasActiveOperatorAssignment(requestDto.getBusId(), requestDto.getOperatorId())) {
-                logger.warn("Operator {} already assigned to bus {}", requestDto.getOperatorId(), requestDto.getBusId());
+            // Check for any existing assignment for this operator and bus (regardless of status)
+            if (busService.hasAnyOperatorAssignment(requestDto.getBusId(), requestDto.getOperatorId())) {
+                logger.warn("Operator {} already assigned to bus {} (any status)", requestDto.getOperatorId(), requestDto.getBusId());
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("success", false, "message", "Operator already assigned to this bus"));
             }
@@ -439,4 +439,3 @@ public class AccountController {
 
 
 }
-

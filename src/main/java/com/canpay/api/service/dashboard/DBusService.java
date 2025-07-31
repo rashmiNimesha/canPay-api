@@ -454,6 +454,14 @@ public class DBusService {
         return exists;
     }
 
+    // Add this method to check for any assignment (any status)
+    public boolean hasAnyOperatorAssignment(UUID busId, UUID operatorId) {
+        logger.debug("Checking any assignment: busId={}, operatorId={}", busId, operatorId);
+        boolean exists = operatorAssignmentRepository.findByBusIdAndOperatorId(busId, operatorId).isPresent();
+        logger.debug("Any assignment exists: {}", exists);
+        return exists;
+    }
+
     /**
      * Inner class for bus statistics.
      */
@@ -519,3 +527,4 @@ public class DBusService {
         }
     }
 }
+
