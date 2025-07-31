@@ -1,6 +1,7 @@
 package com.canpay.api.service.implementation;
 
 import com.canpay.api.dto.UserWalletBalanceDto;
+import com.canpay.api.dto.dashboard.bus.BusWalletDto;
 import com.canpay.api.entity.*;
 import com.canpay.api.entity.User.UserRole;
 import com.canpay.api.entity.Wallet.WalletType;
@@ -15,8 +16,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class WalletServiceImpl implements WalletService {
@@ -219,4 +225,73 @@ public class WalletServiceImpl implements WalletService {
         // Return empty list for now - adjust based on your repository method
         return transactionRepository.findAll(); // Replace with correct method
     }
+
+    /**
+     * Returns a list of bus wallet summaries for a specific owner.
+     * Only includes buses with ACTIVE operator and a wallet.
+     */
+    public List<BusWalletDto> getOwnerBusesSummary(UUID ownerId) {
+        List<BusWalletDto> result = new ArrayList<>();
+        // Find all buses owned by this owner
+        List<Bus> buses = userRepository.findById(ownerId)
+                .map(User::getOwnedBuses)
+                .orElse(new ArrayList<>());
+
+        for (Bus bus : buses) {
+            // Get ACTIVE operator assignment (if any)
+            OperatorAssignment operatorAssignment = bus.getOperatorAssignments().stream()
+                    .filter(a -> a.getStatus() == OperatorAssignment.AssignmentStatus.ACTIVE).findAny()
+                    .orElse(null);
+
+            if (operatorAssignment == null) {
+                continue; // skip buses without ACTIVE operator
+            }
+
+            User operator = operatorAssignment.getOperator();
+
+            // Get bus wallet
+            Wallet wallet = bus.getWallet();
+            if (wallet == null) {
+                continue; // skip buses without wallet
+            }
+
+            // Calculate today's earnings for this bus wallet
+            BigDecimal todaysEarnings = BigDecimal.ZERO;
+            LocalDate today = LocalDate.now();
+            LocalDateTime startOfDay = today.atStartOfDay();
+            LocalDateTime endOfDay = today.atTime(LocalTime.MAX);
+
+            todaysEarnings = transactionRepository.sumAmountByToWalletAndTypeAndStatusAndHappenedAtBetween(
+                    wallet,
+                    Transaction.TransactionType.PAYMENT,
+                    Transaction.TransactionStatus.APPROVED,
+                    startOfDay,
+                    endOfDay
+            );
+            if (todaysEarnings == null) todaysEarnings = BigDecimal.ZERO;
+
+            BusWalletDto dto = new BusWalletDto();
+            // Wallet info
+            dto.setId(wallet.getId());
+            dto.setNumber(wallet.getWalletNumber());
+            dto.setBalance(wallet.getBalance());
+            dto.setCreatedAt(wallet.getCreatedAt());
+            dto.setUpdatedAt(wallet.getUpdatedAt());
+            // Bus info
+            dto.setRouteFrom(bus.getRouteFrom());
+            dto.setRouteTo(bus.getRouteTo());
+            dto.setProvince(bus.getProvince());
+            dto.setBusStatus(bus.getStatus() != null ? bus.getStatus().name() : null);
+            // Operator info
+            dto.setOperatorId(operator.getId());
+            dto.setOperatorName(operator.getName());
+            dto.setOperatorEmail(operator.getEmail());
+            // Earnings
+            dto.setTodaysEarnings(todaysEarnings);
+
+            result.add(dto);
+        }
+        return result;
+    }
+
 }

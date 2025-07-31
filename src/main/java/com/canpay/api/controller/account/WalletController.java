@@ -1,6 +1,7 @@
 package com.canpay.api.controller.account;
 
 import com.canpay.api.dto.UserWalletBalanceDto;
+import com.canpay.api.dto.dashboard.bus.BusWalletDto;
 import com.canpay.api.entity.ResponseEntityBuilder;
 
 import com.canpay.api.service.implementation.JwtService;
@@ -12,7 +13,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/wallet")
@@ -148,4 +151,13 @@ public class WalletController {
         }
     }
 
+    @GetMapping("/buses/{ownerId}/earnings")
+    @PreAuthorize("hasRole('OWNER')")
+    public ResponseEntity<?> getOwnerBusesEarningsSummary(@PathVariable UUID ownerId) {
+        List<BusWalletDto> summaries = walletService.getOwnerBusesSummary(ownerId);
+        return new ResponseEntityBuilder.Builder<List<BusWalletDto>>()
+                .resultMessage("Fetched owner's buses and wallet details")
+                .body(summaries)
+                .buildWrapped();
+    }
 }
