@@ -112,4 +112,9 @@ public interface DOperatorAssignmentRepository extends JpaRepository<OperatorAss
     Optional<OperatorAssignment> findByBusIdAndOperatorIdAndStatus(UUID busId, UUID operatorId, OperatorAssignment.AssignmentStatus status);
     OperatorAssignment findFirstByOperatorIdOrderByAssignedAtDesc(UUID operatorId);
     Optional<OperatorAssignment> findByOperatorAndBusAndStatus(User operator, Bus bus, OperatorAssignment.AssignmentStatus status);
+
+    @Query("SELECT COUNT(DISTINCT oa.operator.id) FROM OperatorAssignment oa " +
+            "WHERE oa.status = com.canpay.api.entity.OperatorAssignment.AssignmentStatus.ACTIVE " +
+            "AND oa.bus.owner.id = :ownerId")
+    long countDistinctActiveOperatorsByOwnerId(@Param("ownerId") UUID ownerId);
 }

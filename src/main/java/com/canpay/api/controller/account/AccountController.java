@@ -427,6 +427,16 @@ public class AccountController {
                 .buildWrapped();
     }
 
+    @GetMapping("/{ownerId}/active-operators")
+    @PreAuthorize("hasRole('OWNER')")
+    public ResponseEntity<?> getTotalActiveOperatorsAssignedToOwner(@PathVariable UUID ownerId) {
+        long totalActiveOperators = operatorAssignmentService.countActiveOperatorsByOwnerId(ownerId);
+        return new ResponseEntityBuilder.Builder<Long>()
+                .resultMessage("Total ACTIVE operators assigned to owner's buses")
+                .body(totalActiveOperators)
+                .buildWrapped();
+    }
+
 
 }
 

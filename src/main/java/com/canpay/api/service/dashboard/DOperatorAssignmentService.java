@@ -390,4 +390,8 @@ public class DOperatorAssignmentService {
     public long getTotalOperatorsAssignedToOwner(UUID ownerId) {
         return operatorAssignmentRepository.countDistinctOperatorsByOwnerId(ownerId);
     }
+
+    public long countActiveOperatorsByOwnerId(UUID ownerId) {
+        return operatorAssignmentRepository.countDistinctActiveOperatorsByOwnerId(ownerId);
+    }
 }
