@@ -5,7 +5,6 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
 
@@ -50,8 +49,7 @@ public class Transaction extends BaseEntity {
 
     /** Passenger involved in the transaction. */
     @ManyToOne
-    @JoinColumn(name = "passenger_id", nullable = false)
-    @NotNull
+    @JoinColumn(name = "passenger_id")
     private User passenger;
 
     /** Bus involved in the transaction, if any. */

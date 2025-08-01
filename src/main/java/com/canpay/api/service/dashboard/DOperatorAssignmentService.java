@@ -421,6 +421,6 @@ public class DOperatorAssignmentService {
                 .stream()
                 .map(this::convertToResponseDto)
                 .collect(java.util.stream.Collectors.toList());
-        return new com.canpay.api.dto.dashboard.operatorassignment.OperatorAssignmentListWithTotalDto(total, list);
+        return new OperatorAssignmentListWithTotalDto(total, list);
     }
 }
