@@ -77,6 +77,21 @@ public class WithdrawalTransactionDto {
         this.busRoute = busRoute;
     }
 
+    public WithdrawalTransactionDto(UUID id, BigDecimal amount, LocalDateTime happenedAt, TransactionStatus status, String note, UUID fromWalletId, String fromWalletNumber, UUID toWalletId, String toWalletNumber, UUID toBankAccountId, String toBankName, String toAccountNumber) {
+        this.transactionId = id;
+        this.amount = amount;
+        this.happenedAt = happenedAt;
+        this.status = status;
+        this.note = note;
+        this.fromWalletId = fromWalletId;
+        this.fromWalletNumber = fromWalletNumber;
+        this.toWalletId = toWalletId;
+        this.toWalletNumber = toWalletNumber;
+        this.toBankAccountId = toBankAccountId;
+        this.toBankName = toBankName;
+        this.toAccountNumber = toAccountNumber;
+    }
+
     // Getters and Setters
     public UUID getTransactionId() {
         return transactionId;

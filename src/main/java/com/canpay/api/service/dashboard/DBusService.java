@@ -84,7 +84,7 @@ public class DBusService {
                 vehicleInsurancePath,
                 vehicleRevenueLicensePath);
 
-        Wallet wallet = new Wallet(); // added rashmi when creating a bus, create a wallet too
+        Wallet wallet = new Wallet(); // added rashmi when creating a bus, create a wallet too - this is for local testing , in actual code admin create wallet when change it to the ACTIVE
         wallet.setType(Wallet.WalletType.BUS);
         wallet.setWalletNumber(Utils.generateUniqueWalletNumber(walletRepository));
         wallet.setBalance(BigDecimal.valueOf(0));

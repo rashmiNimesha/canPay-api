@@ -1,6 +1,7 @@
 package com.canpay.api.service.implementation;
 
 import com.canpay.api.dto.UserWalletBalanceDto;
+import com.canpay.api.dto.dashboard.bus.BusEarningsSummaryResponse;
 import com.canpay.api.dto.dashboard.bus.BusWalletDto;
 import com.canpay.api.dto.dashboard.bus.BusWalletSummaryDto;
 import com.canpay.api.entity.*;
@@ -19,9 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -206,9 +205,10 @@ public class WalletServiceImpl implements WalletService {
         if (walletOpt.isPresent()) {
             Wallet wallet = walletOpt.get();
             return new UserWalletBalanceDto(
-                    wallet.getWalletNumber(),
+                    user.getEmail(),
                     wallet.getBalance().doubleValue(),
-                    user.getName() != null ? user.getName() : "N/A"
+                    user.getName() != null ? user.getName() : "N/A",
+                    wallet.getWalletNumber()
             );
         } else {
             logger.warn("No PASSENGER wallet found for email: {}", email);
@@ -299,25 +299,33 @@ public class WalletServiceImpl implements WalletService {
         return result;
     }
 
-
-    public List<BusWalletSummaryDto> getOwnerBusesWithWalletAndOperator(UUID ownerId) {
+    public BusEarningsSummaryResponse getOwnerBusesWithWalletAndOperator(UUID ownerId) {
         List<Bus> buses = busRepository.findByOwner_IdAndStatus(ownerId, Bus.BusStatus.ACTIVE);
-        return buses.stream().map(bus -> {
-            Wallet wallet = bus.getWallet();
-            // Get today's earnings for this bus
-            LocalDate today = LocalDate.now();
-            LocalDateTime startOfDay = today.atStartOfDay();
-            LocalDateTime endOfDay = today.atTime(LocalTime.MAX);
-            BigDecimal todaysEarnings = transactionRepository.sumAmountByToWalletAndTypeAndStatusAndHappenedAtBetween(
-                    bus.getWallet(),
-                    Transaction.TransactionType.PAYMENT,
-                    Transaction.TransactionStatus.APPROVED,
-                    startOfDay,
-                    endOfDay
-            );
-            if (todaysEarnings == null) todaysEarnings = BigDecimal.ZERO;
+        List<BusWalletSummaryDto> summaryList = new ArrayList<>();
+        BigDecimal totalEarnings = BigDecimal.ZERO;
 
-            // Get active operator assignment if any
+        for (Bus bus : buses) {
+            Wallet wallet = bus.getWallet();
+            BigDecimal todaysEarnings = BigDecimal.ZERO;
+
+            if (wallet != null) {
+                ZoneId zoneId = ZoneId.of("Asia/Colombo");
+                ZonedDateTime zonedStart = LocalDate.now(zoneId).atStartOfDay(zoneId);
+                ZonedDateTime zonedEnd = LocalDate.now(zoneId).atTime(LocalTime.MAX).atZone(zoneId);
+                LocalDateTime startOfDay = zonedStart.withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
+                LocalDateTime endOfDay = zonedEnd.withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
+
+                todaysEarnings = transactionRepository.sumAmountByToWalletAndTypeAndStatusAndHappenedAtBetween(
+                        wallet,
+                        Transaction.TransactionType.PAYMENT,
+                        Transaction.TransactionStatus.APPROVED,
+                        startOfDay,
+                        endOfDay
+                );
+                if (todaysEarnings == null) todaysEarnings = BigDecimal.ZERO;
+                totalEarnings = totalEarnings.add(todaysEarnings);
+            }
+
             OperatorAssignment activeAssignment = bus.getOperatorAssignments().stream()
                     .filter(a -> a.getStatus() == OperatorAssignment.AssignmentStatus.ACTIVE)
                     .findFirst().orElse(null);
@@ -332,21 +340,28 @@ public class WalletServiceImpl implements WalletService {
                 operatorEmail = operator.getEmail();
             }
 
-            return new BusWalletSummaryDto(
-                    bus.getId(),
-                    bus.getBusNumber(),
-                    wallet != null ? wallet.getWalletNumber() : null,
-                    wallet != null ? wallet.getBalance() : null,
-                    bus.getRouteFrom(),
-                    bus.getRouteTo(),
-                    bus.getProvince(),
-                    bus.getStatus().name(),
-                    operatorId,
-                    operatorName,
-                    operatorEmail,
-                    todaysEarnings
-            );
-        }).collect(Collectors.toList());
+            BusWalletSummaryDto dto = new BusWalletSummaryDto();
+            dto.setBusid(bus.getId());
+            dto.setBusNumber(bus.getBusNumber());
+            dto.setWalletId(wallet != null ? wallet.getId() : null);
+            dto.setWalletNumber(wallet != null ? wallet.getWalletNumber() : null);
+            dto.setWalletBalance(wallet != null ? wallet.getBalance() : null);
+            dto.setCreatedAt(wallet != null ? wallet.getCreatedAt() : null);
+            dto.setUpdatedAt(wallet != null ? wallet.getUpdatedAt() : null);
+            dto.setRouteFrom(bus.getRouteFrom());
+            dto.setRouteTo(bus.getRouteTo());
+            dto.setProvince(bus.getProvince());
+            dto.setBusStatus(bus.getStatus() != null ? bus.getStatus().name() : null);
+            dto.setOperatorId(operatorId);
+            dto.setOperatorName(operatorName);
+            dto.setOperatorEmail(operatorEmail);
+            dto.setTodaysEarnings(todaysEarnings);
+
+            summaryList.add(dto);
+        }
+
+        return new BusEarningsSummaryResponse(summaryList, totalEarnings);
     }
+
 
 }

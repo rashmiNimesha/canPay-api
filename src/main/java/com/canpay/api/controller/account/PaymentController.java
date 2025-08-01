@@ -1,8 +1,12 @@
 package com.canpay.api.controller.account;
 
+import com.canpay.api.dto.dashboard.operatorassignment.OperatorAssignmentListWithTotalDto;
+import com.canpay.api.dto.dashboard.transactions.OwnerWithdrawRequestDto;
+import com.canpay.api.dto.dashboard.transactions.WithdrawalTransactionDto;
 import com.canpay.api.entity.*;
 import com.canpay.api.repository.dashboard.DOperatorAssignmentRepository;
 import com.canpay.api.repository.dashboard.DWalletRepository;
+import com.canpay.api.service.dashboard.DTransactionService;
 import com.canpay.api.service.implementation.JwtService;
 import com.canpay.api.repository.BusRepository;
 import com.canpay.api.repository.TransactionRepository;
@@ -25,6 +29,9 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/payment")
 public class PaymentController {
+
+    private final Logger logger = LoggerFactory.getLogger(PaymentController.class);
+
     private final JwtService jwtService;
     private final UserServiceImpl userService;
     private final BusRepository busRepository;
@@ -32,11 +39,11 @@ public class PaymentController {
     private final DWalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
     private final MqttClient mqttClient;
-    private final Logger logger = LoggerFactory.getLogger(PaymentController.class);
+    private final DTransactionService ownerWithdrawService;
 
     public PaymentController(JwtService jwtService, UserServiceImpl userService, BusRepository busRepository,
                              DOperatorAssignmentRepository operatorAssignmentRepository, DWalletRepository walletRepository,
-                             TransactionRepository transactionRepository, MqttClient mqttClient) {
+                             TransactionRepository transactionRepository, MqttClient mqttClient, DTransactionService ownerWithdrawService) {
         this.jwtService = jwtService;
         this.userService = userService;
         this.busRepository = busRepository;
@@ -44,6 +51,7 @@ public class PaymentController {
         this.walletRepository = walletRepository;
         this.transactionRepository = transactionRepository;
         this.mqttClient = mqttClient;
+        this.ownerWithdrawService = ownerWithdrawService;
     }
 
     @PostMapping("/process")
@@ -217,6 +225,31 @@ public class PaymentController {
             logger.error("Payment processing failed: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Payment processing failed: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/owner/{ownerId}/withdraw")
+    public ResponseEntity<?> withdraw(@PathVariable UUID ownerId, @RequestBody OwnerWithdrawRequestDto request) {
+        logger.info("Received withdraw request for owner: {}", ownerId);
+        try {
+            WithdrawalTransactionDto wtd = ownerWithdrawService.handleWithdraw(ownerId, request);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Withdrawal request processed successfully",
+                "data", wtd
+            ));
+        } catch (IllegalArgumentException e) {
+            logger.warn("Withdraw failed: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", e.getMessage()
+            ));
+        } catch (Exception e) {
+            logger.error("Withdraw failed: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "success", false,
+                "message", "Withdrawal failed: " + e.getMessage()
+            ));
         }
     }
 }
