@@ -272,7 +272,7 @@ public class AccountController {
             }
 
             OperatorAssignment assignment = new OperatorAssignment(operator, bus,
-                    requestDto.getStatus() != null ? requestDto.getStatus() : OperatorAssignment.AssignmentStatus.PENDING);
+                    requestDto.getStatus() != null ? requestDto.getStatus() : OperatorAssignment.AssignmentStatus.ACTIVE);   // previously this is pending
             logger.debug("OperatorAssignment state: id={}, busId={}, operatorId={}, status={}",
                     assignment.getId(), assignment.getBus().getId(), assignment.getOperator().getId(), assignment.getStatus());
 
