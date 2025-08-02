@@ -137,4 +137,31 @@ public class TransactionController {
                 .buildWrapped();
     }
 
+    @GetMapping("/owner/{ownerId}/today/total")
+    @PreAuthorize("hasRole('OWNER')")
+    public ResponseEntity<?> getTodayTotalTransactions(@RequestHeader(value = "Authorization") String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Authorization header with Bearer token is required"));
+        }
+        String token = authHeader.substring(7);
+        try {
+            String role = jwtService.extractRole(token);
+            if (!"OWNER".equals(role)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("success", false, "message", "Invalid role for accessing today's transactions"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Invalid or expired token"));
+        }
+
+        long totalToday = dTransactionService.getTodayTotalTransactions();
+        return new ResponseEntityBuilder.Builder<Long>()
+                .resultMessage("Total transactions done today retrieved successfully")
+                .httpStatus(HttpStatus.OK)
+                .body(totalToday)
+                .buildWrapped();
+    }
+
 }

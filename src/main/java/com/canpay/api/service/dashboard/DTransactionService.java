@@ -696,4 +696,13 @@ public class DTransactionService {
 
         return responseDto;
     }
+
+    /**
+     * Gets the total number of transactions done today (from 00:00 to now).
+     */
+    public long getTodayTotalTransactions() {
+        LocalDateTime startOfDay = LocalDateTime.now().toLocalDate().atStartOfDay();
+        LocalDateTime now = LocalDateTime.now();
+        return transactionRepository.findByHappenedAtBetween(startOfDay, now).size();
+    }
 }
