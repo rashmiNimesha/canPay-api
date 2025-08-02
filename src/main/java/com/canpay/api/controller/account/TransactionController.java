@@ -3,7 +3,7 @@ package com.canpay.api.controller.account;
 import com.canpay.api.dto.dashboard.transactions.RechargeTransactionDto;
 import com.canpay.api.entity.ResponseEntityBuilder;
 import com.canpay.api.entity.Transaction;
-
+import com.canpay.api.service.dashboard.DTransactionService;
 import com.canpay.api.service.implementation.JwtService;
 import com.canpay.api.service.implementation.TransactionService;
 import org.slf4j.Logger;
@@ -23,11 +23,13 @@ import java.util.UUID;
 public class TransactionController {
     private final TransactionService transactionService;
     private final JwtService jwtService;
+    private final DTransactionService dTransactionService;
     private final Logger logger = LoggerFactory.getLogger(TransactionController.class);
 
-    public TransactionController(TransactionService transactionService, JwtService jwtService) {
+    public TransactionController(TransactionService transactionService, JwtService jwtService, DTransactionService dTransactionService) {
         this.transactionService = transactionService;
         this.jwtService = jwtService;
+        this.dTransactionService = dTransactionService;
     }
 
     @GetMapping("/recent/{passengerId}")
@@ -103,6 +105,62 @@ public class TransactionController {
                 .resultMessage("Recharge transactions by passenger retrieved successfully")
                 .httpStatus(HttpStatus.OK)
                 .body(transactions)
+                .buildWrapped();
+    }
+
+    @GetMapping("/owner/{ownerId}/all")
+    @PreAuthorize("hasRole('OWNER')")
+    public ResponseEntity<?> getAllOwnerTransactions(@RequestHeader(value = "Authorization") String authHeader, @PathVariable UUID ownerId) {
+        // Validate JWT and role
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Authorization header with Bearer token is required"));
+        }
+        String token = authHeader.substring(7);
+        try {
+            String role = jwtService.extractRole(token);
+            if (!"OWNER".equals(role)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("success", false, "message", "Invalid role for accessing owner transactions"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Invalid or expired token"));
+        }
+
+        // Get transactions
+        Map<String, Object> data = dTransactionService.getAllOwnerTransactions(ownerId);
+        return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                .resultMessage("Owner transactions retrieved successfully")
+                .httpStatus(HttpStatus.OK)
+                .body(data)
+                .buildWrapped();
+    }
+
+    @GetMapping("/owner/{ownerId}/today/total")
+    @PreAuthorize("hasRole('OWNER')")
+    public ResponseEntity<?> getTodayTotalTransactions(@RequestHeader(value = "Authorization") String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Authorization header with Bearer token is required"));
+        }
+        String token = authHeader.substring(7);
+        try {
+            String role = jwtService.extractRole(token);
+            if (!"OWNER".equals(role)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("success", false, "message", "Invalid role for accessing today's transactions"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Invalid or expired token"));
+        }
+
+        long totalToday = dTransactionService.getTodayTotalTransactions();
+        return new ResponseEntityBuilder.Builder<Long>()
+                .resultMessage("Total transactions done today retrieved successfully")
+                .httpStatus(HttpStatus.OK)
+                .body(totalToday)
                 .buildWrapped();
     }
 
