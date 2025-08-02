@@ -2,7 +2,9 @@ package com.canpay.api.service.dashboard;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -300,6 +302,24 @@ public class DTransactionService {
      */
     public List<Transaction> getTransactionsByOwnerId(UUID ownerId) {
         return transactionRepository.findByOwner_Id(ownerId);
+    }
+
+    /**
+     * Gets all transactions related to an owner: fare payments (for all their buses) and withdrawals.
+     */
+    public Map<String, Object> getAllOwnerTransactions(UUID ownerId) {
+        // 1. Fare payments for all buses owned by this owner
+        List<PaymentTransactionDto> farePayments = transactionRepository.findPaymentTransactionsByBusOwner(
+                userRepository.findById(ownerId).orElseThrow(() -> new IllegalArgumentException("Owner not found"))
+        ).stream().map(this::convertToPaymentDto).collect(Collectors.toList());
+
+        // 2. Withdrawals done by owner (wallet to bank / wallet to wallet)
+        List<WithdrawalTransactionDto> withdrawals = getWithdrawalTransactionsByOwnerId(ownerId);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("farePayments", farePayments);
+        result.put("withdrawals", withdrawals);
+        return result;
     }
 
     // DTO Conversion Methods
@@ -650,6 +670,7 @@ public class DTransactionService {
         tx.setStatus(Transaction.TransactionStatus.APPROVED);
         tx.setBus(fromWallet.getBus()); // Set bus if available
         tx.setFromWallet(fromWallet);
+        tx.setOwner(owner);
         if (toWallet != null) tx.setToWallet(toWallet);
         if (toBankAccount != null) tx.setToBankAccount(toBankAccount);
         tx.setNote("Owner withdraw: " + req.getFromType() + "->" + req.getToType());
