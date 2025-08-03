@@ -40,6 +40,7 @@ public class BankAccountController {
     }
 
     @GetMapping("/by-email")
+    @PreAuthorize("hasAnyRole('PASSENGER', 'OWNER')")
     public ResponseEntity<?> getBankAccountsByEmail(Authentication authentication) {
         String email = authentication.getName(); // Extracted from JWT
         String role = authentication.getAuthorities().iterator().next().getAuthority(); // ROLE_PASSENGER
@@ -58,9 +59,11 @@ public class BankAccountController {
         User user = userOpt.get();
         List<BankAccountDto> result = user.getBankAccounts().stream()
                 .map(acc -> new BankAccountDto(
+                        acc.getId(),
                         acc.getBankName(),
                         acc.getAccountNumber(),
-                        acc.getAccountName()
+                        acc.getAccountName(),
+                        acc.isDefault()
                 ))
                 .toList();
 

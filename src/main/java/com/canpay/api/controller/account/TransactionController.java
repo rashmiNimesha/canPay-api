@@ -110,7 +110,10 @@ public class TransactionController {
 
     @GetMapping("/owner/{ownerId}/all")
     @PreAuthorize("hasRole('OWNER')")
-    public ResponseEntity<?> getAllOwnerTransactions(@RequestHeader(value = "Authorization") String authHeader, @PathVariable UUID ownerId) {
+    public ResponseEntity<?> getAllOwnerTransactions(@RequestHeader(value = "Authorization") String authHeader, @PathVariable String ownerId) {
+
+        UUID ownerUuid = UUID.fromString(ownerId);
+
         // Validate JWT and role
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -129,7 +132,7 @@ public class TransactionController {
         }
 
         // Get transactions
-        Map<String, Object> data = dTransactionService.getAllOwnerTransactions(ownerId);
+        Map<String, Object> data = dTransactionService.getAllOwnerTransactions(ownerUuid);
         return new ResponseEntityBuilder.Builder<Map<String, Object>>()
                 .resultMessage("Owner transactions retrieved successfully")
                 .httpStatus(HttpStatus.OK)

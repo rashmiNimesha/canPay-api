@@ -229,10 +229,11 @@ public class PaymentController {
     }
 
     @PostMapping("/owner/{ownerId}/withdraw")
-    public ResponseEntity<?> withdraw(@PathVariable UUID ownerId, @RequestBody OwnerWithdrawRequestDto request) {
+    public ResponseEntity<?> withdraw(@PathVariable String ownerId, @RequestBody OwnerWithdrawRequestDto request) {
+        UUID ownerUuid = UUID.fromString(ownerId);
         logger.info("Received withdraw request for owner: {}", ownerId);
         try {
-            WithdrawalTransactionDto wtd = ownerWithdrawService.handleWithdraw(ownerId, request);
+            WithdrawalTransactionDto wtd = ownerWithdrawService.handleWithdraw(ownerUuid, request);
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "Withdrawal request processed successfully",
