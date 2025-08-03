@@ -38,6 +38,7 @@ public class OperatorAssignmentControllerAc {
     public final UserServiceImpl userService;
     private final DOperatorAssignmentService operatorAssignmentService;
     private final DBusService busService;
+    UUID ownerUuid;
 
     public OperatorAssignmentControllerAc(DOperatorAssignmentRepository operatorAssignmentRepository, JwtService jwtService, UserServiceImpl userService, DOperatorAssignmentService operatorAssignmentService, DBusService busService) {
         this.operatorAssignmentRepository = operatorAssignmentRepository;
@@ -155,10 +156,12 @@ public class OperatorAssignmentControllerAc {
     @GetMapping("/owner/{ownerId}/operators")
     @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<?> getOperatorsByOwnerAndStatus(
-            @PathVariable UUID ownerId,
+            @PathVariable String ownerId,
             @RequestParam("status") OperatorAssignment.AssignmentStatus status) {
+        ownerUuid = UUID.fromString(ownerId);
+
         OperatorAssignmentListWithTotalDto result =
-                operatorAssignmentService.getOperatorAssignmentsByOwnerIdAndStatus(ownerId, status);
+                operatorAssignmentService.getOperatorAssignmentsByOwnerIdAndStatus(ownerUuid, status);
         return new ResponseEntityBuilder.Builder<OperatorAssignmentListWithTotalDto>()
                 .resultMessage("Operators with status " + status + " assigned to owner's buses")
                 .body(result)
@@ -169,8 +172,9 @@ public class OperatorAssignmentControllerAc {
     // total operators assigned to owner by number
     @GetMapping("/{ownerId}/total-operators")
     @PreAuthorize("hasRole('OWNER')")
-    public ResponseEntity<?> getTotalOperatorsAssignedToOwner(@PathVariable UUID ownerId) {
-        long totalOperators = operatorAssignmentService.getTotalOperatorsAssignedToOwner(ownerId);
+    public ResponseEntity<?> getTotalOperatorsAssignedToOwner(@PathVariable String ownerId) {
+        ownerUuid = UUID.fromString(ownerId);
+        long totalOperators = operatorAssignmentService.getTotalOperatorsAssignedToOwner(ownerUuid);
         return new ResponseEntityBuilder.Builder<Long>()
                 .resultMessage("Total operators assigned to owner")
                 .body(totalOperators)
@@ -179,8 +183,9 @@ public class OperatorAssignmentControllerAc {
 
     @GetMapping("/{ownerId}/active-operators")
     @PreAuthorize("hasRole('OWNER')")
-    public ResponseEntity<?> getTotalActiveOperatorsAssignedToOwner(@PathVariable UUID ownerId) {
-        long totalActiveOperators = operatorAssignmentService.countActiveOperatorsByOwnerId(ownerId);
+    public ResponseEntity<?> getTotalActiveOperatorsAssignedToOwner(@PathVariable String ownerId) {
+        ownerUuid = UUID.fromString(ownerId);
+        long totalActiveOperators = operatorAssignmentService.countActiveOperatorsByOwnerId(ownerUuid);
         return new ResponseEntityBuilder.Builder<Long>()
                 .resultMessage("Total ACTIVE operators assigned to owner's buses")
                 .body(totalActiveOperators)
@@ -189,9 +194,10 @@ public class OperatorAssignmentControllerAc {
 
     @GetMapping("/{ownerId}/active-operators-list")
     @PreAuthorize("hasRole('OWNER')")
-    public ResponseEntity<?> getActiveOperatorsAssignedToOwner(@PathVariable UUID ownerId) {
+    public ResponseEntity<?> getActiveOperatorsAssignedToOwner(@PathVariable String ownerId) {
+        ownerUuid = UUID.fromString(ownerId);
         List<OperatorAssignmentListResponseDto> activeAssignments =
-                operatorAssignmentService.getActiveOperatorAssignmentsByOwnerId(ownerId);
+                operatorAssignmentService.getActiveOperatorAssignmentsByOwnerId(ownerUuid);
 
         List<OperatorAssignmentListResponseDto> result = activeAssignments.stream().map(assignment -> {
             var operator = userService.findUserById(assignment.getOperatorId()).orElse(null);
@@ -222,10 +228,12 @@ public class OperatorAssignmentControllerAc {
     // get buses count by status and list of buses by status
     @GetMapping("owner/{ownerId}/buses/status-list")
     @PreAuthorize("hasRole('OWNER')")
-    public ResponseEntity<?> getOwnerBusesStatusCount(@PathVariable UUID ownerId) {
-        Map<String, Long> statusCount = busService.countBusesByStatusForOwner(ownerId);
+    public ResponseEntity<?> getOwnerBusesStatusCount(@PathVariable String ownerId) {
+        ownerUuid = UUID.fromString(ownerId);
+
+        Map<String, Long> statusCount = busService.countBusesByStatusForOwner(ownerUuid);
         // Get all buses for the owner
-        List<BusResponseDto> buses = busService.getBusesByOwner(ownerId);
+        List<BusResponseDto> buses = busService.getBusesByOwner(ownerUuid);
 
         // Group buses by status
         Map<String, List<BusResponseDto>> busesByStatus = new HashMap<>();
@@ -248,8 +256,9 @@ public class OperatorAssignmentControllerAc {
     // get total  and total bus list for owner
     @GetMapping("/owner/{ownerId}/buses/list")
     @PreAuthorize("hasRole('OWNER')")
-    public ResponseEntity<?> getOwnerBuses(@PathVariable UUID ownerId) {
-        List<BusResponseDto> buses = busService.getBusesByOwner(ownerId);
+    public ResponseEntity<?> getOwnerBuses(@PathVariable String ownerId) {
+        ownerUuid = UUID.fromString(ownerId);
+        List<BusResponseDto> buses = busService.getBusesByOwner(ownerUuid);
         Map<String, Object> result = new HashMap<>();
         result.put("total", buses.size());
         result.put("buses", buses);

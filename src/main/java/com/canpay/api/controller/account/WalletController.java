@@ -155,8 +155,9 @@ public class WalletController {
 
     @GetMapping("/buses/{ownerId}/earnings")
     @PreAuthorize("hasRole('OWNER')")
-    public ResponseEntity<?> getOwnerBusesEarningsSummary(@PathVariable UUID ownerId) {
-        BusEarningsSummaryResponse result = walletService.getOwnerBusesWithWalletAndOperator(ownerId);
+    public ResponseEntity<?> getOwnerBusesEarningsSummary(@PathVariable String ownerId) {
+        UUID ownerUuid = UUID.fromString(ownerId);
+        BusEarningsSummaryResponse result = walletService.getOwnerBusesWithWalletAndOperator(ownerUuid);
         return new ResponseEntityBuilder.Builder<BusEarningsSummaryResponse>()
                 .resultMessage("Fetched owner's buses and wallet details")
                 .body(result)
