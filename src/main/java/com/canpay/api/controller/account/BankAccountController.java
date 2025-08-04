@@ -45,7 +45,6 @@ public class BankAccountController {
         String email = authentication.getName(); // Extracted from JWT
         String role = authentication.getAuthorities().iterator().next().getAuthority(); // ROLE_PASSENGER
 
-        // Convert ROLE_PASSENGER to PASSENGER
         String plainRole = role.replace("ROLE_", "");
         Optional<User> userOpt = userRepository.findByEmailAndRole(
                 email,
