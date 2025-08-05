@@ -16,6 +16,7 @@ import com.canpay.api.service.implementation.BankAccountServiceImpl;
 import com.canpay.api.service.implementation.JwtService;
 import com.canpay.api.service.implementation.TransactionService;
 import com.canpay.api.service.implementation.UserServiceImpl;
+import com.canpay.api.service.dashboard.DWalletService;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -40,15 +41,17 @@ public class AccountController {
     private final DOperatorAssignmentService operatorAssignmentService;
     private final DBusService busService;
     private final TransactionService transactionService;
+    private final DWalletService walletService;
 
     public AccountController(UserServiceImpl userService, JwtService jwtService,
-                             BankAccountServiceImpl bankAccountService, DOperatorAssignmentService operatorAssignmentService, DBusService busService, TransactionService transactionService) {
+                             BankAccountServiceImpl bankAccountService, DOperatorAssignmentService operatorAssignmentService, DBusService busService, TransactionService transactionService, DWalletService walletService) {
         this.userService = userService;
         this.jwtService = jwtService;
         this.bankAccountService = bankAccountService;
         this.operatorAssignmentService = operatorAssignmentService;
         this.busService = busService;
         this.transactionService = transactionService;
+        this.walletService = walletService;
     }
 
 
@@ -413,6 +416,64 @@ public class AccountController {
             logger.error("Error fetching operator financial details: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Error fetching operator financial details"));
+        }
+    }
+
+    /**
+     * Get owner's wallet details by owner ID.
+     * Only accessible by OWNERs.
+     */
+    @GetMapping("/owner/wallet-details")
+    @PreAuthorize("hasRole('OWNER')")
+    public ResponseEntity<?> getOwnerWalletDetails(
+            @RequestHeader(value = "Authorization") String authHeader,
+            @RequestParam("ownerId") String ownerIdStr) {
+        logger.debug("Received request for owner wallet details for ownerId={}", ownerIdStr);
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            logger.warn("Authorization header missing or invalid");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Authorization header with Bearer token is required"));
+        }
+
+        String token = authHeader.substring(7);
+        try {
+            String tokenRole = jwtService.extractRole(token);
+            if (!"OWNER".equals(tokenRole)) {
+                logger.warn("Invalid role in token: {}", tokenRole);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("success", false, "message", "Only owners can access this endpoint"));
+            }
+        } catch (Exception e) {
+            logger.warn("Invalid token: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Invalid or expired token"));
+        }
+
+        java.util.UUID ownerId;
+        try {
+            ownerId = java.util.UUID.fromString(ownerIdStr);
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid UUID format for ownerId: {}", ownerIdStr);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("success", false, "message", "Invalid UUID format for ownerId"));
+        }
+
+        try {
+            Map<String, Object> data = walletService.getOwnerWalletDetails(ownerId);
+            logger.info("Returning wallet details for owner: {}", ownerId);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "data", data
+            ));
+        } catch (NoSuchElementException e) {
+            logger.warn("Owner or wallet not found: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Error fetching owner wallet details: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Error fetching owner wallet details"));
         }
     }
 
