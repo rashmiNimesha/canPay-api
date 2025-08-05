@@ -237,9 +237,11 @@ public class PaymentController {
 
             // Publish MQTT notification to operator
             String topic = "bus/" + busId + "/payment";
+
+            // newly added
             String message = String.format(
-                    "{\"transactionId\": \"%s\", \"busId\": \"%s\", \"passengerId\": \"%s\", \"operatorId\": \"%s\", \"amount\": %s, \"busNumber\": \"%s\", \"status\": \"%s\"}",
-                    transaction.getId(), busId, passenger.getId(), operatorId, amount, bus.getBusNumber(), transaction.getStatus()
+                    "{\"transactionId\": \"%s\", \"busId\": \"%s\", \"passengerId\": \"%s\", \"passengerName\": \"%s\", \"operatorId\": \"%s\", \"amount\": %s, \"busNumber\": \"%s\", \"status\": \"%s\"}",
+                    transaction.getId(), busId, passenger.getId(), passenger.getName(), operatorId, amount, bus.getBusNumber(), transaction.getStatus()
             );
             // Print to command line for debugging
             System.out.println("MQTT DEBUG | Topic: " + topic + " | Message: " + message);
