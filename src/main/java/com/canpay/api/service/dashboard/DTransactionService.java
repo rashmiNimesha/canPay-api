@@ -308,17 +308,35 @@ public class DTransactionService {
      * Gets all transactions related to an owner: fare payments (for all their buses) and withdrawals.
      */
     public Map<String, Object> getAllOwnerTransactions(UUID ownerId) {
-        // 1. Fare payments for all buses owned by this owner
+        // Calculate one week ago
+        LocalDateTime oneWeekAgo = LocalDateTime.now().minusDays(7);
+
+        // 1. Fare payments for all buses owned by this owner (last 7 days)
         List<PaymentTransactionDto> farePayments = transactionRepository.findPaymentTransactionsByBusOwner(
                 userRepository.findById(ownerId).orElseThrow(() -> new IllegalArgumentException("Owner not found"))
-        ).stream().map(this::convertToPaymentDto).collect(Collectors.toList());
+        ).stream()
+         .map(this::convertToPaymentDto)
+         .filter(dto -> dto.getHappenedAt() != null && !dto.getHappenedAt().isBefore(oneWeekAgo))
+         .collect(Collectors.toList());
 
-        // 2. Withdrawals done by owner (wallet to bank / wallet to wallet)
-        List<WithdrawalTransactionDto> withdrawals = getWithdrawalTransactionsByOwnerId(ownerId);
+        // 2. Withdrawals done by owner (wallet to bank / wallet to wallet) (last 7 days)
+        List<WithdrawalTransactionDto> allWithdrawals = getWithdrawalTransactionsByOwnerId(ownerId).stream()
+            .filter(dto -> dto.getHappenedAt() != null && !dto.getHappenedAt().isBefore(oneWeekAgo))
+            .collect(Collectors.toList());
+
+        // Split into withdrawals (to bank) and transfers (wallet to wallet)
+        List<WithdrawalTransactionDto> withdrawals = allWithdrawals.stream()
+                .filter(w -> w.getToBankAccountId() != null)
+                .collect(Collectors.toList());
+
+        List<WithdrawalTransactionDto> transfers = allWithdrawals.stream()
+                .filter(w -> w.getToBankAccountId() == null && w.getToWalletId() != null)
+                .collect(Collectors.toList());
 
         Map<String, Object> result = new HashMap<>();
         result.put("farePayments", farePayments);
         result.put("withdrawals", withdrawals);
+        result.put("transfers", transfers);
         return result;
     }
 
