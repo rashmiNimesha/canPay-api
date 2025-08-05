@@ -340,6 +340,32 @@ public class DTransactionService {
         return result;
     }
 
+    /**
+     * Gets all recharge and payment transactions for a passenger within the last N days.
+     */
+    public Map<String, Object> getRecentRechargeAndPaymentTransactionsForPassenger(UUID passengerId, int days) {
+        LocalDateTime since = LocalDateTime.now().minusDays(days);
+
+        // Recharge transactions
+        List<RechargeTransactionDto> recharges = transactionRepository.findRechargeTransactionsByPassengerId(passengerId)
+                .stream()
+                .filter(t -> t.getHappenedAt() != null && !t.getHappenedAt().isBefore(since))
+                .map(this::convertToRechargeDto)
+                .collect(Collectors.toList());
+
+        // Payment transactions
+        List<PaymentTransactionDto> payments = transactionRepository.findByPassenger_Id(passengerId)
+                .stream()
+                .filter(t -> t.getType() == TransactionType.PAYMENT && t.getHappenedAt() != null && !t.getHappenedAt().isBefore(since))
+                .map(this::convertToPaymentDto)
+                .collect(Collectors.toList());
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("recharges", recharges);
+        result.put("payments", payments);
+        return result;
+    }
+
     // DTO Conversion Methods
     /**
      * Converts Transaction entity to RechargeTransactionDto.

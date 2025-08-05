@@ -167,4 +167,37 @@ public class TransactionController {
                 .buildWrapped();
     }
 
+    /**
+     * Get all wallet recharge and bus payment transactions for a specific passenger within the last 10 days.
+     */
+    @GetMapping("/passenger/{passengerId}/all-recent")
+    @PreAuthorize("hasRole('PASSENGER')")
+    public ResponseEntity<?> getAllRecentTransactionsForPassenger(@RequestHeader(value = "Authorization") String authHeader, @PathVariable String passengerId) {
+        UUID passengerUuid = UUID.fromString(passengerId);
+
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Authorization header with Bearer token is required"));
+        }
+        String token = authHeader.substring(7);
+        try {
+            String role = jwtService.extractRole(token);
+            if (!"PASSENGER".equals(role)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("success", false, "message", "Invalid role for accessing passenger transactions"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Invalid or expired token"));
+        }
+
+        Map<String, Object> data = dTransactionService.getRecentRechargeAndPaymentTransactionsForPassenger(passengerUuid, 10);
+        return new ResponseEntityBuilder.Builder<Map<String, Object>>()
+                .resultMessage("Recent recharge and payment transactions for passenger retrieved successfully")
+                .httpStatus(HttpStatus.OK)
+                .body(data)
+                .buildWrapped();
+    }
+
 }
