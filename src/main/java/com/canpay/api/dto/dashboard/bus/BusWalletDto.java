@@ -33,6 +33,9 @@ public class BusWalletDto {
         }
     }
 
+    public BusWalletDto(UUID id, String busNumber, String s, BigDecimal bigDecimal, String routeFrom, String routeTo, String province, String name, UUID operatorId, String operatorName, String operatorEmail, BigDecimal todaysEarnings) {
+    }
+
     public UUID getId() {
         return id;
     }

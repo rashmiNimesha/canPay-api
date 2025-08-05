@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -24,14 +25,14 @@ public class TransactionService {
         this.userRepository = userRepository;
     }
 
-    public List<Transaction> getRecentTransactions(String passengerEmail) {
-        User passenger = userRepository.findByEmail(passengerEmail)
+    public List<Transaction> getRecentTransactions(UUID passengerID) {
+        User passenger = userRepository.findById(passengerID)
                 .orElseThrow(() -> {
-                    logger.warn("Passenger not found: {}", passengerEmail);
+                    logger.warn("Passenger not found: {}", passengerID);
                     return new RuntimeException("Passenger not found");
                 });
         List<Transaction> transactions = transactionRepository.findTop10ByPassengerOrderByHappenedAtDesc(passenger);
-        logger.info("Fetched {} recent transactions for passenger: {}", transactions.size(), passengerEmail);
+        logger.info("Fetched {} recent transactions for passenger: {}", transactions.size(), passengerID);
         return transactions;
     }
 
@@ -70,6 +71,10 @@ public class TransactionService {
                 transaction.getToWallet() != null ? transaction.getToWallet().getId() : null,
                 transaction.getToWallet() != null ? transaction.getToWallet().getWalletNumber() : null,
                 transaction.getToWallet() != null ? transaction.getToWallet().getBalance() : null);
+    }
+
+    public BigDecimal sumPaymentsForBus(java.util.UUID busId) {
+        return transactionRepository.sumPaymentsForBus(busId);
     }
 
 }

@@ -2,6 +2,7 @@ package com.canpay.api.controller.account;
 
 
 import com.canpay.api.dto.dashboard.bus.BusResponseDto;
+import com.canpay.api.dto.dashboard.operatorassignment.OperatorAssignmentListResponseDto;
 import com.canpay.api.dto.dashboard.operatorassignment.OperatorAssignmentRequestDto;
 import com.canpay.api.dto.dashboard.operatorassignment.OperatorAssignmentResponseDto;
 import com.canpay.api.dto.dashboard.user.UserDto;
@@ -13,7 +14,9 @@ import com.canpay.api.service.dashboard.DBusService;
 import com.canpay.api.service.dashboard.DOperatorAssignmentService;
 import com.canpay.api.service.implementation.BankAccountServiceImpl;
 import com.canpay.api.service.implementation.JwtService;
+import com.canpay.api.service.implementation.TransactionService;
 import com.canpay.api.service.implementation.UserServiceImpl;
+import com.canpay.api.service.dashboard.DWalletService;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -24,9 +27,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.math.BigDecimal;
+import java.util.*;
 
 @RestController
 @RequestMapping("api/v1/user-service")
@@ -38,15 +40,18 @@ public class AccountController {
     private final Logger logger = LoggerFactory.getLogger(AccountController.class);
     private final DOperatorAssignmentService operatorAssignmentService;
     private final DBusService busService;
-
+    private final TransactionService transactionService;
+    private final DWalletService walletService;
 
     public AccountController(UserServiceImpl userService, JwtService jwtService,
-                             BankAccountServiceImpl bankAccountService, DOperatorAssignmentService operatorAssignmentService, DBusService busService) {
+                             BankAccountServiceImpl bankAccountService, DOperatorAssignmentService operatorAssignmentService, DBusService busService, TransactionService transactionService, DWalletService walletService) {
         this.userService = userService;
         this.jwtService = jwtService;
         this.bankAccountService = bankAccountService;
         this.operatorAssignmentService = operatorAssignmentService;
         this.busService = busService;
+        this.transactionService = transactionService;
+        this.walletService = walletService;
     }
 
 
@@ -262,15 +267,15 @@ public class AccountController {
             }
             logger.debug("Bus validated: id={}, ownerId={}", bus.getId(), bus.getOwner().getId());
 
-            // Check for existing active assignment
-            if (busService.hasActiveOperatorAssignment(requestDto.getBusId(), requestDto.getOperatorId())) {
-                logger.warn("Operator {} already assigned to bus {}", requestDto.getOperatorId(), requestDto.getBusId());
+            // Check for any existing assignment for this operator and bus (regardless of status)
+            if (busService.hasAnyOperatorAssignment(requestDto.getBusId(), requestDto.getOperatorId())) {
+                logger.warn("Operator {} already assigned to bus {} (any status)", requestDto.getOperatorId(), requestDto.getBusId());
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("success", false, "message", "Operator already assigned to this bus"));
             }
 
             OperatorAssignment assignment = new OperatorAssignment(operator, bus,
-                    requestDto.getStatus() != null ? requestDto.getStatus() : OperatorAssignment.AssignmentStatus.PENDING);
+                    requestDto.getStatus() != null ? requestDto.getStatus() : OperatorAssignment.AssignmentStatus.ACTIVE);   // previously this is pending
             logger.debug("OperatorAssignment state: id={}, busId={}, operatorId={}, status={}",
                     assignment.getId(), assignment.getBus().getId(), assignment.getOperator().getId(), assignment.getStatus());
 
@@ -324,4 +329,152 @@ public class AccountController {
                     .body(Map.of("success", false, "message", "Runtime exception: " + e.getMessage()));
         }
     }
+
+
+    @GetMapping("/operator/financial-details")
+    @PreAuthorize("hasRole('OPERATOR')")
+    public ResponseEntity<?> getOperatorFinancialDetails(
+            @RequestHeader(value = "Authorization") String authHeader,
+            @RequestParam("operatorId") String operatorIdStr,
+            @RequestParam("busId") String busIdStr) {
+        logger.debug("Received request for operator financial details for operatorId={}, busId={}", operatorIdStr, busIdStr);
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            logger.warn("Authorization header missing or invalid");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Authorization header with Bearer token is required"));
+        }
+
+        String token = authHeader.substring(7);
+        try {
+            String tokenRole = jwtService.extractRole(token);
+            if (!"OPERATOR".equals(tokenRole)) {
+                logger.warn("Invalid role in token: {}", tokenRole);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("success", false, "message", "Only operators can access this endpoint"));
+            }
+        } catch (Exception e) {
+            logger.warn("Invalid token: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Invalid or expired token"));
+        }
+
+        UUID operatorId;
+        UUID busId;
+        try {
+            operatorId = UUID.fromString(operatorIdStr);
+            busId = UUID.fromString(busIdStr);
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid UUID format for operatorId or busId: {}, {}", operatorIdStr, busIdStr);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("success", false, "message", "Invalid UUID format for operatorId or busId"));
+        }
+
+        try {
+            // Find operator
+            Optional<User> operatorOpt = userService.findUserById(operatorId);
+            if (operatorOpt.isEmpty() || !User.UserRole.OPERATOR.equals(operatorOpt.get().getRole())) {
+                logger.warn("Operator not found or invalid role for id: {}", operatorId);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("success", false, "message", "Operator not found"));
+            }
+            User operator = operatorOpt.get();
+
+            // Find bus
+            Bus bus = busService.findBusById(busId);
+            if (bus == null) {
+                logger.warn("Bus not found for id: {}", busId);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("success", false, "message", "Bus not found"));
+            }
+
+            // Check for ACTIVE assignment
+            boolean hasActiveAssignment = operator.getOperatorAssignments().stream()
+                    .anyMatch(a -> a.getBus().getId().equals(busId)
+                            && a.getStatus() == OperatorAssignment.AssignmentStatus.ACTIVE);
+
+            if (!hasActiveAssignment) {
+                logger.warn("No ACTIVE assignment found for operator {} and bus {}", operatorId, busId);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("success", false, "message", "No ACTIVE assignment found for this operator and bus"));
+            }
+
+            // Get earnings for this bus
+            BigDecimal earnings = transactionService.sumPaymentsForBus(busId);
+
+            Map<String, Object> data = Map.of(
+                    "operatorName", operator.getName(),
+                    "busNumber", bus.getBusNumber(),
+                    "earningsAmount", earnings != null ? earnings : BigDecimal.ZERO
+            );
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "data", data
+            ));
+        } catch (Exception e) {
+            logger.error("Error fetching operator financial details: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Error fetching operator financial details"));
+        }
+    }
+
+    /**
+     * Get owner's wallet details by owner ID.
+     * Only accessible by OWNERs.
+     */
+    @GetMapping("/owner/wallet-details")
+    @PreAuthorize("hasRole('OWNER')")
+    public ResponseEntity<?> getOwnerWalletDetails(
+            @RequestHeader(value = "Authorization") String authHeader,
+            @RequestParam("ownerId") String ownerIdStr) {
+        logger.debug("Received request for owner wallet details for ownerId={}", ownerIdStr);
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            logger.warn("Authorization header missing or invalid");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Authorization header with Bearer token is required"));
+        }
+
+        String token = authHeader.substring(7);
+        try {
+            String tokenRole = jwtService.extractRole(token);
+            if (!"OWNER".equals(tokenRole)) {
+                logger.warn("Invalid role in token: {}", tokenRole);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("success", false, "message", "Only owners can access this endpoint"));
+            }
+        } catch (Exception e) {
+            logger.warn("Invalid token: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Invalid or expired token"));
+        }
+
+        java.util.UUID ownerId;
+        try {
+            ownerId = java.util.UUID.fromString(ownerIdStr);
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid UUID format for ownerId: {}", ownerIdStr);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("success", false, "message", "Invalid UUID format for ownerId"));
+        }
+
+        try {
+            Map<String, Object> data = walletService.getOwnerWalletDetails(ownerId);
+            logger.info("Returning wallet details for owner: {}", ownerId);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "data", data
+            ));
+        } catch (NoSuchElementException e) {
+            logger.warn("Owner or wallet not found: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Error fetching owner wallet details: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Error fetching owner wallet details"));
+        }
+    }
+
 }

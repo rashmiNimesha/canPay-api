@@ -1,6 +1,5 @@
 package com.canpay.api.dto;
 
-
 public class UserWalletBalanceDto {
 
     private String email;
@@ -8,6 +7,9 @@ public class UserWalletBalanceDto {
     private Long accountNumber;
     private String accountName;
     private String walletNumber;
+    // Add ownerId and walletType for owner wallet details
+    private String ownerId;
+    private String walletType;
 
     public UserWalletBalanceDto(String email ,double walletBalance) {
         this.email = email;
@@ -27,6 +29,22 @@ public class UserWalletBalanceDto {
         this.accountName = name;
     }
 
+    public UserWalletBalanceDto(String email, double balance, String accountName, String walletNumber) {
+        this.email = email;
+        this.balance = balance;
+        this.accountName = accountName;
+        this.walletNumber = walletNumber;
+    }
+
+    // New constructor for owner wallet details
+    public UserWalletBalanceDto(String ownerId, String ownerName, String ownerEmail, String walletNumber, double walletBalance, String walletType) {
+        this.ownerId = ownerId;
+        this.accountName = ownerName;
+        this.email = ownerEmail;
+        this.walletNumber = walletNumber;
+        this.balance = walletBalance;
+        this.walletType = walletType;
+    }
 
     public String getEmail() {
         return email;
@@ -66,5 +84,21 @@ public class UserWalletBalanceDto {
 
     public void setWalletNumber(String walletNumber) {
         this.walletNumber = walletNumber;
+    }
+
+    public String getOwnerId() {
+        return ownerId;
+    }
+
+    public void setOwnerId(String ownerId) {
+        this.ownerId = ownerId;
+    }
+
+    public String getWalletType() {
+        return walletType;
+    }
+
+    public void setWalletType(String walletType) {
+        this.walletType = walletType;
     }
 }

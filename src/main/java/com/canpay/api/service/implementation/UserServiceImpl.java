@@ -1,6 +1,7 @@
 package com.canpay.api.service.implementation;
 
 import com.canpay.api.entity.BankAccount;
+import com.canpay.api.entity.Bus;
 import com.canpay.api.entity.User;
 import com.canpay.api.entity.User.UserRole;
 import com.canpay.api.entity.Wallet;
@@ -14,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -328,15 +330,54 @@ public class UserServiceImpl implements UserService {
             bankDetails.put("accountNumber", null);
             bankDetails.put("accountName", null);
         }
-
-        // Find wallet balance
-        Optional<Wallet> walletOpt = walletRepository.findByUser(user);
         Map<String, Object> walletDetails = new HashMap<>();
-        if (walletOpt.isPresent()) {
-            walletDetails.put("balance", walletOpt.get().getBalance());
-        } else {
-            logger.info("No wallet found for user: {}", email);
-            walletDetails.put("balance", null);
+
+        if(role == UserRole.PASSENGER) {
+            // Find wallet balance
+            Optional<Wallet> walletOpt = walletRepository.findByUser(user);
+            if (walletOpt.isPresent()) {
+                walletDetails.put("balance", walletOpt.get().getBalance());
+                walletDetails.put("walletNumber", walletOpt.get().getWalletNumber());
+            } else {
+                logger.info("No wallet found for user: {}", email);
+                walletDetails.put("balance", null);
+            }
+
+        }
+        else if(role == UserRole.OWNER) {
+            // Sum owner's wallet + all bus wallets
+            // 1. Get owner's wallet (type OWNER)
+            Optional<Wallet> ownerWalletOpt = walletRepository.findByUserAndType(user, Wallet.WalletType.OWNER);
+            BigDecimal ownerBalance = BigDecimal.ZERO;
+            String ownerWalletNumber = null;
+            if (ownerWalletOpt.isPresent()) {
+                ownerBalance = ownerWalletOpt.get().getBalance();
+                ownerWalletNumber = ownerWalletOpt.get().getWalletNumber();
+            }
+
+            // 2. Get all buses owned by this user
+            List<Bus> buses = user.getOwnedBuses();
+            BigDecimal busWalletsSum = BigDecimal.ZERO;
+            List<String> busWalletNumbers = new ArrayList<>();
+            if (buses != null && !buses.isEmpty()) {
+                // 3. Get all bus wallets
+                List<Wallet> busWallets = walletRepository.findByBusInAndType(buses, Wallet.WalletType.BUS);
+                for (Wallet w : busWallets) {
+                    if (w.getBalance() != null) {
+                        busWalletsSum = busWalletsSum.add(w.getBalance());
+                    }
+                    if (w.getWalletNumber() != null) {
+                        busWalletNumbers.add(w.getWalletNumber());
+                    }
+                }
+            }
+
+            // 4. Sum balances
+            BigDecimal totalBalance = ownerBalance.add(busWalletsSum);
+
+            walletDetails.put("balance", totalBalance);
+            walletDetails.put("ownerWalletNumber", ownerWalletNumber);
+            walletDetails.put("busWalletNumbers", busWalletNumbers);
         }
 
         Map<String, Object> result = new HashMap<>();

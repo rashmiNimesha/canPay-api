@@ -2,6 +2,7 @@ package com.canpay.api.dto;
 
 import com.canpay.api.entity.BankAccount;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 public class BankAccountDto {
 
@@ -37,6 +38,14 @@ public class BankAccountDto {
         this.accountNumber = accountNumber;
         this.accountName = accountName;
         this.isDefault = isDefault();
+    }
+
+    public BankAccountDto(UUID id, String bankName, Long accountNumber, String accountName, boolean aDefault) {
+        this.id = id.toString();
+        this.bankName = bankName;
+        this.accountNumber = accountNumber;
+        this.accountName = accountName;
+        this.isDefault = aDefault;
     }
 
 

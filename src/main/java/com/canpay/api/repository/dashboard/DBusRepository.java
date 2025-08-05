@@ -7,6 +7,7 @@ import com.canpay.api.entity.Bus.BusType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.lang.NonNull;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 import java.util.Optional;
@@ -98,4 +99,12 @@ public interface DBusRepository extends JpaRepository<Bus, UUID> {
 
     /** Delete buses by owner ID */
     void deleteByOwner_Id(UUID ownerId);
+
+    /** Find buses by owner ID */
+    List<Bus> findByOwnerId(UUID ownerId);
+
+    /** Count buses by status for a specific owner */
+    @Query("SELECT b.status, COUNT(b) FROM Bus b WHERE b.owner.id = :ownerId GROUP BY b.status")
+    List<Object[]> countBusesByStatusForOwner(UUID ownerId);
+
 }

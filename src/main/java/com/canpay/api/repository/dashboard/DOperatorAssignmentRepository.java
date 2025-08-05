@@ -1,9 +1,13 @@
 package com.canpay.api.repository.dashboard;
 
+import com.canpay.api.entity.Bus;
 import com.canpay.api.entity.OperatorAssignment;
 import com.canpay.api.entity.OperatorAssignment.AssignmentStatus;
 
+import com.canpay.api.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.lang.NonNull;
 
@@ -101,4 +105,21 @@ public interface DOperatorAssignmentRepository extends JpaRepository<OperatorAss
     /** Delete operator assignments by operator ID and bus ID */
     void deleteByOperator_IdAndBus_Id(UUID operatorId, UUID busId);
 
+    @Query("SELECT COUNT(DISTINCT oa.operator.id) FROM OperatorAssignment oa WHERE oa.bus.owner.id = :ownerId")
+    long countDistinctOperatorsByOwnerId(@Param("ownerId") UUID ownerId);
+
+    Optional<OperatorAssignment> findByOperatorAndBus(User operator, Bus bus);
+    Optional<OperatorAssignment> findByBusIdAndOperatorIdAndStatus(UUID busId, UUID operatorId, OperatorAssignment.AssignmentStatus status);
+    OperatorAssignment findFirstByOperatorIdOrderByAssignedAtDesc(UUID operatorId);
+    Optional<OperatorAssignment> findByOperatorAndBusAndStatus(User operator, Bus bus, OperatorAssignment.AssignmentStatus status);
+
+    @Query("SELECT COUNT(DISTINCT oa.operator.id) FROM OperatorAssignment oa " +
+            "WHERE oa.status = com.canpay.api.entity.OperatorAssignment.AssignmentStatus.ACTIVE " +
+            "AND oa.bus.owner.id = :ownerId")
+    long countDistinctActiveOperatorsByOwnerId(@Param("ownerId") UUID ownerId);
+
+    Optional<OperatorAssignment> findByBusIdAndOperatorId(UUID busId, UUID operatorId);
+
+    /** Find operator assignments by bus owner ID and status */
+    List<OperatorAssignment> findByBusOwnerIdAndStatus(UUID ownerId, AssignmentStatus status);
 }

@@ -1,5 +1,7 @@
 package com.canpay.api.service.dashboard;
 
+import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -11,6 +13,8 @@ import com.canpay.api.entity.Bus;
 import com.canpay.api.entity.Wallet;
 import com.canpay.api.entity.Wallet.WalletType;
 import com.canpay.api.entity.User;
+import com.canpay.api.entity.User.UserRole;
+import com.canpay.api.dto.UserWalletBalanceDto;
 import com.canpay.api.lib.Utils;
 import com.canpay.api.repository.dashboard.DWalletRepository;
 
@@ -121,5 +125,31 @@ public class DWalletService {
     @Transactional
     public void deleteWalletByBusId(UUID busId) {
         walletRepository.deleteByBus_Id(busId);
+    }
+
+    /**
+     * Get wallet details for an owner by ownerId.
+     * Throws NoSuchElementException if not found or not an owner.
+     */
+    public Map<String, Object> getOwnerWalletDetails(UUID ownerId) {
+        Optional<User> ownerOpt = walletRepository.findByUser_Id(ownerId)
+                .flatMap(wallet -> Optional.ofNullable(wallet.getUser()));
+        if (ownerOpt.isEmpty() || !UserRole.OWNER.equals(ownerOpt.get().getRole())) {
+            throw new NoSuchElementException("Owner not found");
+        }
+        User owner = ownerOpt.get();
+        Wallet wallet = owner.getWallet();
+        if (wallet == null) {
+            throw new NoSuchElementException("No wallet found for this owner");
+        }
+        UserWalletBalanceDto dto = new UserWalletBalanceDto(
+                owner.getId().toString(),
+                owner.getName(),
+                owner.getEmail(),
+                wallet.getWalletNumber(),
+                wallet.getBalance().doubleValue(),
+                wallet.getType().toString()
+        );
+        return Map.of("walletDetails", dto);
     }
 }

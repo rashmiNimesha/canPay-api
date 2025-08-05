@@ -2,21 +2,25 @@ package com.canpay.api.service.dashboard;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.canpay.api.controller.account.PaymentController;
+import com.canpay.api.dto.dashboard.transactions.*;
+import com.canpay.api.entity.*;
+import com.canpay.api.repository.dashboard.*;
+import com.canpay.api.service.implementation.UserServiceImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.canpay.api.dto.dashboard.transactions.GenericTransactionDto;
-import com.canpay.api.dto.dashboard.transactions.PaymentTransactionDto;
-import com.canpay.api.dto.dashboard.transactions.RechargeTransactionDto;
-import com.canpay.api.dto.dashboard.transactions.WithdrawalTransactionDto;
-import com.canpay.api.entity.Transaction;
 import com.canpay.api.entity.Transaction.TransactionStatus;
 import com.canpay.api.entity.Transaction.TransactionType;
-import com.canpay.api.repository.dashboard.DTransactionRepository;
 
 /**
  * Service for managing Transaction entities in the dashboard context.
@@ -25,12 +29,23 @@ import com.canpay.api.repository.dashboard.DTransactionRepository;
  */
 @Service
 public class DTransactionService {
+    private final Logger logger = LoggerFactory.getLogger(PaymentController.class);
 
     private final DTransactionRepository transactionRepository;
+    private final DBusRepository busRepository;
+    private final DUserRepository userRepository;
+    private final DBankAccountRepository bankAccountRepository;
+    private final DWalletRepository walletRepository;
+    private final UserServiceImpl userService;
 
     @Autowired
-    public DTransactionService(DTransactionRepository transactionRepository) {
+    public DTransactionService(DTransactionRepository transactionRepository, DBusRepository busRepository, DUserRepository userRepository, DBankAccountRepository bankAccountRepository, DWalletRepository walletRepository, UserServiceImpl userService) {
         this.transactionRepository = transactionRepository;
+        this.busRepository = busRepository;
+        this.userRepository = userRepository;
+        this.bankAccountRepository = bankAccountRepository;
+        this.walletRepository = walletRepository;
+        this.userService = userService;
     }
 
     /**
@@ -65,6 +80,7 @@ public class DTransactionService {
     }
 
     // RECHARGE specific methods with DTO mapping
+
     /**
      * Gets all recharge transactions with full details as DTOs.
      */
@@ -86,6 +102,7 @@ public class DTransactionService {
     }
 
     // WITHDRAWAL specific methods with DTO mapping
+
     /**
      * Gets all withdrawal transactions with full details as DTOs.
      */
@@ -198,6 +215,7 @@ public class DTransactionService {
     }
 
     // Analytics and statistics methods
+
     /**
      * Gets transaction statistics.
      */
@@ -286,6 +304,42 @@ public class DTransactionService {
         return transactionRepository.findByOwner_Id(ownerId);
     }
 
+    /**
+     * Gets all transactions related to an owner: fare payments (for all their buses) and withdrawals.
+     */
+    public Map<String, Object> getAllOwnerTransactions(UUID ownerId) {
+        // Calculate one week ago
+        LocalDateTime oneWeekAgo = LocalDateTime.now().minusDays(7);
+
+        // 1. Fare payments for all buses owned by this owner (last 7 days)
+        List<PaymentTransactionDto> farePayments = transactionRepository.findPaymentTransactionsByBusOwner(
+                userRepository.findById(ownerId).orElseThrow(() -> new IllegalArgumentException("Owner not found"))
+        ).stream()
+         .map(this::convertToPaymentDto)
+         .filter(dto -> dto.getHappenedAt() != null && !dto.getHappenedAt().isBefore(oneWeekAgo))
+         .collect(Collectors.toList());
+
+        // 2. Withdrawals done by owner (wallet to bank / wallet to wallet) (last 7 days)
+        List<WithdrawalTransactionDto> allWithdrawals = getWithdrawalTransactionsByOwnerId(ownerId).stream()
+            .filter(dto -> dto.getHappenedAt() != null && !dto.getHappenedAt().isBefore(oneWeekAgo))
+            .collect(Collectors.toList());
+
+        // Split into withdrawals (to bank) and transfers (wallet to wallet)
+        List<WithdrawalTransactionDto> withdrawals = allWithdrawals.stream()
+                .filter(w -> w.getToBankAccountId() != null)
+                .collect(Collectors.toList());
+
+        List<WithdrawalTransactionDto> transfers = allWithdrawals.stream()
+                .filter(w -> w.getToBankAccountId() == null && w.getToWalletId() != null)
+                .collect(Collectors.toList());
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("farePayments", farePayments);
+        result.put("withdrawals", withdrawals);
+        result.put("transfers", transfers);
+        return result;
+    }
+
     // DTO Conversion Methods
     /**
      * Converts Transaction entity to RechargeTransactionDto.
@@ -329,8 +383,8 @@ public class DTransactionService {
         String busRoute = transaction.getBus() != null &&
                 transaction.getBus().getRouteFrom() != null &&
                 transaction.getBus().getRouteTo() != null
-                        ? transaction.getBus().getRouteFrom() + " - " + transaction.getBus().getRouteTo()
-                        : null;
+                ? transaction.getBus().getRouteFrom() + " - " + transaction.getBus().getRouteTo()
+                : null;
 
         return new WithdrawalTransactionDto(
                 transaction.getId(),
@@ -538,5 +592,135 @@ public class DTransactionService {
         public BigDecimal getPaymentAmount() {
             return paymentAmount;
         }
+    }
+
+
+    public WithdrawalTransactionDto handleWithdraw(UUID ownerId, OwnerWithdrawRequestDto req) {
+        User owner = userService.findUserById(ownerId)
+                .orElseThrow(() -> {
+                    logger.warn("Owner not found: {}", ownerId);
+                    return new RuntimeException("Owner not found");
+                });
+        if (!owner.getRole().equals(User.UserRole.OWNER)) {
+            logger.warn("User is not an owner: {}", ownerId);
+            throw new IllegalArgumentException("Invalid owner");
+        }
+
+        // Validate amount
+        if (req.getAmount() == null || req.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Invalid amount");
+        }
+
+        Wallet fromWallet = null;
+        Wallet toWallet = null;
+        BankAccount toBankAccount = null;
+
+        // 1. Identify source wallet and owner
+        if (req.getFromType() == OwnerWithdrawRequestDto.FromType.BUS) {
+            Bus bus = busRepository.findByBusNumber(req.getFromId()).orElse(null);
+            if (bus == null || bus.getWallet() == null) {
+                throw new IllegalArgumentException("Bus or bus wallet not found");
+            }
+            fromWallet = bus.getWallet();
+            owner = bus.getOwner();
+        } else if (req.getFromType() == OwnerWithdrawRequestDto.FromType.OWNER) {
+            owner = userRepository.findById(UUID.fromString(req.getFromId())).orElse(null);
+            if (owner == null || owner.getWallet() == null) {
+                throw new IllegalArgumentException("Owner or owner wallet not found");
+            }
+            fromWallet = owner.getWallet();
+        } else {
+            throw new IllegalArgumentException("Invalid fromType");
+        }
+
+        // 2. Identify destination
+        if (req.getToType() == OwnerWithdrawRequestDto.ToType.WALLET) {
+            if (owner == null || owner.getWallet() == null) {
+                throw new IllegalArgumentException("Owner wallet not found");
+            }
+            toWallet = owner.getWallet();
+        } else if (req.getToType() == OwnerWithdrawRequestDto.ToType.BANK) {
+            if (owner == null) {
+                throw new IllegalArgumentException("Owner not found");
+            }
+            Optional<BankAccount> bankcc = bankAccountRepository.findByUserId(owner.getId())
+                    .stream()
+                    .filter(BankAccount::isDefault)
+                    .findFirst();
+
+            UUID bankIdd = bankcc.isPresent() ? bankcc.get().getId() : null;
+
+            if (bankIdd == null) {
+                // Try to get default bank account
+                Optional<BankAccount> defaultBank = owner.getBankAccounts().stream().filter(BankAccount::isDefault).findFirst();
+                if (defaultBank.isEmpty()) {
+                    throw new IllegalArgumentException("No bank account specified or default bank account not found");
+                }
+                toBankAccount = defaultBank.get();
+            } else {
+                toBankAccount = bankAccountRepository.findById(bankIdd).orElse(null);
+                if (toBankAccount == null) {
+                    throw new IllegalArgumentException("Bank account not found");
+                }
+            }
+        } else {
+            throw new IllegalArgumentException("Invalid toType");
+        }
+
+        // 3. Check balance
+        if (fromWallet.getBalance().compareTo(req.getAmount()) < 0) {
+            throw new IllegalArgumentException("Insufficient balance");
+        }
+
+        // 4. Perform transfer
+        fromWallet.setBalance(fromWallet.getBalance().subtract(req.getAmount()));
+
+        if (toWallet != null) {
+            toWallet.setBalance(toWallet.getBalance().add(req.getAmount()));
+            walletRepository.save(toWallet);
+        }
+        walletRepository.save(fromWallet);
+
+        // 5. Record transaction
+        Transaction tx = new Transaction();
+        tx.setAmount(req.getAmount());
+        tx.setType(Transaction.TransactionType.WITHDRAWAL);
+        tx.setStatus(Transaction.TransactionStatus.APPROVED);
+        tx.setBus(fromWallet.getBus()); // Set bus if available
+        tx.setFromWallet(fromWallet);
+        tx.setOwner(owner);
+        if (toWallet != null) tx.setToWallet(toWallet);
+        if (toBankAccount != null) tx.setToBankAccount(toBankAccount);
+        tx.setNote("Owner withdraw: " + req.getFromType() + "->" + req.getToType());
+        tx.setHappenedAt(java.time.LocalDateTime.now());
+
+        transactionRepository.save(tx);
+
+        // Map to WithdrawalTransactionDto
+        WithdrawalTransactionDto responseDto = new WithdrawalTransactionDto(
+                tx.getId(),
+                tx.getAmount(),
+                tx.getHappenedAt(),
+                tx.getStatus(),
+                tx.getNote(),
+                tx.getFromWallet() != null ? tx.getFromWallet().getId() : null,
+                tx.getFromWallet().getWalletNumber(),
+                tx.getToWallet() != null ? tx.getToWallet().getId() : null,
+                tx.getToWallet() != null ? tx.getToWallet().getWalletNumber() : null,
+                tx.getToBankAccount() != null ? tx.getToBankAccount().getId() : null,
+                tx.getToBankAccount() != null ? tx.getToBankAccount().getBankName() : null,
+                tx.getToBankAccount() != null ? String.valueOf(tx.getToBankAccount().getAccountNumber()) : null
+        );
+
+        return responseDto;
+    }
+
+    /**
+     * Gets the total number of transactions done today (from 00:00 to now).
+     */
+    public long getTodayTotalTransactions() {
+        LocalDateTime startOfDay = LocalDateTime.now().toLocalDate().atStartOfDay();
+        LocalDateTime now = LocalDateTime.now();
+        return transactionRepository.findByHappenedAtBetween(startOfDay, now).size();
     }
 }

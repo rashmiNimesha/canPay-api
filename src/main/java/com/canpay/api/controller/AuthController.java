@@ -183,7 +183,6 @@ public class AuthController {
                 String name = request.get("name");
                 String nic = request.get("nic");
 
-                // Require Authorization header with Bearer token
                 if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                         logger.warn("Authorization header is missing or does not start with Bearer");
                         return new ResponseEntityBuilder.Builder<Map<String, Object>>()
@@ -192,7 +191,6 @@ public class AuthController {
                                         .buildWrapped();
                 }
 
-                // Extract role from JWT token
                 UserRole role;
                 String token = authHeader.substring(7);
                 logger.debug("Received token: {}", token);
@@ -224,7 +222,6 @@ public class AuthController {
                                         .buildWrapped();
                 }
 
-                // Validate email matches the token's subject
                 try {
                         String tokenEmail = jwtService.extractEmail(token);
                         if (!email.equals(tokenEmail)) {

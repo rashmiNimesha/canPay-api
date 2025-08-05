@@ -17,7 +17,6 @@ import java.time.LocalDateTime;
 @Table(name = "operator_assignments")
 @Getter
 @Setter
-@NoArgsConstructor
 public class OperatorAssignment extends BaseEntity {
 
     /** Timestamp when the operator was assigned. */
@@ -56,6 +55,9 @@ public class OperatorAssignment extends BaseEntity {
         this.bus = bus;
         this.status = status;
         this.assignedAt = LocalDateTime.now();
+    }
+
+    public OperatorAssignment() {
     }
 
     // Explicit Getters and Setters

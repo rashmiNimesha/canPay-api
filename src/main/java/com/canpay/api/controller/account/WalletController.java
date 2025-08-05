@@ -1,6 +1,9 @@
 package com.canpay.api.controller.account;
 
 import com.canpay.api.dto.UserWalletBalanceDto;
+import com.canpay.api.dto.dashboard.bus.BusEarningsSummaryResponse;
+import com.canpay.api.dto.dashboard.bus.BusWalletDto;
+import com.canpay.api.dto.dashboard.bus.BusWalletSummaryDto;
 import com.canpay.api.entity.ResponseEntityBuilder;
 
 import com.canpay.api.service.implementation.JwtService;
@@ -12,7 +15,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/wallet")
@@ -146,6 +151,17 @@ public class WalletController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Failed to fetch wallet balance: " + e.getMessage()));
         }
+    }
+
+    @GetMapping("/buses/{ownerId}/earnings")
+    @PreAuthorize("hasRole('OWNER')")
+    public ResponseEntity<?> getOwnerBusesEarningsSummary(@PathVariable String ownerId) {
+        UUID ownerUuid = UUID.fromString(ownerId);
+        BusEarningsSummaryResponse result = walletService.getOwnerBusesWithWalletAndOperator(ownerUuid);
+        return new ResponseEntityBuilder.Builder<BusEarningsSummaryResponse>()
+                .resultMessage("Fetched owner's buses and wallet details")
+                .body(result)
+                .buildWrapped();
     }
 
 }

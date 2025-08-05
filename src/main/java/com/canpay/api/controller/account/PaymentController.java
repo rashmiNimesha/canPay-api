@@ -1,13 +1,19 @@
 package com.canpay.api.controller.account;
 
+import com.canpay.api.dto.dashboard.operatorassignment.OperatorAssignmentListWithTotalDto;
+import com.canpay.api.dto.dashboard.transactions.OwnerWithdrawRequestDto;
+import com.canpay.api.dto.dashboard.transactions.WithdrawalTransactionDto;
 import com.canpay.api.entity.*;
+import com.canpay.api.repository.dashboard.DOperatorAssignmentRepository;
 import com.canpay.api.repository.dashboard.DWalletRepository;
+import com.canpay.api.service.dashboard.DTransactionService;
 import com.canpay.api.service.implementation.JwtService;
-//import com.canpay.api.service.implementation.MqttService;
-import com.canpay.api.service.implementation.UserServiceImpl;
 import com.canpay.api.repository.BusRepository;
-import com.canpay.api.repository.OperatorAssignmentRepository;
 import com.canpay.api.repository.TransactionRepository;
+import com.canpay.api.service.implementation.UserServiceImpl;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -23,28 +29,29 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/payment")
 public class PaymentController {
+
+    private final Logger logger = LoggerFactory.getLogger(PaymentController.class);
+
     private final JwtService jwtService;
     private final UserServiceImpl userService;
     private final BusRepository busRepository;
-    private final OperatorAssignmentRepository operatorAssignmentRepository;
+    private final DOperatorAssignmentRepository operatorAssignmentRepository;
     private final DWalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
-//    private final MqttService mqttService;
-    private final Logger logger = LoggerFactory.getLogger(PaymentController.class);
+    private final MqttClient mqttClient;
+    private final DTransactionService ownerWithdrawService;
 
     public PaymentController(JwtService jwtService, UserServiceImpl userService, BusRepository busRepository,
-                             OperatorAssignmentRepository operatorAssignmentRepository, DWalletRepository walletRepository,
-                             TransactionRepository transactionRepository)
-
-//                             MqttService mqttService)
-    {
+                             DOperatorAssignmentRepository operatorAssignmentRepository, DWalletRepository walletRepository,
+                             TransactionRepository transactionRepository, MqttClient mqttClient, DTransactionService ownerWithdrawService) {
         this.jwtService = jwtService;
         this.userService = userService;
         this.busRepository = busRepository;
         this.operatorAssignmentRepository = operatorAssignmentRepository;
         this.walletRepository = walletRepository;
         this.transactionRepository = transactionRepository;
-//        this.mqttService = mqttService;
+        this.mqttClient = mqttClient;
+        this.ownerWithdrawService = ownerWithdrawService;
     }
 
     @PostMapping("/process")
@@ -53,7 +60,6 @@ public class PaymentController {
     public ResponseEntity<?> processPayment(@RequestHeader(value = "Authorization") String authHeader,
                                             @RequestBody Map<String, String> request) {
         logger.debug("Received payment request: {}", request);
-        System.out.println("came to the processPayment");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             logger.warn("Authorization header missing or invalid");
@@ -141,11 +147,12 @@ public class PaymentController {
                         .body(Map.of("success", false, "message", "Invalid operator"));
             }
 
-            // Fetch operator assignment to get owner
-            OperatorAssignment assignment = operatorAssignmentRepository.findByOperatorAndBus(operator, bus)
+            // Fetch operator assignment to get owner (must be ACTIVE)
+            OperatorAssignment assignment = operatorAssignmentRepository
+                    .findByOperatorAndBusAndStatus(operator, bus, OperatorAssignment.AssignmentStatus.ACTIVE)
                     .orElseThrow(() -> {
-                        logger.warn("Operator {} not assigned to bus {}", operatorId, busId);
-                        return new RuntimeException("Operator not assigned to bus");
+                        logger.warn("Operator {} not assigned to bus {} with ACTIVE status", operatorId, busId);
+                        return new RuntimeException("Operator not assigned to bus or not ACTIVE");
                     });
 
             User owner = assignment.getBus().getOwner();
@@ -155,35 +162,45 @@ public class PaymentController {
                         .body(Map.of("success", false, "message", "Invalid owner"));
             }
 
-            // Fetch owner wallet
-            Wallet ownerWallet = walletRepository.findByUserAndType(owner, Wallet.WalletType.OWNER)
+            // Fetch bus wallet (instead of owner wallet)
+            Wallet busWallet = walletRepository.findByBusAndType(bus, Wallet.WalletType.BUS)
                     .orElseThrow(() -> {
-                        logger.warn("Owner wallet not found for email: {}", owner.getEmail());
-                        return new RuntimeException("Owner wallet not found");
+                        logger.warn("Bus wallet not found for bus: {}", bus.getId());
+                        return new RuntimeException("Bus wallet not found");
                     });
 
-            // Update wallets
+            // Update wallets: subtract from passenger, add to bus wallet
             passengerWallet.setBalance(passengerWallet.getBalance().subtract(amount));
-            ownerWallet.setBalance(ownerWallet.getBalance().add(amount));
+            busWallet.setBalance(busWallet.getBalance().add(amount));
             walletRepository.save(passengerWallet);
-            walletRepository.save(ownerWallet);
+            walletRepository.save(busWallet);
 
-            // Create transaction
+            // Create transaction (to_wallet is busWallet, owner is still set)
             Transaction transaction = new Transaction(amount, Transaction.TransactionType.PAYMENT, passenger, bus, operator);
             transaction.setOwner(owner);
             transaction.setFromWallet(passengerWallet);
-            transaction.setToWallet(ownerWallet);
+            transaction.setToWallet(busWallet);
             transaction.setStatus(Transaction.TransactionStatus.APPROVED);
             transaction.setNote("Payment for bus " + bus.getBusNumber());
             transactionRepository.save(transaction);
 
-            // Send MQTT notifications
-//            mqttService.sendPaymentNotification(passenger.getId().toString(), "passenger",
-//                    "Payment of " + amount + " made for bus " + bus.getBusNumber());
-//            mqttService.sendPaymentNotification(operator.getId().toString(), "operator",
-//                    "Payment of " + amount + " received for bus " + bus.getBusNumber());
-//            mqttService.sendPaymentNotification(owner.getId().toString(), "owner",
-//                    "Payment of " + amount + " credited for bus " + bus.getBusNumber());
+            // Publish MQTT notification to operator
+            String topic = "bus/" + busId + "/payment";
+            String message = String.format(
+                    "{\"transactionId\": \"%s\", \"busId\": \"%s\", \"passengerId\": \"%s\", \"operatorId\": \"%s\", \"amount\": %s, \"busNumber\": \"%s\", \"status\": \"%s\"}",
+                    transaction.getId(), busId, passenger.getId(), operatorId, amount, bus.getBusNumber(), transaction.getStatus()
+            );
+            // Print to command line for debugging
+            System.out.println("MQTT DEBUG | Topic: " + topic + " | Message: " + message);
+            try {
+                MqttMessage mqttMessage = new MqttMessage(message.getBytes());
+                mqttMessage.setQos(1); // At least once delivery
+                mqttClient.publish(topic, mqttMessage);
+                logger.info("Published MQTT message to topic {}: {}", topic, message);
+            } catch (MqttException e) {
+                logger.error("Failed to publish MQTT message: {}", e.getMessage(), e);
+                // Continue processing even if MQTT fails to avoid blocking payment
+            }
 
             logger.info("Payment processed: passenger={}, bus={}, operator={}, owner={}, amount={}",
                     passengerEmail, busId, operatorId, owner.getId(), amount);
@@ -208,6 +225,32 @@ public class PaymentController {
             logger.error("Payment processing failed: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Payment processing failed: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/owner/{ownerId}/withdraw")
+    public ResponseEntity<?> withdraw(@PathVariable String ownerId, @RequestBody OwnerWithdrawRequestDto request) {
+        UUID ownerUuid = UUID.fromString(ownerId);
+        logger.info("Received withdraw request for owner: {}", ownerId);
+        try {
+            WithdrawalTransactionDto wtd = ownerWithdrawService.handleWithdraw(ownerUuid, request);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Withdrawal request processed successfully",
+                "data", wtd
+            ));
+        } catch (IllegalArgumentException e) {
+            logger.warn("Withdraw failed: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", e.getMessage()
+            ));
+        } catch (Exception e) {
+            logger.error("Withdraw failed: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "success", false,
+                "message", "Withdrawal failed: " + e.getMessage()
+            ));
         }
     }
 }
