@@ -16,6 +16,7 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -31,6 +32,9 @@ import java.util.UUID;
 public class PaymentController {
 
     private final Logger logger = LoggerFactory.getLogger(PaymentController.class);
+
+    @Value("${canpay.hmac.passenger-secret}")
+    private String passengerHmacSecret;
 
     private final JwtService jwtService;
     private final UserServiceImpl userService;
@@ -57,8 +61,12 @@ public class PaymentController {
     @PostMapping("/process")
     @PreAuthorize("hasRole('PASSENGER')")
     @Transactional
-    public ResponseEntity<?> processPayment(@RequestHeader(value = "Authorization") String authHeader,
-                                            @RequestBody Map<String, String> request) {
+    public ResponseEntity<?> processPayment(
+            @RequestHeader(value = "Authorization") String authHeader,
+            @RequestHeader(value = "X-Signature", required = false) String signature,
+            @RequestHeader(value = "X-Timestamp", required = false) String timestamp,
+            @RequestBody Map<String, String> request) {
+
         logger.debug("Received payment request: {}", request);
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -67,8 +75,16 @@ public class PaymentController {
                     .body(Map.of("success", false, "message", "Authorization header with Bearer token is required"));
         }
 
+        // --- HMAC signature verification ---
+        if (signature == null || timestamp == null) {
+            logger.warn("Missing X-Signature or X-Timestamp header");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Missing signature or timestamp"));
+        }
+
         String token = authHeader.substring(7);
         String passengerEmail;
+        User passenger;
         try {
             passengerEmail = jwtService.extractEmail(token);
             String role = jwtService.extractRole(token);
@@ -77,17 +93,52 @@ public class PaymentController {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("success", false, "message", "Invalid role for payment"));
             }
+            // Fetch passenger early for HMAC secret
+            passenger = userService.findUserByEmail(passengerEmail)
+                    .orElseThrow(() -> {
+                        logger.warn("Passenger not found: {}", passengerEmail);
+                        return new RuntimeException("Passenger not found");
+                    });
         } catch (Exception e) {
             logger.warn("Invalid token: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("success", false, "message", "Invalid or expired token"));
         }
 
+        // Validate request fields for HMAC
+        String amountStr = request.get("amount");
+        if (amountStr == null) {
+            logger.warn("Missing amount in request for HMAC verification");
+            return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "message", "Amount is required"));
+        }
+
+        // --- HMAC verification logic ---
+        try {
+            String hmacSecret = getHmacSecretForPassenger(passengerEmail); // <-- Replace with your actual logic
+            if (hmacSecret == null) {
+                logger.warn("No HMAC secret found for passenger: {}", passengerEmail);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("success", false, "message", "No HMAC secret found for user"));
+            }
+            String payloadToSign = amountStr + ":" + timestamp;
+            String computedSignature = computeHmacSha256Base64(hmacSecret, payloadToSign);
+            if (!signature.equals(computedSignature)) {
+                logger.warn("Invalid HMAC signature. Provided: {}, Computed: {}", signature, computedSignature);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("success", false, "message", "Invalid signature"));
+            }
+        } catch (Exception e) {
+            logger.error("Error verifying HMAC signature: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Signature verification failed"));
+        }
+
         try {
             // Validate request
             String busIdStr = request.get("busId");
             String operatorIdStr = request.get("operatorId");
-            String amountStr = request.get("amount");
+             amountStr = request.get("amount");
 
             if (busIdStr == null || operatorIdStr == null || amountStr == null) {
                 logger.warn("Missing required fields in request");
@@ -106,7 +157,7 @@ public class PaymentController {
             }
 
             // Fetch passenger
-            User passenger = userService.findUserByEmail(passengerEmail)
+            passenger = userService.findUserByEmail(passengerEmail)
                     .orElseThrow(() -> {
                         logger.warn("Passenger not found: {}", passengerEmail);
                         return new RuntimeException("Passenger not found");
@@ -253,4 +304,19 @@ public class PaymentController {
             ));
         }
     }
+
+    private static String computeHmacSha256Base64(String secret, String message) throws Exception {
+        javax.crypto.Mac sha256_HMAC = javax.crypto.Mac.getInstance("HmacSHA256");
+        javax.crypto.spec.SecretKeySpec secret_key = new javax.crypto.spec.SecretKeySpec(secret.getBytes(java.nio.charset.StandardCharsets.UTF_8), "HmacSHA256");
+        sha256_HMAC.init(secret_key);
+        byte[] hash = sha256_HMAC.doFinal(message.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
+    }
+
+    private String getHmacSecretForPassenger(String email) {
+        return passengerHmacSecret; // common key used by all passenger devices
+
+    }
+
+
 }
