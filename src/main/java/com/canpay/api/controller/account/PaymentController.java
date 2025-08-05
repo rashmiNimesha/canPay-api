@@ -317,6 +317,4 @@ public class PaymentController {
         return passengerHmacSecret; // common key used by all passenger devices
 
     }
-
-
 }
