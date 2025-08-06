@@ -1,6 +1,7 @@
 package com.canpay.api.dto.dashboard.operatorassignment;
 
 import com.canpay.api.entity.OperatorAssignment.AssignmentStatus;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
@@ -11,8 +12,10 @@ import java.util.UUID;
  */
 public class OperatorAssignmentRequestDto {
 
-    @NotNull(message = "Operator ID is required")
     private UUID operatorId;
+
+    @Email(message = "Operator email must be valid")
+    private String operatorEmail;
 
     @NotNull(message = "Bus ID is required")
     private UUID busId;
@@ -31,6 +34,14 @@ public class OperatorAssignmentRequestDto {
 
     public void setOperatorId(UUID operatorId) {
         this.operatorId = operatorId;
+    }
+
+    public String getOperatorEmail() {
+        return operatorEmail;
+    }
+
+    public void setOperatorEmail(String operatorEmail) {
+        this.operatorEmail = operatorEmail;
     }
 
     public UUID getBusId() {
