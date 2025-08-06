@@ -423,4 +423,15 @@ public class DOperatorAssignmentService {
                 .collect(java.util.stream.Collectors.toList());
         return new OperatorAssignmentListWithTotalDto(total, list);
     }
+
+    /**
+     * Remove an operator assignment from a bus.
+     */
+    public void removeOperatorFromBus(Bus bus, User operator) {
+        var assignmentOpt = operatorAssignmentRepository.findByBusIdAndOperatorId(bus.getId(), operator.getId());
+        if (assignmentOpt.isEmpty()) {
+            throw new RuntimeException("Assignment not found for this bus and operator");
+        }
+        operatorAssignmentRepository.deleteByOperator_IdAndBus_Id(operator.getId(), bus.getId());
+    }
 }
