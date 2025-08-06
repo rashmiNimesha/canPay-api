@@ -32,7 +32,7 @@ import com.canpay.api.dto.dashboard.user.UserDto;
 
 
 @RestController
-@RequestMapping("/api/v1/operator-assignment")     // operator-assignment change
+@RequestMapping("/api/v1/operator-assignment")
 public class OperatorAssignmentControllerAc {
 
     private final Logger logger = org.slf4j.LoggerFactory.getLogger(OperatorAssignmentControllerAc.class);
@@ -65,8 +65,8 @@ public class OperatorAssignmentControllerAc {
     public ResponseEntity<?> assignOperator(
             @RequestHeader(value = "Authorization") String authHeader,
             @Valid @RequestBody OperatorAssignmentRequestDto requestDto) {
-        logger.debug("Received operator assignment request: busId={}, operatorId={}, status={}",
-                requestDto.getBusId(), requestDto.getOperatorId(), requestDto.getStatus());
+        logger.debug("Received operator assignment request: busId={}, operatorId={}, operatorEmail={}, status={}",
+                requestDto.getBusId(), requestDto.getOperatorId(), requestDto.getOperatorEmail(), requestDto.getStatus());
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             logger.warn("Authorization header missing or invalid");
@@ -99,14 +99,28 @@ public class OperatorAssignmentControllerAc {
                     });
             logger.debug("Owner validated: id={}, email={}", owner.getId(), owner.getEmail());
 
-            // Validate operator
-            User operator = userService.findUserById(requestDto.getOperatorId())
-                    .orElseThrow(() -> {
-                        logger.warn("Operator not found for ID: {}", requestDto.getOperatorId());
-                        return new RuntimeException("Operator not found");
-                    });
+            // Resolve operator by ID or email
+            User operator = null;
+            if (requestDto.getOperatorId() != null) {
+                operator = userService.findUserById(requestDto.getOperatorId())
+                        .orElseThrow(() -> {
+                            logger.warn("Operator not found for ID: {}", requestDto.getOperatorId());
+                            return new RuntimeException("Operator not found");
+                        });
+            } else if (requestDto.getOperatorEmail() != null && !requestDto.getOperatorEmail().isBlank()) {
+                operator = userService.findUserByEmailAndRole(requestDto.getOperatorEmail(), User.UserRole.OPERATOR)
+                        .orElseThrow(() -> {
+                            logger.warn("Operator not found for email: {}", requestDto.getOperatorEmail());
+                            return new RuntimeException("Operator not found");
+                        });
+            } else {
+                logger.warn("Operator ID or email must be provided");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("success", false, "message", "Operator ID or email is required"));
+            }
+
             if (!User.UserRole.OPERATOR.equals(operator.getRole())) {
-                logger.warn("User is not an operator: {}", requestDto.getOperatorId());
+                logger.warn("User is not an operator: {}", operator.getId());
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("success", false, "message", "User is not an operator"));
             }
@@ -127,14 +141,14 @@ public class OperatorAssignmentControllerAc {
             logger.debug("Bus validated: id={}, ownerId={}", bus.getId(), bus.getOwner().getId());
 
             // Check for any existing assignment for this operator and bus (regardless of status)
-            if (busService.hasAnyOperatorAssignment(requestDto.getBusId(), requestDto.getOperatorId())) {
-                logger.warn("Operator {} already assigned to bus {} (any status)", requestDto.getOperatorId(), requestDto.getBusId());
+            if (busService.hasAnyOperatorAssignment(requestDto.getBusId(), operator.getId())) {
+                logger.warn("Operator {} already assigned to bus {} (any status)", operator.getId(), requestDto.getBusId());
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("success", false, "message", "Operator already assigned to this bus"));
             }
 
             OperatorAssignment assignment = new OperatorAssignment(operator, bus,
-                    requestDto.getStatus() != null ? requestDto.getStatus() : OperatorAssignment.AssignmentStatus.ACTIVE);   // previously this is pending
+                    requestDto.getStatus() != null ? requestDto.getStatus() : OperatorAssignment.AssignmentStatus.ACTIVE);
             logger.debug("OperatorAssignment state: id={}, busId={}, operatorId={}, status={}",
                     assignment.getId(), assignment.getBus().getId(), assignment.getOperator().getId(), assignment.getStatus());
 
@@ -147,6 +161,7 @@ public class OperatorAssignmentControllerAc {
             responseDto.setAssignedAt(assignment.getAssignedAt());
             responseDto.setCreatedAt(assignment.getCreatedAt());
             responseDto.setUpdatedAt(assignment.getUpdatedAt());
+            responseDto.setAssigned(assignment.getStatus() == OperatorAssignment.AssignmentStatus.ACTIVE);
 
             // Populate UserDto
             UserDto userDto = new UserDto();
@@ -169,7 +184,7 @@ public class OperatorAssignmentControllerAc {
             responseDto.setBus(busDto);
 
             logger.info("Operator {} assigned to bus {} with status {}",
-                    requestDto.getOperatorId(), requestDto.getBusId(), requestDto.getStatus());
+                    operator.getId(), requestDto.getBusId(), requestDto.getStatus());
 
             return new ResponseEntityBuilder.Builder<Map<String, Object>>()
                     .resultMessage("Operator assigned successfully")
@@ -177,13 +192,17 @@ public class OperatorAssignmentControllerAc {
                     .body(Map.of("data", responseDto))
                     .buildWrapped();
         } catch (DataIntegrityViolationException e) {
-            logger.error("Constraint violation while assigning operator: busId={}, operatorId={}, error={}",
-                    requestDto.getBusId(), requestDto.getOperatorId(), e.getMessage(), e);
+            logger.error("Constraint violation while assigning operator: busId={}, operatorId/email={}, error={}",
+                    requestDto.getBusId(),
+                    requestDto.getOperatorId() != null ? requestDto.getOperatorId() : requestDto.getOperatorEmail(),
+                    e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("success", false, "message", "Database constraint violation: " + e.getMessage()));
-        } catch (Exception e) { // Changed from RuntimeException to Exception to catch all potential issues
-            logger.error("Failed to assign operator: busId={}, operatorId={}, error={}",
-                    requestDto.getBusId(), requestDto.getOperatorId(), e.getMessage(), e);
+        } catch (Exception e) {
+            logger.error("Failed to assign operator: busId={}, operatorId/email={}, error={}",
+                    requestDto.getBusId(),
+                    requestDto.getOperatorId() != null ? requestDto.getOperatorId() : requestDto.getOperatorEmail(),
+                    e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("success", false, "message", "Runtime exception: " + e.getMessage()));
         }
