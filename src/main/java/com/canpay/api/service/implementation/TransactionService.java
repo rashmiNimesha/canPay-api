@@ -1,10 +1,12 @@
 package com.canpay.api.service.implementation;
 
+import com.canpay.api.dto.dashboard.transactions.BusTransactionDto;
 import com.canpay.api.dto.dashboard.transactions.RechargeTransactionDto;
 import com.canpay.api.entity.Transaction;
 import com.canpay.api.entity.User;
 import com.canpay.api.repository.TransactionRepository;
 import com.canpay.api.repository.UserRepository;
+import com.canpay.api.repository.dashboard.DTransactionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -16,11 +18,11 @@ import java.util.stream.Collectors;
 
 @Service
 public class TransactionService {
-    private final TransactionRepository transactionRepository;
+    private final DTransactionRepository transactionRepository;
     private final UserRepository userRepository;
     private final Logger logger = LoggerFactory.getLogger(TransactionService.class);
 
-    public TransactionService(TransactionRepository transactionRepository, UserRepository userRepository) {
+    public TransactionService(DTransactionRepository transactionRepository, UserRepository userRepository) {
         this.transactionRepository = transactionRepository;
         this.userRepository = userRepository;
     }
@@ -75,6 +77,32 @@ public class TransactionService {
 
     public BigDecimal sumPaymentsForBus(java.util.UUID busId) {
         return transactionRepository.sumPaymentsForBus(busId);
+    }
+
+    public List<BusTransactionDto> getRecentTransactionsByOperatorAndBus(UUID operatorId, UUID busId) {
+
+        List<BusTransactionDto> transactions= transactionRepository.findTop10ByOperatorIdAndBusIdOrderByHappenedAtDesc(operatorId, busId);
+        if (transactions.isEmpty()) {
+            logger.warn("No recent transactions found for operator: {} and bus: {}", operatorId, busId);
+            return List.of();
+        }
+        logger.info("Fetched {} recent transactions for operator: {} and bus: {}", transactions.size(), operatorId, busId);
+        return transactions.stream()
+                .map(dto -> new BusTransactionDto(
+                        dto.getBusNumber(),
+                        dto.getBusRoute(),
+                        dto.getBusType(),
+                        dto.getProvince(),
+                        dto.getPassengerId(),
+                        dto.getPassengerName(),
+                        dto.getPassengerEmail(),
+                        dto.getOperatorId(),
+                        dto.getOperatorName(),
+                        dto.getOperatorEmail(),
+                        dto.getNote(),
+                        dto.getAmount()))
+                .collect(Collectors.toList());
+
     }
 
 }
