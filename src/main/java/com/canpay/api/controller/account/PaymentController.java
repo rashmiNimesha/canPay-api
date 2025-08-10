@@ -1,6 +1,5 @@
 package com.canpay.api.controller.account;
 
-import com.canpay.api.dto.dashboard.operatorassignment.OperatorAssignmentListWithTotalDto;
 import com.canpay.api.dto.dashboard.transactions.OwnerWithdrawRequestDto;
 import com.canpay.api.dto.dashboard.transactions.WithdrawalTransactionDto;
 import com.canpay.api.entity.*;
@@ -252,6 +251,23 @@ public class PaymentController {
                 logger.info("Published MQTT message to topic {}: {}", topic, message);
             } catch (MqttException e) {
                 logger.error("Failed to publish MQTT message: {}", e.getMessage(), e);
+                // Continue processing even if MQTT fails to avoid blocking payment
+            }
+
+            // Publish MQTT notification to passenger
+            String passengerTopic = "passenger/" + passenger.getId() + "/payment";
+            String passengerMessage = String.format(
+                    "{\"transactionId\": \"%s\", \"busId\": \"%s\", \"amount\": %s, \"busNumber\": \"%s\", \"status\": \"%s\", \"message\": \"%s\"}",
+                    transaction.getId(), busId, amount, bus.getBusNumber(), transaction.getStatus(), "Payment to bus successful"
+            );
+            System.out.println("MQTT DEBUG | Topic: " + passengerTopic + " | Message: " + passengerMessage);
+            try {
+                MqttMessage mqttPassengerMessage = new MqttMessage(passengerMessage.getBytes());
+                mqttPassengerMessage.setQos(1);
+                mqttClient.publish(passengerTopic, mqttPassengerMessage);
+                logger.info("Published MQTT message to topic {}: {}", passengerTopic, passengerMessage);
+            } catch (MqttException e) {
+                logger.error("Failed to publish MQTT message to passenger: {}", e.getMessage(), e);
                 // Continue processing even if MQTT fails to avoid blocking payment
             }
 

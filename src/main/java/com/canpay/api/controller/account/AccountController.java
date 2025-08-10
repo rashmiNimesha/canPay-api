@@ -1,14 +1,8 @@
 package com.canpay.api.controller.account;
 
-
-import com.canpay.api.dto.dashboard.bus.BusResponseDto;
-import com.canpay.api.dto.dashboard.operatorassignment.OperatorAssignmentListResponseDto;
-import com.canpay.api.dto.dashboard.operatorassignment.OperatorAssignmentRequestDto;
-import com.canpay.api.dto.dashboard.operatorassignment.OperatorAssignmentResponseDto;
 import com.canpay.api.dto.dashboard.user.UserDto;
 import com.canpay.api.entity.Bus;
 import com.canpay.api.entity.OperatorAssignment;
-import com.canpay.api.entity.ResponseEntityBuilder;
 import com.canpay.api.entity.User;
 import com.canpay.api.service.dashboard.DBusService;
 import com.canpay.api.service.dashboard.DOperatorAssignmentService;
@@ -17,11 +11,8 @@ import com.canpay.api.service.implementation.JwtService;
 import com.canpay.api.service.implementation.TransactionService;
 import com.canpay.api.service.implementation.UserServiceImpl;
 import com.canpay.api.service.dashboard.DWalletService;
-import jakarta.transaction.Transactional;
-import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
