@@ -366,6 +366,41 @@ public class DTransactionService {
         return result;
     }
 
+    /**
+     * Gets the most recent transactions for a bus and operator within the last N days.
+     */
+    public List<BusTransactionDto> getRecentTransactionsByBusAndOperatorWithinDays(UUID busId, UUID operatorId, int days) {
+        LocalDateTime since = LocalDateTime.now().minusDays(days);
+        List<Transaction> transactions = transactionRepository.findByBus_Id(busId).stream()
+                .filter(t -> t.getOperator() != null && operatorId.equals(t.getOperator().getId()))
+                .filter(t -> t.getHappenedAt() != null && !t.getHappenedAt().isBefore(since))
+                .sorted((a, b) -> b.getHappenedAt().compareTo(a.getHappenedAt()))
+                .limit(10)
+                .collect(Collectors.toList());
+
+        return transactions.stream().map(t -> {
+            String busRoute = t.getBus() != null && t.getBus().getRouteFrom() != null && t.getBus().getRouteTo() != null
+                    ? t.getBus().getRouteFrom() + " - " + t.getBus().getRouteTo()
+                    : null;
+            return new BusTransactionDto(
+                    t.getId() != null ? t.getId().toString() : null,
+                    t.getHappenedAt(),
+                    t.getBus() != null ? t.getBus().getBusNumber() : null,
+                    busRoute,
+                    t.getBus() != null ? (t.getBus().getType() != null ? t.getBus().getType().toString() : null) : null,
+                    t.getBus() != null ? t.getBus().getProvince() : null,
+                    t.getPassenger() != null ? (t.getPassenger().getId() != null ? t.getPassenger().getId().toString() : null) : null,
+                    t.getPassenger() != null ? t.getPassenger().getName() : null,
+                    t.getPassenger() != null ? t.getPassenger().getEmail() : null,
+                    t.getOperator() != null ? (t.getOperator().getId() != null ? t.getOperator().getId().toString() : null) : null,
+                    t.getOperator() != null ? t.getOperator().getName() : null,
+                    t.getOperator() != null ? t.getOperator().getEmail() : null,
+                    t.getNote(),
+                    t.getAmount()
+            );
+        }).collect(Collectors.toList());
+    }
+
     // DTO Conversion Methods
     /**
      * Converts Transaction entity to RechargeTransactionDto.

@@ -79,30 +79,4 @@ public class TransactionService {
         return transactionRepository.sumPaymentsForBus(busId);
     }
 
-    public List<BusTransactionDto> getRecentTransactionsByOperatorAndBus(UUID operatorId, UUID busId) {
-
-        List<BusTransactionDto> transactions= transactionRepository.findTop10ByOperatorIdAndBusIdOrderByHappenedAtDesc(operatorId, busId);
-        if (transactions.isEmpty()) {
-            logger.warn("No recent transactions found for operator: {} and bus: {}", operatorId, busId);
-            return List.of();
-        }
-        logger.info("Fetched {} recent transactions for operator: {} and bus: {}", transactions.size(), operatorId, busId);
-        return transactions.stream()
-                .map(dto -> new BusTransactionDto(
-                        dto.getBusNumber(),
-                        dto.getBusRoute(),
-                        dto.getBusType(),
-                        dto.getProvince(),
-                        dto.getPassengerId(),
-                        dto.getPassengerName(),
-                        dto.getPassengerEmail(),
-                        dto.getOperatorId(),
-                        dto.getOperatorName(),
-                        dto.getOperatorEmail(),
-                        dto.getNote(),
-                        dto.getAmount()))
-                .collect(Collectors.toList());
-
-    }
-
 }

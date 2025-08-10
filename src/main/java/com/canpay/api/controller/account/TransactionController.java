@@ -204,17 +204,23 @@ public class TransactionController {
                 .buildWrapped();
     }
 
-    @GetMapping("/operator/{operatorId}/{busId}/recent")
+    /**
+     * Get the most recent transactions (within 10 days) for a specific bus, only if the bus is assigned to the operator.
+     */
+    @GetMapping("/bus/{busId}/operator/{operatorId}/recent")
     @PreAuthorize("hasRole('OPERATOR')")
-    public ResponseEntity<?> getRecentTransactionsByOperatorAndBus(@RequestHeader(value = "Authorization") String authHeader, @PathVariable String operatorId, @PathVariable String busId) {
-        UUID operatorUuid;
+    public ResponseEntity<?> getRecentBusTransactionsForOperator(
+            @RequestHeader(value = "Authorization") String authHeader,
+            @PathVariable String busId,
+            @PathVariable String operatorId) {
         UUID busUuid;
+        UUID operatorUuid;
         try {
-            operatorUuid = UUID.fromString(operatorId);
             busUuid = UUID.fromString(busId);
+            operatorUuid = UUID.fromString(operatorId);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("success", false, "message", "Invalid UUID format for operatorId or busId"));
+                    .body(Map.of("success", false, "message", "Invalid UUID format for busId or operatorId"));
         }
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -234,15 +240,18 @@ public class TransactionController {
                     .body(Map.of("success", false, "message", "Invalid or expired token"));
         }
 
-        if(!dOperatorAssignmentRepository.findByBusIdAndOperatorId(busUuid, operatorUuid).isPresent()) {
+        // Check if operator is assigned to the bus (active assignment)
+        if (!dOperatorAssignmentRepository.findByBusIdAndOperatorIdAndStatus(
+                busUuid, operatorUuid, com.canpay.api.entity.OperatorAssignment.AssignmentStatus.ACTIVE).isPresent()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("success", false, "message", "Operator is not assigned to this bus"));
         }
 
-        List<BusTransactionDto> transactions = transactionService.getRecentTransactionsByOperatorAndBus(operatorUuid, busUuid);
+        // Fetch recent transactions for the bus within 10 days
+        List<BusTransactionDto> transactions = dTransactionService.getRecentTransactionsByBusAndOperatorWithinDays(busUuid, operatorUuid, 10);
 
         return new ResponseEntityBuilder.Builder<List<BusTransactionDto>>()
-                .resultMessage("Recent transactions for operator and bus retrieved successfully")
+                .resultMessage("Recent transactions for bus and operator retrieved successfully")
                 .httpStatus(HttpStatus.OK)
                 .body(transactions)
                 .buildWrapped();

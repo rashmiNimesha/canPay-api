@@ -1,8 +1,11 @@
 package com.canpay.api.dto.dashboard.transactions;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 public class BusTransactionDto {
+    private String transactionId;
+    private LocalDateTime happenedAt;
     private String busNumber;
     private String busRoute;
     private String busType;
@@ -41,6 +44,39 @@ public class BusTransactionDto {
         this.operatorEmail = operatorEmail;
         this.note = note;
         this.amount = amount;
+    }
+
+    public BusTransactionDto(String transactionId, LocalDateTime happenedAt, String busNumber, String busRoute, String busType, String province, String passengerId, String passengerName, String passengerEmail, String operatorId, String operatorName, String operatorEmail, String note, BigDecimal amount) {
+        this.transactionId = transactionId;
+        this.happenedAt = happenedAt;
+        this.busNumber = busNumber;
+        this.busRoute = busRoute;
+        this.busType = busType;
+        this.province = province;
+        this.passengerId = passengerId;
+        this.passengerName = passengerName;
+        this.passengerEmail = passengerEmail;
+        this.operatorId = operatorId;
+        this.operatorName = operatorName;
+        this.operatorEmail = operatorEmail;
+        this.note = note;
+        this.amount = amount;
+    }
+
+    public String getTransactionId() {
+        return transactionId;
+    }
+
+    public void setTransactionId(String transactionId) {
+        this.transactionId = transactionId;
+    }
+
+    public LocalDateTime getHappenedAt() {
+        return happenedAt;
+    }
+
+    public void setHappenedAt(LocalDateTime happenedAt) {
+        this.happenedAt = happenedAt;
     }
 
     public String getBusNumber() {
