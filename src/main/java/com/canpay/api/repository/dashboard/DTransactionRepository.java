@@ -1,5 +1,6 @@
 package com.canpay.api.repository.dashboard;
 
+import com.canpay.api.dto.dashboard.transactions.BusTransactionDto;
 import com.canpay.api.entity.Transaction;
 import com.canpay.api.entity.Transaction.TransactionType;
 import com.canpay.api.entity.Transaction.TransactionStatus;
@@ -227,4 +228,17 @@ public interface DTransactionRepository extends JpaRepository<Transaction, UUID>
 
     /** Delete transactions by owner ID */
     void deleteByOwner_Id(UUID ownerId);
+
+    List<BusTransactionDto> findTop10ByOperatorIdAndBusIdOrderByHappenedAtDesc(UUID operatorId, UUID busId);
+
+    @Query("SELECT t FROM Transaction t " +
+            "LEFT JOIN t.bus b " +
+            "LEFT JOIN t.operator o " +
+            "LEFT JOIN t.owner ow " +
+            "WHERE t.passenger = :passenger " +
+            "ORDER BY t.happenedAt DESC")
+    List<Transaction> findTop10ByPassengerOrderByHappenedAtDesc(User passenger);
+
+    @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.bus.id = :busId AND t.type = com.canpay.api.entity.Transaction.TransactionType.PAYMENT AND t.status = com.canpay.api.entity.Transaction.TransactionStatus.APPROVED")
+    BigDecimal sumPaymentsForBus(UUID busId);
 }

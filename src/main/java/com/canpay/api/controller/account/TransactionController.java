@@ -1,8 +1,10 @@
 package com.canpay.api.controller.account;
 
+import com.canpay.api.dto.dashboard.transactions.BusTransactionDto;
 import com.canpay.api.dto.dashboard.transactions.RechargeTransactionDto;
 import com.canpay.api.entity.ResponseEntityBuilder;
 import com.canpay.api.entity.Transaction;
+import com.canpay.api.repository.dashboard.DOperatorAssignmentRepository;
 import com.canpay.api.service.dashboard.DTransactionService;
 import com.canpay.api.service.implementation.JwtService;
 import com.canpay.api.service.implementation.TransactionService;
@@ -25,11 +27,13 @@ public class TransactionController {
     private final JwtService jwtService;
     private final DTransactionService dTransactionService;
     private final Logger logger = LoggerFactory.getLogger(TransactionController.class);
+    private final DOperatorAssignmentRepository dOperatorAssignmentRepository;
 
-    public TransactionController(TransactionService transactionService, JwtService jwtService, DTransactionService dTransactionService) {
+    public TransactionController(TransactionService transactionService, JwtService jwtService, DTransactionService dTransactionService, DOperatorAssignmentRepository dOperatorAssignmentRepository) {
         this.transactionService = transactionService;
         this.jwtService = jwtService;
         this.dTransactionService = dTransactionService;
+        this.dOperatorAssignmentRepository = dOperatorAssignmentRepository;
     }
 
     @GetMapping("/recent/{passengerId}")
@@ -197,6 +201,50 @@ public class TransactionController {
                 .resultMessage("Recent recharge and payment transactions for passenger retrieved successfully")
                 .httpStatus(HttpStatus.OK)
                 .body(data)
+                .buildWrapped();
+    }
+
+    @GetMapping("/operator/{operatorId}/{busId}/recent")
+    @PreAuthorize("hasRole('OPERATOR')")
+    public ResponseEntity<?> getRecentTransactionsByOperatorAndBus(@RequestHeader(value = "Authorization") String authHeader, @PathVariable String operatorId, @PathVariable String busId) {
+        UUID operatorUuid;
+        UUID busUuid;
+        try {
+            operatorUuid = UUID.fromString(operatorId);
+            busUuid = UUID.fromString(busId);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("success", false, "message", "Invalid UUID format for operatorId or busId"));
+        }
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Authorization header with Bearer token is required"));
+        }
+
+        String token = authHeader.substring(7);
+        try {
+            String role = jwtService.extractRole(token);
+            if (!"OPERATOR".equals(role)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("success", false, "message", "Invalid role for accessing transactions"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Invalid or expired token"));
+        }
+
+        if(!dOperatorAssignmentRepository.findByBusIdAndOperatorId(busUuid, operatorUuid).isPresent()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("success", false, "message", "Operator is not assigned to this bus"));
+        }
+
+        List<BusTransactionDto> transactions = transactionService.getRecentTransactionsByOperatorAndBus(operatorUuid, busUuid);
+
+        return new ResponseEntityBuilder.Builder<List<BusTransactionDto>>()
+                .resultMessage("Recent transactions for operator and bus retrieved successfully")
+                .httpStatus(HttpStatus.OK)
+                .body(transactions)
                 .buildWrapped();
     }
 
