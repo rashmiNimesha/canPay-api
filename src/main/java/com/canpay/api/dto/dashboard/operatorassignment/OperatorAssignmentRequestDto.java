@@ -17,7 +17,7 @@ public class OperatorAssignmentRequestDto {
     @Email(message = "Operator email must be valid")
     private String operatorEmail;
 
-    @NotNull(message = "Bus ID is required")
+//    @NotNull(message = "Bus ID is required")
     private UUID busId;
 
     private AssignmentStatus status;
