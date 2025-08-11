@@ -32,6 +32,8 @@ public interface DOperatorAssignmentRepository extends JpaRepository<OperatorAss
 
     /** Find operator assignments by bus ID */
     List<OperatorAssignment> findByBus_Id(UUID busId);
+    Optional<OperatorAssignment> findByBusId(UUID busId);
+
 
     /** Find operator assignments by status */
     List<OperatorAssignment> findByStatus(AssignmentStatus status);
