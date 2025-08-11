@@ -13,11 +13,9 @@ import java.util.UUID;
 public class OperatorAssignmentRequestDto {
 
     private UUID operatorId;
-
-    @Email(message = "Operator email must be valid")
     private String operatorEmail;
 
-//    @NotNull(message = "Bus ID is required")
+//    @NotNull(message = "Bus ID is required")     // rashmi chnaged this cause
     private UUID busId;
 
     private AssignmentStatus status;
