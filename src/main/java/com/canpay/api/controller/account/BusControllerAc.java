@@ -40,7 +40,7 @@ public class BusControllerAc {
         this.userServiceImpl = userServiceImpl;
     }
 
-    @GetMapping("/{busId}")
+    @GetMapping("/by-operator/{busId}")
     @PreAuthorize("hasRole('PASSENGER')")
     public ResponseEntity<?> getBusAndOperatorDetails(@PathVariable String busId) {
         try {
