@@ -434,7 +434,7 @@ public class OperatorAssignmentControllerAc {
      * @param ownerId Owner's UUID (path param)
      * @param requestDto Request body with busId and operatorId
      */
-    @DeleteMapping("/owner/{ownerId}/remove-operator")
+    @PostMapping("/owner/{ownerId}/remove-operator")
     @PreAuthorize("hasRole('OWNER')")
     @Transactional
     public ResponseEntity<?> removeOperatorFromBus(
