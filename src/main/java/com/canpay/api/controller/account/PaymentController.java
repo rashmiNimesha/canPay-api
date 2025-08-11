@@ -136,17 +136,17 @@ public class PaymentController {
         try {
             // Validate request
             String busIdStr = request.get("busId");
-            String operatorIdStr = request.get("operatorId");
+//            String operatorIdStr = request.get("operatorId");
              amountStr = request.get("amount");
 
-            if (busIdStr == null || operatorIdStr == null || amountStr == null) {
+            if (busIdStr == null || amountStr == null) {
                 logger.warn("Missing required fields in request");
                 return ResponseEntity.badRequest()
                         .body(Map.of("success", false, "message", "busId, operatorId, and amount are required"));
             }
 
             UUID busId = UUID.fromString(busIdStr);
-            UUID operatorId = UUID.fromString(operatorIdStr);
+//            UUID operatorId = UUID.fromString(operatorIdStr);
             BigDecimal amount = new BigDecimal(amountStr);
 
             if (amount.compareTo(BigDecimal.ZERO) <= 0) {
@@ -185,11 +185,14 @@ public class PaymentController {
                     });
 
             // Fetch operator
-            User operator = userService.findUserById(operatorId)
+            OperatorAssignment operatorAssignment = operatorAssignmentRepository.findByBusId(busId)
                     .orElseThrow(() -> {
-                        logger.warn("Operator not found: {}", operatorId);
-                        return new RuntimeException("Operator not found");
+                        logger.warn("Operator assignment not found for bus: {}", busId);
+                        return new RuntimeException("Operator assignment not found for bus");
                     });
+            User operator = operatorAssignment.getOperator();
+            String operatorId = operator.getId().toString();
+
 
             if (!operator.getRole().equals(User.UserRole.OPERATOR)) {
                 logger.warn("User is not an operator: {}", operatorId);
