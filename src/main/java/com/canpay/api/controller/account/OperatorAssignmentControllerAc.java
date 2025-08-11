@@ -494,4 +494,56 @@ public class OperatorAssignmentControllerAc {
                     .body(Map.of("success", false, "message", e.getMessage()));
         }
     }
+
+    /**
+     * Operator removes themselves from a bus (delete assignment).
+     * @param authHeader Authorization header containing Bearer token.
+     * @param requestDto Request body with busId and operatorId.
+     */
+    @DeleteMapping("/operator/remove-bus")
+    @PreAuthorize("hasRole('OPERATOR')")
+    @Transactional
+    public ResponseEntity<?> operatorRemoveBus(
+            @RequestHeader(value = "Authorization") String authHeader,
+            @Valid @RequestBody OperatorAssignmentRequestDto requestDto) {
+        logger.debug("Operator requests to remove themselves from bus: operatorId={}, busId={}",
+                requestDto.getOperatorId(), requestDto.getBusId());
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            logger.warn("Authorization header missing or invalid");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Authorization header with Bearer token is required"));
+        }
+        String token = authHeader.substring(7);
+        try {
+            String tokenRole = jwtService.extractRole(token);
+            if (!"OPERATOR".equals(tokenRole)) {
+                logger.warn("Invalid role in token: {}", tokenRole);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("success", false, "message", "Only operators can remove themselves from a bus"));
+            }
+            String operatorEmail = jwtService.extractEmail(token);
+            User operator = userService.findUserByEmailAndRole(operatorEmail, User.UserRole.OPERATOR)
+                    .orElseThrow(() -> new RuntimeException("Operator not found"));
+            if (!operator.getId().equals(requestDto.getOperatorId())) {
+                logger.warn("Operator ID in token does not match request");
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("success", false, "message", "Operator ID mismatch"));
+            }
+            Bus bus = busService.findBusById(requestDto.getBusId());
+            if (bus == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("success", false, "message", "Bus not found"));
+            }
+            operatorAssignmentService.removeOperatorFromBus(bus, operator);
+            return ResponseEntity.ok(Map.of("success", true, "message", "Operator removed from bus successfully"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
 }

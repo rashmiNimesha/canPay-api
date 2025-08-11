@@ -77,7 +77,10 @@ public class JwtService {
     public boolean isTokenValid(String token) {
         try {
             Claims claims = extractAllClaims(token);
-            return !claims.getExpiration().before(new Date());
+            Date expiration = claims.getExpiration();
+            Date now = new Date();
+            logger.debug("Token expiration: {}, Current time: {}", expiration, now);
+            return expiration != null && expiration.after(now);
         } catch (Exception e) {
             logger.error("Invalid token: {}", e.getMessage());
             return false;
