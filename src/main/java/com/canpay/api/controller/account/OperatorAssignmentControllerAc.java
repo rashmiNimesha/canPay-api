@@ -500,7 +500,7 @@ public class OperatorAssignmentControllerAc {
      * @param authHeader Authorization header containing Bearer token.
      * @param requestDto Request body with busId and operatorId.
      */
-    @DeleteMapping("/operator/remove-bus")
+    @PostMapping("/operator/remove-bus")
     @PreAuthorize("hasRole('OPERATOR')")
     @Transactional
     public ResponseEntity<?> operatorRemoveBus(
