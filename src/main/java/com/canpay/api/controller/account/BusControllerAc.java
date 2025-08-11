@@ -40,14 +40,14 @@ public class BusControllerAc {
         this.userServiceImpl = userServiceImpl;
     }
 
-    @GetMapping("/{busId}/operator/{operatorId}")
+    @GetMapping("/{busId}")
     @PreAuthorize("hasRole('PASSENGER')")
-    public ResponseEntity<?> getBusAndOperatorDetails(@PathVariable String busId, @PathVariable String operatorId) {
+    public ResponseEntity<?> getBusAndOperatorDetails(@PathVariable String busId) {
         try {
-            logger.info("Fetching bus and operator details for busId: {}, operatorId: {}", busId, operatorId);
-            System.out.println("Fetching bus and operator details for busId: " + busId + ", operatorId: " + operatorId);
+            logger.info("Fetching bus and operator details for busId: {}", busId);
+            System.out.println("Fetching bus and operator details for busId: " + busId);
+
             UUID busUuid = UUID.fromString(busId);
-            UUID operatorUuid = UUID.fromString(operatorId);
 
             Bus bus = busRepository.findById(busUuid)
                     .orElseThrow(() -> {
@@ -55,19 +55,29 @@ public class BusControllerAc {
                         return new RuntimeException("Bus not found");
                     });
 
-            User operator = userRepository.findById(operatorUuid)
-                    .orElseThrow(() -> {
-                        logger.warn("Operator not found: {}", operatorId);
-                        return new RuntimeException("Operator not found");
-                    });
+            // Find the active operator assignment for this bus
+            User operator = null;
+            if (bus.getOperatorAssignments() != null) {
+                operator = bus.getOperatorAssignments().stream()
+                        .filter(oa -> oa.getStatus() == com.canpay.api.entity.OperatorAssignment.AssignmentStatus.ACTIVE)
+                        .map(com.canpay.api.entity.OperatorAssignment::getOperator)
+                        .findFirst()
+                        .orElse(null);
+            }
+
+            if (operator == null) {
+                logger.warn("No active operator assigned for bus: {}", busId);
+                return ResponseEntity.badRequest()
+                        .body(Map.of("success", false, "message", "No active operator assigned for this bus"));
+            }
 
             if (!operator.getRole().equals(User.UserRole.OPERATOR)) {
-                logger.warn("User is not an operator: {}", operatorId);
+                logger.warn("User is not an operator: {}", operator.getId());
                 return ResponseEntity.badRequest()
                         .body(Map.of("success", false, "message", "Invalid operator"));
             }
 
-            logger.info("Fetched details for bus: {}, operator: {}", busId, operatorId);
+            logger.info("Fetched details for bus: {}, operator: {}", busId, operator.getId());
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "data", Map.of(
@@ -79,7 +89,7 @@ public class BusControllerAc {
         } catch (IllegalArgumentException e) {
             logger.warn("Invalid UUID format: {}", e.getMessage());
             return ResponseEntity.badRequest()
-                    .body(Map.of("success", false, "message", "Invalid busId or operatorId"));
+                    .body(Map.of("success", false, "message", "Invalid busId"));
         } catch (RuntimeException e) {
             logger.error("Error fetching details: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

@@ -142,7 +142,7 @@ public class PaymentController {
             if (busIdStr == null || amountStr == null) {
                 logger.warn("Missing required fields in request");
                 return ResponseEntity.badRequest()
-                        .body(Map.of("success", false, "message", "busId, operatorId, and amount are required"));
+                        .body(Map.of("success", false, "message", "busId and amount are required"));
             }
 
             UUID busId = UUID.fromString(busIdStr);
