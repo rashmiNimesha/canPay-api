@@ -6,7 +6,7 @@ Canpay-api is a backend API project.
 
 ## Features
 
-- [ ] Core API endpoints for payment processing *(details to be filled based on project specifics)*
+- [ ] Core API endpoints
 - [ ] Secure transaction management
 - [ ] Modular and scalable architecture
 
